@@ -17,6 +17,18 @@ class Relation(object):
         self.card_min = card_min
         self.card_max = card_max
 
+    def isMandatory(self) -> bool:
+        return (len(self.children)==1 and self.card_max==1 and self.card_min==1)
+
+    def isOptional(self)-> bool:
+        return (len(self.children)==1 and self.card_max==1 and self.card_min==0)
+
+    def isSet(self)-> bool:
+        return (len(self.children)>1 and self.card_max==len(self.children) and self.card_min==1)
+
+    def isAlternative(self)-> bool:
+        return (len(self.children)>1 and self.card_max==1 and self.card_min==1)
+
 
 class Feature():
 
