@@ -1,17 +1,12 @@
 from ast import AST
-from typing import TypeVar, Sequence, Any
+from typing import Sequence
 
 from core.models.VariabilityModel import VariabilityModel
 
 
-T = TypeVar('T')
-T = TypeVar('A', 'int', 'str')
-
-
 class Relation(object):
 
-    # TODO: buscar como añadir el tipo sin redundancia
-    def __init__(self, parent: Any, children: Any, card_min: int, card_max: int):
+    def __init__(self, parent: 'Feature', children: Sequence['Feature'], card_min: int, card_max: int):
         self.parent = parent
         self.children = children
         self.card_min = card_min
@@ -32,13 +27,12 @@ class Relation(object):
 
 class Feature():
 
-    def __init__(self, name: str, relations: Sequence[Relation]):
+    def __init__(self, name: str, relations: Sequence['Relation']):
         self.name = name
         self.relations = relations
 
-    def add_relation(self, relation: Relation):
+    def add_relation(self, relation: 'Relation'):
         self.relations.append(relation)
-
 
 
 class FeatureModel(VariabilityModel):
