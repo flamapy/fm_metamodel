@@ -12,16 +12,16 @@ class Relation(object):
         self.card_min = card_min
         self.card_max = card_max
 
-    def isMandatory(self) -> bool:
+    def is_mandatory(self) -> bool:
         return (len(self.children)==1 and self.card_max==1 and self.card_min==1)
 
-    def isOptional(self)-> bool:
+    def is_optional(self)-> bool:
         return (len(self.children)==1 and self.card_max==1 and self.card_min==0)
 
-    def isOr(self)-> bool:
+    def is_or(self)-> bool:
         return (len(self.children)>1 and self.card_max==len(self.children) and self.card_min==1)
 
-    def isAlternative(self)-> bool:
+    def is_alternative(self)-> bool:
         return (len(self.children)>1 and self.card_max==1 and self.card_min==1)
 
 
