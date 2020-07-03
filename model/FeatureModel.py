@@ -23,7 +23,7 @@ class Relation(object):
     def isOptional(self)-> bool:
         return (len(self.children)==1 and self.card_max==1 and self.card_min==0)
 
-    def isSet(self)-> bool:
+    def isOr(self)-> bool:
         return (len(self.children)>1 and self.card_max==len(self.children) and self.card_min==1)
 
     def isAlternative(self)-> bool:
@@ -45,7 +45,7 @@ class FeatureModel(VariabilityModel):
 
     def __init__(self, root: Feature, constraint: Sequence[AST]):
         self.root = root
-        self.ctc = constraint
+        self.ctc = constraint #implementar CTC con AST
 
     def get_relations(self, feature=None):
         relations = []
