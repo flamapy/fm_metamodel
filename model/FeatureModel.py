@@ -12,6 +12,9 @@ class Relation(object):
         self.card_min = card_min
         self.card_max = card_max
 
+    def add_child(self,feature:'Feature'):
+        self.children.append(feature)
+
     def is_mandatory(self) -> bool:
         return (len(self.children)==1 and self.card_max==1 and self.card_min==1)
 
@@ -33,6 +36,10 @@ class Feature():
 
     def add_relation(self, relation: 'Relation'):
         self.relations.append(relation)
+
+    #This is the toString method in Java
+    def __str__(self):
+        return self.name
 
 
 class FeatureModel(VariabilityModel):
