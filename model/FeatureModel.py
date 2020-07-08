@@ -27,6 +27,11 @@ class Relation(object):
     def is_alternative(self)-> bool:
         return (len(self.children)>1 and self.card_max==1 and self.card_min==1)
 
+    def __str__(self):
+        res= self.parent.name + '[' + str(self.card_min) + ',' + str(self.card_max) + ']'
+        for _child in self.children:
+            res=res+_child.name+' '
+        return res
 
 class Feature():
 
@@ -37,7 +42,6 @@ class Feature():
     def add_relation(self, relation: 'Relation'):
         self.relations.append(relation)
 
-    #This is the toString method in Java
     def __str__(self):
         return self.name
 
@@ -55,19 +59,18 @@ class FeatureModel(VariabilityModel):
         for relation in feature.relations:
             relations.append(relation)
             for _feature in relation.children:
-                self.get_relations(_feature)
+                relations.extend(self.get_relations(_feature))
         return relations
 
     def get_features(self, feature=None):
         features = []
-        if not feature:
-            feature = self.root
-            features.append(feature)
-        for relation in feature.relations:
-            for _feature in relation.children:
-                features.append(_feature)
-                self.get_features(_feature)
+        features.append(self.root)
+        for relation in self.get_relations():
+            features.extend(relation.children)
         return features
 
     def __str__(self) -> str:
-        return self.root.name
+        res= 'root: '+ self.root.name + '\r\n'
+        for i,relation in enumerate(self.get_relations()):
+            res=res+'relation '+ str(i)+': '+str(relation) + '\r\n'
+        return(res)
