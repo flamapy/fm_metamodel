@@ -42,6 +42,9 @@ class Feature():
     def add_relation(self, relation: 'Relation'):
         self.relations.append(relation)
 
+    def get_relations(self):
+        return self.relations
+
     def __str__(self):
         return self.name
 
