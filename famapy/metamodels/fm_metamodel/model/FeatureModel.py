@@ -1,7 +1,7 @@
 from ast import AST
 from typing import Sequence
 
-from core.models.VariabilityModel import VariabilityModel
+from famapy.core.models.VariabilityModel import VariabilityModel
 
 
 class Relation(object):
@@ -32,6 +32,7 @@ class Relation(object):
         for _child in self.children:
             res=res+_child.name+' '
         return res
+
 
 class Feature():
 

@@ -1,24 +1,25 @@
 import sys
 import xml.etree.ElementTree as ET
 
-from core.transformations.TextToModel import TextToModel
-from fm_metamodel.model.FeatureModel import Feature, FeatureModel, Relation
+from famapy.core.transformations.TextToModel import TextToModel
+from famapy.metamodels.fm_metamodel.model.FeatureModel import Feature, FeatureModel, Relation
+
 
 class XMLTransformation(TextToModel):
 
-    def __init__(self,path): 
+    def __init__(self,path):
         self.file=path
         self.features_names=[]
     def register(self, extension, metamodel):
         print("This ain't working yet")
 
     def transform(self):
-        
+
         rootcounter=1
 
         tree = ET.parse(self.file)
         xml_root = tree.getroot()
-       
+
         #iterate over child of the xml root element
         for child in xml_root:
             if child.tag.casefold() == 'feature':
@@ -35,7 +36,7 @@ class XMLTransformation(TextToModel):
 
     def parseFeature(self,element) -> Feature:
         name= element.attrib.get('name')
-        
+
         if name in self.features_names:
             print("This XML contains duplicated feature names", file=sys.stderr)
         else:
@@ -52,8 +53,8 @@ class XMLTransformation(TextToModel):
         return feature
 
     def parseRelation(self,element) -> Relation:
-        r = Relation(parent=None,children=[],card_min=0,card_max=0)    
-                
+        r = Relation(parent=None,children=[],card_min=0,card_max=0)
+
         if element.tag.casefold() == 'binaryrelation' :
             numSolitaryFeatures = 0
 
