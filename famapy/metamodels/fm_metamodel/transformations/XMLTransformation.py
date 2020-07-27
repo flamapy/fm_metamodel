@@ -2,14 +2,16 @@ import sys
 import xml.etree.ElementTree as ET
 
 from famapy.core.transformations.TextToModel import TextToModel
-from famapy.metamodels.fm_metamodel.model.FeatureModel import Feature, FeatureModel, Relation
+from famapy.metamodels.fm_metamodel.models.FeatureModel import Feature, FeatureModel, Relation
 
 
 class XMLTransformation(TextToModel):
+    EXT_SRC = 'xml'
 
-    def __init__(self,path):
-        self.file=path
-        self.features_names=[]
+    def __init__(self, path):
+        self.file = path
+        self.features_names = []
+
     def register(self, extension, metamodel):
         print("This ain't working yet")
 

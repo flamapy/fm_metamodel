@@ -2,14 +2,15 @@ import json
 import sys
 
 from famapy.core.transformations.ModelToText import ModelToText
-from famapy.metamodels.fm_metamodel.model.FeatureModel import Feature, FeatureModel, Relation
+from famapy.metamodels.fm_metamodel.models.FeatureModel import Feature, FeatureModel, Relation
 
 
 class JsonWriter(ModelToText):
+    EXT_DST = 'json'
 
-    def __init__(self,path,model:FeatureModel):
-        self.file=path
-        self.model=model
+    def __init__(self, path: str, model: FeatureModel):
+        self.file = path
+        self.model = model
 
     def register(self, extension, metamodel):
         print("This ain't working yet")
