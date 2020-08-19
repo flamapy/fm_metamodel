@@ -51,6 +51,7 @@ class Feature():
 
 
 class FeatureModel(VariabilityModel):
+    EXT = 'fm'
 
     def __init__(self, root: Feature, constraint: Sequence[AST]):
         self.root = root
