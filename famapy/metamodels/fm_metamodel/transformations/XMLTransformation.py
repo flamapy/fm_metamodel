@@ -12,11 +12,7 @@ class XMLTransformation(TextToModel):
         self.file = path
         self.features_names = []
 
-    def register(self, extension, metamodel):
-        print("This ain't working yet")
-
     def transform(self):
-
         rootcounter=1
 
         tree = ET.parse(self.file)

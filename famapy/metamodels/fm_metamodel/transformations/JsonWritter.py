@@ -12,9 +12,6 @@ class JsonWriter(ModelToText):
         self.file = path
         self.model = model
 
-    def register(self, extension, metamodel):
-        print("This ain't working yet")
-
     def transform(self):
         data={}
         root = self.model.root
@@ -24,6 +21,7 @@ class JsonWriter(ModelToText):
 
         with open('data.json', 'w') as outfile:
             json.dump(data, outfile)
+        return outfile
 
     def processFeature(self,f:Feature):
         dict={}
