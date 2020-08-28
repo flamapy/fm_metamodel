@@ -9,7 +9,7 @@ class JsonWriter(ModelToText):
     EXT_DST = 'json'
 
     def __init__(self, path: str, model: FeatureModel):
-        self.file = path
+        self.path = path
         self.model = model
 
     def transform(self):
@@ -19,9 +19,9 @@ class JsonWriter(ModelToText):
         data['hierachy']=self.processFeature(root)
         data['ctc']=self.processConstraints()
 
-        with open('data.json', 'w') as outfile:
+        with open(self.path, 'w') as outfile:
             json.dump(data, outfile)
-        return outfile
+        return super().transform()
 
     def processFeature(self,f:Feature):
         dict={}

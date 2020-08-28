@@ -9,20 +9,24 @@ class XMLTransformation(TextToModel):
     EXT_SRC = 'xml'
 
     def __init__(self, path):
-        self.file = path
+        self.path = path
+        # TODO: add empty FeatureModel
+        #self.model = FeatureModel(feature, [])
         self.features_names = []
 
     def transform(self):
-        rootcounter=1
+        rootcounter = 1
 
-        tree = ET.parse(self.file)
+        tree = ET.parse(self.path)
         xml_root = tree.getroot()
 
         #iterate over child of the xml root element
         for child in xml_root:
             if child.tag.casefold() == 'feature':
-                rootcounter=rootcounter+1
-                root=self.parseFeature(child)
+                rootcounter += 1
+                root = self.parseFeature(child)
+                # TODO: esto está mal, aqui debemos de ir guardando las
+                # diferentes features para pasarselas después al FeatureModel
                 fm = FeatureModel(root, [])
 
             elif child.tag.casefold() == 'excludes' or child.tag.casefold() == 'requires' :
