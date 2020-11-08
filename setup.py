@@ -6,11 +6,11 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-    name="fm_metamodel",
+    name="famapy-fm",
     version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="famapy short description",
+    author="Víctor Ramírez de la Corte",
+    author_email="me@virako.es",
+    description="famapy-fm is a plugin to FaMaPy module",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/FaMaPy/fm_metamodel",
@@ -21,7 +21,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        'famapy==0.0.1'
+    ],
     dependency_links=[
-        'https://github.com/FaMaPy/core/tarball/master#egg=package-1.0'
+        'famapy==0.0.1'
     ],
 )
