@@ -10,7 +10,7 @@ class JsonWriter(ModelToText):
     def get_destiny_extension() -> str:
         return 'json'
 
-    def __init__(self, path: str, model: FeatureModel):
+    def __init__(self, model: FeatureModel, path: str):
         self.path = path
         self.model = model
 
@@ -45,5 +45,13 @@ class JsonWriter(ModelToText):
         return _dict
 
     def process_constraints(self):
-        print("This is not yet supported")
-        return {}
+        constraints = []
+        for constraint in self.model.ctcs:
+            _ctc ={}
+            _ctc["name"] = constraint.name
+            _ctc["origin"] = constraint.origin.name
+            _ctc["destination"] = constraint.destination.name
+            _ctc["ctctype"] = constraint.ctc_type
+            constraints.append(_ctc)
+            
+        return constraints

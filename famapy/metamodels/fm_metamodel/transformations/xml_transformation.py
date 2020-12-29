@@ -2,7 +2,8 @@ import sys
 from xml.etree import ElementTree
 
 from famapy.core.transformations import TextToModel
-from famapy.metamodels.fm_metamodel.models.feature_model import Feature, FeatureModel, Relation
+from famapy.core.exceptions import DuplicatedFeature
+from famapy.metamodels.fm_metamodel.models.feature_model import Feature, FeatureModel, Relation, Constraint
 
 
 class XMLTransformation(TextToModel):
@@ -15,39 +16,50 @@ class XMLTransformation(TextToModel):
         self.path = path
         # TODO: add empty FeatureModel
         # self.model = FeatureModel(feature, [])
-        self.features_names = []
+        self.name_feature = {}
 
     def transform(self):
         rootcounter = 1
-
         tree = ElementTree.parse(self.path)
         xml_root = tree.getroot()
-
         # iterate over child of the xml root element
         for child in xml_root:
             if child.tag.casefold() == 'feature':
                 rootcounter += 1
                 root = self.parse_feature(child)
-                # TODO: esto está mal, aqui debemos de ir guardando las
-                # diferentes features para pasarselas después al FeatureModel
-                fm = FeatureModel(root, [])
-
+                fm = FeatureModel(root,[])
             elif child.tag.casefold() == 'excludes' or child.tag.casefold() == 'requires':
-                print("Fatal error. REQUIRES. Not yet supported", file=sys.stderr)
-
+                ctc=self.parse_ctc(child)
+                fm.ctcs.append(ctc)
             else:
                 print("This XML contains non supported elements", file=sys.stderr)
+
         return fm
+
+    def parse_ctc(self,element)->Constraint:
+
+        name=element.attrib.get('name')
+        ctc_type=element.tag.casefold()
+        origin=self.name_feature[element.attrib.get('feature')]
+
+        if ctc_type == 'excludes':
+            destination=self.name_feature[element.attrib.get('excludes')]
+        elif ctc_type == 'requires':
+            destination=self.name_feature[element.attrib.get('requires')]
+
+        return Constraint(name,origin,destination,ctc_type)
 
     def parse_feature(self, element) -> Feature:
         name = element.attrib.get('name')
 
-        if name in self.features_names:
-            print("This XML contains duplicated feature names", file=sys.stderr)
-        else:
-            self.features_names.append(name)
 
         feature = Feature(name, [])
+
+        if name in self.name_feature:
+            print("This XML contains duplicated feature names", file=sys.stderr)
+            raise DuplicatedFeature
+        else:
+            self.name_feature[name]=feature
 
         for child in element:
             if child.tag.casefold() == 'setrelation' or child.tag.casefold() == 'binaryrelation':
@@ -55,6 +67,7 @@ class XMLTransformation(TextToModel):
                 relation.parent = feature
                 feature.relations.append(relation)
 
+     
         return feature
 
     def parse_relation(self, element) -> Relation:
