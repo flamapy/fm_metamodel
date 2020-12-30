@@ -7,7 +7,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import Feature, Feature
 class JsonWriter(ModelToText):
 
     @staticmethod
-    def get_destiny_extension() -> str:
+    def get_destination_extension() -> str:
         return 'json'
 
     def __init__(self, model: FeatureModel, path: str):

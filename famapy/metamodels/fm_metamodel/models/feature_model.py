@@ -84,6 +84,10 @@ class FeatureModel(VariabilityModel):
             features.extend(relation.children)
         return features
 
+    #This method is for consistency with the getters
+    def get_constraints(self):
+        return self.ctcs
+
     def get_feature_by_name(self, str) -> Feature:
         features = self.get_features
         for feat in features:
