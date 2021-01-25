@@ -28,7 +28,7 @@ class Relation:
         return (len(self.children) > 1 and self.card_max == 1 and self.card_min ==  1)
 
     def __str__(self):
-        res = self.parent.name + '[' + str(self.card_min) + ',' + str(self.card_max) + ']'
+        res = (self.parent.name if self.parent else '') + '[' + str(self.card_min) + ',' + str(self.card_max) + ']'
         for _child in self.children:
             res += _child.name + ' '
         return res
