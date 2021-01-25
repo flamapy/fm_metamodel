@@ -46,6 +46,9 @@ class Feature:
     def get_relations(self):
         return self.relations
 
+    def get_parent(self):
+        return next((r.parent for r in self.relations if not r.children), None)
+
     def __str__(self):
         return self.name
 
