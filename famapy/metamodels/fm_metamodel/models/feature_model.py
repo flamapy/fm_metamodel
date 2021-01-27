@@ -16,16 +16,16 @@ class Relation:
         self.children.append(feature)
 
     def is_mandatory(self) -> bool:
-        return (len(self.children) == 1 and self.card_max == 1 and self.card_min == 1)
+        return self.card_min == 1 and self.card_max == 1 and len(self.children) == 1
 
     def is_optional(self) -> bool:
-        return (len(self.children) == 1 and self.card_max == 1 and self.card_min == 0)
+        return self.card_min == 0 and self.card_max == 1 and len(self.children) == 1
 
     def is_or(self) -> bool:
-        return (len(self.children) > 1 and self.card_max == len(self.children) and self.card_min == 1)
+        return self.card_min == 1 and self.card_max == len(self.children) and len(self.children) > 1
 
     def is_alternative(self) -> bool:
-        return (len(self.children) > 1 and self.card_max == 1 and self.card_min ==  1)
+        return self.card_min == 1 and self.card_max == 1 and len(self.children) > 1
 
     def __str__(self):
         res = (self.parent.name if self.parent else '') + '[' + str(self.card_min) + ',' + str(self.card_max) + ']'
