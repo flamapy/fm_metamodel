@@ -105,6 +105,14 @@ class FeatureModel(VariabilityModel):
             if not has_children: number+=1
         return number
 
+    def average_branching_factor(self) -> int:
+		features = self.get_features
+		childrens = 0
+	    for feat in features:
+		    for relation in self.get_relations(feat):
+		        childrens+=len(relation.children)
+        return childrens/len(features)
+
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
