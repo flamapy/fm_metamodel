@@ -97,7 +97,7 @@ class FeatureModel(VariabilityModel):
 
     def get_number_of_leafs(self) -> int:
         number = 0
-        has_children = false
+        has_children = False
         for feat in self.get_features:
             for relation in self.get_relations(feat):
                 has_children = has_children or relation.children is not None
