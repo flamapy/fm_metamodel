@@ -111,7 +111,7 @@ class FeatureModel(VariabilityModel):
 	    for feat in features:
 		    for relation in self.get_relations(feat):
 		        childrens+=len(relation.children)
-        return childrens/len(features)
+        return round(childrens/len(features))
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
