@@ -95,6 +95,16 @@ class FeatureModel(VariabilityModel):
                 return feat
         raise ElementNotFoundException
 
+    def get_number_of_leafs(self) -> int:
+        number = 0
+        has_children = false
+        for feat in self.get_features:
+            for relation in self.get_relations(feat):
+                has_children = has_children or relation.children is not None
+                if has_children: break
+            if not has_children: number+=1
+        return number
+
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
