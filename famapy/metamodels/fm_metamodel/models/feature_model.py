@@ -52,6 +52,9 @@ class Feature:
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return self.name
+
 class Constraint:
     #This is heavily limited. Currently this will only support requires and excludes
     def __init__(self, name: str, origin:'Feature', destination:'Feature', ctc_type:str):
@@ -92,7 +95,7 @@ class FeatureModel(VariabilityModel):
         return self.ctcs
 
     def get_feature_by_name(self, str) -> Feature:
-        features = self.get_features
+        features = self.get_features()
         for feat in features:
             if feat.name == str:
                 return feat
