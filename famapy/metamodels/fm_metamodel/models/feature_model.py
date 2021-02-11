@@ -98,19 +98,17 @@ class FeatureModel(VariabilityModel):
     def get_number_of_leafs(self) -> int:
         number = 0
         has_children = False
-        for feat in self.get_features:
-            for relation in self.get_relations(feat):
-                has_children = has_children or relation.children is not None
-                if has_children: break
-            if not has_children: number+=1
+        for feat in self.get_features():
+            if len(self.get_relations(feat)) == 0:
+                number+=1
         return number
 
-    def average_branching_factor(self) -> int:
-		features = self.get_features
-		childrens = 0
-	    for feat in features:
-		    for relation in self.get_relations(feat):
-		        childrens+=len(relation.children)
+    def get_average_branching_factor(self) -> int:
+        features = self.get_features()
+        childrens = 0
+        for feat in features:
+            for relation in self.get_relations(feat):
+                childrens+=len(relation.children)
         return round(childrens/len(features))
 
     def __str__(self) -> str:
