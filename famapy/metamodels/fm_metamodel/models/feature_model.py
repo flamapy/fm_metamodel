@@ -69,26 +69,36 @@ class FeatureModel(VariabilityModel):
     def get_extension() -> str:
         return 'fm'
 
-    def __init__(self, root: Feature, constraint: Sequence[Constraint]):
+    def __init__(self, root: Feature, constraint: Sequence[Constraint]=[], features: Sequence[Feature]=[], relations: Sequence[Relation]=[]):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
+        self.features = features
+        self.relations = relations
+        if not features:
+            self.features = self.get_features()
+        if not relations:
+            self.relations = self.get_relations()
 
     def get_relations(self, feature=None):
-        relations = []
-        if not feature:
-            feature = self.root
-        for relation in feature.relations:
-            relations.append(relation)
-            for _feature in relation.children:
-                relations.extend(self.get_relations(_feature))
-        return relations
+        if not self.relations:
+            relations = []
+            if not feature:
+                feature = self.root
+            for relation in feature.relations:
+                relations.append(relation)
+                for _feature in relation.children:
+                    relations.extend(self.get_relations(_feature))
+            self.relations
+        return self.relations
 
     def get_features(self):
-        features = []
-        features.append(self.root)
-        for relation in self.get_relations():
-            features.extend(relation.children)
-        return features
+        if not self.features:
+            features = []
+            features.append(self.root)
+            for relation in self.get_relations():
+                features.extend(relation.children)
+            self.features = features
+        return self.features
 
     #This method is for consistency with the getters
     def get_constraints(self):
