@@ -78,6 +78,7 @@ class FeatureModel(VariabilityModel):
             self.features = self.get_features()
         if not relations:
             self.relations = self.get_relations()
+        self.features_by_name = {f.name : f for f in self.features}
 
     def get_relations(self, feature=None):
         if not self.relations:
@@ -104,12 +105,10 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self):
         return self.ctcs
 
-    def get_feature_by_name(self, str) -> Feature:
-        features = self.get_features()
-        for feat in features:
-            if feat.name == str:
-                return feat
-        raise ElementNotFoundException
+    def get_feature_by_name(self, feature_name: str) -> Feature:
+        if not feature_name in self.features_by_name.keys():
+            raise ElementNotFoundException
+        return self.features_by_name[feature_name]
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
