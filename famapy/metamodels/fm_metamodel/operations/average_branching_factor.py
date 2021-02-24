@@ -10,7 +10,7 @@ class AverageBranchingFactor(AverageBranchingFactor):
     def get_average_branching_factor(self):
         return self.average_branching_factor
 
-    def execute(self, model: FeatureModel) -> 'CountLeafs':
+    def execute(self, model: FeatureModel) -> 'AverageBranchingFactor':
         features = model.get_features()
         childrens = 0
         for feat in features:
