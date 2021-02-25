@@ -2,7 +2,7 @@ from famapy.core.operations import AverageBranchingFactor
 from famapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
 
 
-class AverageBranchingFactor(AverageBranchingFactor):
+class FMAverageBranchingFactor(AverageBranchingFactor):
 
     def __init__(self):
         self.average_branching_factor = 0
@@ -10,7 +10,7 @@ class AverageBranchingFactor(AverageBranchingFactor):
     def get_average_branching_factor(self):
         return self.average_branching_factor
 
-    def execute(self, model: FeatureModel) -> 'AverageBranchingFactor':
+    def execute(self, model: FeatureModel) -> 'FMAverageBranchingFactor':
         features = model.get_features()
         childrens = 0
         for feat in features:
