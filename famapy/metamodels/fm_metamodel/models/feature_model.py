@@ -1,8 +1,8 @@
-from ast import AST
 from typing import Sequence
 
 from famapy.core.models import VariabilityModel
-from famapy.core.exceptions import ElementNotFound
+from famapy.core.exceptions import ElementNotFoundException
+
 
 class Relation:
 
@@ -57,7 +57,7 @@ class Feature:
 
 class Constraint:
     #This is heavily limited. Currently this will only support requires and excludes
-    def __init__(self, name: str, origin:'Feature', destination:'Feature', ctc_type:str):
+    def __init__(self, name: str, origin: 'Feature', destination: 'Feature', ctc_type: str):
         self.name = name
         self.origin = origin
         self.destination = destination
@@ -69,7 +69,13 @@ class FeatureModel(VariabilityModel):
     def get_extension() -> str:
         return 'fm'
 
-    def __init__(self, root: Feature, constraint: Sequence[Constraint]=[], features: Sequence[Feature]=[], relations: Sequence[Relation]=[]):
+    def __init__(
+        self,
+        root: Feature,
+        constraint: Sequence[Constraint] = list,
+        features: Sequence[Feature] = list,
+        relations: Sequence[Relation] = list
+    ):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
         self.features = features
@@ -89,7 +95,7 @@ class FeatureModel(VariabilityModel):
                 relations.append(relation)
                 for _feature in relation.children:
                     relations.extend(self.get_relations(_feature))
-            self.relations
+            self.relations = relations
         return self.relations
 
     def get_features(self):
@@ -106,7 +112,7 @@ class FeatureModel(VariabilityModel):
         return self.ctcs
 
     def get_feature_by_name(self, feature_name: str) -> Feature:
-        if not feature_name in self.features_by_name.keys():
+        if feature_name not in self.features_by_name.keys():
             raise ElementNotFoundException
         return self.features_by_name[feature_name]
 
