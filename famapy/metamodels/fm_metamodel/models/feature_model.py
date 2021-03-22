@@ -1,8 +1,6 @@
-from ast import AST
 from typing import Sequence
 
 from famapy.core.models import VariabilityModel
-from famapy.core.exceptions import ElementNotFound
 
 class Relation:
 
@@ -69,7 +67,7 @@ class FeatureModel(VariabilityModel):
     def get_extension() -> str:
         return 'fm'
 
-    def __init__(self, root: Feature, constraint: Sequence[Constraint]=[], features: Sequence[Feature]=[], relations: Sequence[Relation]=[]):
+    def __init__(self, root: Feature, constraint: Sequence['Constraint'] = [], features: Sequence['Feature'] = [], relations: Sequence['Relation'] = []):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
         self.features = features
@@ -106,7 +104,7 @@ class FeatureModel(VariabilityModel):
         return self.ctcs
 
     def get_feature_by_name(self, feature_name: str) -> Feature:
-        if not feature_name in self.features_by_name.keys():
+        if feature_name not in self.features_by_name.keys():
             raise ElementNotFoundException
         return self.features_by_name[feature_name]
 
