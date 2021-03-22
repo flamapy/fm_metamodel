@@ -1,5 +1,7 @@
-from famapy.metamodels.fm_metamodel.models import FeatureModel
 from famapy.core.operations import CoreFeatures
+from famapy.metamodels.fm_metamodel.models import FeatureModel
+from famapy.metamodels.fm_metamodel.models.feature_model import Feature
+
 
 
 class FMCoreFeatures(CoreFeatures):
@@ -16,13 +18,13 @@ class FMCoreFeatures(CoreFeatures):
     def __init__(self):
         self.result = []
 
-    def get_core_features(self) -> list['Feature']:
+    def get_core_features(self) -> list[Feature]:
         return self.result
 
     def execute(self, model: FeatureModel) -> 'FMCoreFeatures':
         if not model.root:  # void feature model
             return self
-            
+
         core_features = [model.root]
         features = [model.root]
         while features:

@@ -55,7 +55,7 @@ class Feature:
 
 class Constraint:
     #This is heavily limited. Currently this will only support requires and excludes
-    def __init__(self, name: str, origin:'Feature', destination:'Feature', ctc_type:str):
+    def __init__(self, name: str, origin: 'Feature', destination: 'Feature', ctc_type: str):
         self.name = name
         self.origin = origin
         self.destination = destination
@@ -67,7 +67,17 @@ class FeatureModel(VariabilityModel):
     def get_extension() -> str:
         return 'fm'
 
+<<<<<<< HEAD
     def __init__(self, root: Feature, constraint: Sequence['Constraint'] = [], features: Sequence['Feature'] = [], relations: Sequence['Relation'] = []):
+=======
+    def __init__(
+        self,
+        root: Feature,
+        constraint: Sequence[Constraint] = list,
+        features: Sequence[Feature] = list,
+        relations: Sequence[Relation] = list
+    ):
+>>>>>>> 9a23124c67587a78af59624c7dd68460a83334ee
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
         self.features = features
@@ -87,7 +97,7 @@ class FeatureModel(VariabilityModel):
                 relations.append(relation)
                 for _feature in relation.children:
                     relations.extend(self.get_relations(_feature))
-            self.relations=relations
+            self.relations = relations
         return self.relations
 
     def get_features(self):

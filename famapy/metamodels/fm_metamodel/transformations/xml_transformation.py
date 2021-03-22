@@ -37,7 +37,6 @@ class XMLTransformation(TextToModel):
         return fm
 
     def parse_ctc(self,element)->Constraint:
-
         name=element.attrib.get('name')
         ctc_type=element.tag.casefold()
         origin=self.name_feature[element.attrib.get('feature')]
@@ -57,15 +56,14 @@ class XMLTransformation(TextToModel):
         if name in self.name_feature:
             print("This XML contains duplicated feature names", file=sys.stderr)
             raise DuplicatedFeature
-        else:
-            self.name_feature[name]=feature
+
+        self.name_feature[name]=feature
 
         for child in element:
             if child.tag.casefold() == 'setrelation' or child.tag.casefold() == 'binaryrelation':
                 relation = self.parse_relation(child)
                 relation.parent = feature
                 feature.relations.append(relation)
-     
         return feature
 
     def parse_relation(self, element) -> Relation:
