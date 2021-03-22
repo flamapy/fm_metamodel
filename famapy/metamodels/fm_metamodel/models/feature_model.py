@@ -67,26 +67,17 @@ class FeatureModel(VariabilityModel):
     def get_extension() -> str:
         return 'fm'
 
-<<<<<<< HEAD
-    def __init__(self, root: Feature, constraint: Sequence['Constraint'] = [], features: Sequence['Feature'] = [], relations: Sequence['Relation'] = []):
-=======
     def __init__(
         self,
         root: Feature,
-        constraint: Sequence[Constraint] = list,
-        features: Sequence[Feature] = list,
-        relations: Sequence[Relation] = list
+        constraint: Sequence['Constraint'] = [],
+        features: Sequence['Feature'] = [],
+        relations: Sequence['Relation'] = []
     ):
->>>>>>> 9a23124c67587a78af59624c7dd68460a83334ee
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
         self.features = features
         self.relations = relations
-        if not features:
-            self.features = self.get_features()
-        if not relations:
-            self.relations = self.get_relations()
-        self.features_by_name = {f.name : f for f in self.features}
 
     def get_relations(self, feature=None):
         if not self.relations:
