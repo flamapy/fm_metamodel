@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from famapy.core.models import VariabilityModel
+from famapy.core.models import AST
 
 class Relation:
 
@@ -55,11 +56,12 @@ class Feature:
 
 class Constraint:
     #This is heavily limited. Currently this will only support requires and excludes
-    def __init__(self, name: str, origin: 'Feature', destination: 'Feature', ctc_type: str):
+    def __init__(self, name: str, ast: AST):
         self.name = name
-        self.origin = origin
-        self.destination = destination
-        self.ctc_type = ctc_type
+        self.ast = ast
+        #self.origin = origin
+        #self.destination = destination
+        #self.ctc_type = ctc_type
 
 class FeatureModel(VariabilityModel):
 

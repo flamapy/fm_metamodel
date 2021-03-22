@@ -2,6 +2,7 @@ import sys
 from xml.etree import ElementTree
 
 from famapy.core.transformations import TextToModel
+from famapy.core.models.ast import AST
 from famapy.core.exceptions import DuplicatedFeature
 from famapy.metamodels.fm_metamodel.models.feature_model import Feature, FeatureModel, Relation, Constraint
 
@@ -46,7 +47,8 @@ class XMLTransformation(TextToModel):
         elif ctc_type == 'requires':
             destination=self.name_feature[element.attrib.get('requires')]
 
-        return Constraint(name,origin,destination,ctc_type)
+        #return Constraint(name,origin,destination,ctc_type)
+        return Constraint(name, AST(origin.name+" "+ctc_type+" "+destination.name))
 
     def parse_feature(self, element) -> Feature:
         name = element.attrib.get('name')
