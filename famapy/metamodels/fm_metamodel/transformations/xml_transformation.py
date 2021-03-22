@@ -64,7 +64,6 @@ class XMLTransformation(TextToModel):
                 relation = self.parse_relation(child)
                 relation.parent = feature
                 feature.relations.append(relation)
-
         return feature
 
     def parse_relation(self, element) -> Relation:

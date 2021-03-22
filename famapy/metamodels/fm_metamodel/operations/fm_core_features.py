@@ -3,6 +3,7 @@ from famapy.metamodels.fm_metamodel.models import FeatureModel
 from famapy.metamodels.fm_metamodel.models.feature_model import Feature
 
 
+
 class FMCoreFeatures(CoreFeatures):
     """This implementation assumes that:
      (1) there are not any dead-features in the model.

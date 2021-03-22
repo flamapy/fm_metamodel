@@ -10,9 +10,9 @@ class JsonWriter(ModelToText):
     def get_destination_extension() -> str:
         return 'json'
 
-    def __init__(self, model: FeatureModel, path: str):
+    def __init__(self, source_model: FeatureModel, path: str):
         self.path = path
-        self.model = model
+        self.model = source_model
 
     def transform(self):
         data = {}
