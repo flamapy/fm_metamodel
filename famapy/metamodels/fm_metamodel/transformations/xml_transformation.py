@@ -52,7 +52,6 @@ class XMLTransformation(TextToModel):
     def parse_feature(self, element) -> Feature:
         name = element.attrib.get('name')
 
-
         feature = Feature(name, [])
 
         if name in self.name_feature:
@@ -66,7 +65,6 @@ class XMLTransformation(TextToModel):
                 relation = self.parse_relation(child)
                 relation.parent = feature
                 feature.relations.append(relation)
-
      
         return feature
 

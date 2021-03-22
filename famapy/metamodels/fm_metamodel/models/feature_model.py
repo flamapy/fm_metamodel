@@ -89,7 +89,7 @@ class FeatureModel(VariabilityModel):
                 relations.append(relation)
                 for _feature in relation.children:
                     relations.extend(self.get_relations(_feature))
-            self.relations
+            self.relations=relations
         return self.relations
 
     def get_features(self):
