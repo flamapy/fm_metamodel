@@ -10,6 +10,9 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
     def get_average_branching_factor(self):
         return self.average_branching_factor
 
+    def get_result(self):
+        return self.get_average_branching_factor()
+
     def execute(self, model: FeatureModel) -> 'FMAverageBranchingFactor':
         features = model.get_features()
         childrens = 0
