@@ -116,5 +116,6 @@ class FeatureModel(VariabilityModel):
         for i, relation in enumerate(self.get_relations()):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
-            res += ctc.origin.name +" "+ctc.ctc_type + " " + ctc.destination.name
+            root = ctc.ast.get_root()
+            res += ctc.ast.get_first_child(root).get_name() + " " + root.get_name() + " " + ctc.ast.get_second_child(root).get_name()
         return(res)
