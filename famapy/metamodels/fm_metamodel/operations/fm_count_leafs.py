@@ -10,6 +10,9 @@ class FMCountLeafs(CountLeafs):
     def get_number_of_leafs(self):
         return self.number_of_leafs
 
+    def get_result(self):
+        return self.get_number_of_leafs()
+
     def execute(self, model: FeatureModel) -> 'FMCountLeafs':
         number = 0
         for feat in model.get_features():
