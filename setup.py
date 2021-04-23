@@ -22,9 +22,9 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'famapy==0.0.1'
+        'famapy==0.1.0'
     ],
     dependency_links=[
-        'famapy==0.0.1'
+        'famapy==0.1.0'
     ],
 )
