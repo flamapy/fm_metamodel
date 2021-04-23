@@ -3,7 +3,6 @@ from famapy.metamodels.fm_metamodel.models import FeatureModel
 from famapy.metamodels.fm_metamodel.models.feature_model import Feature
 
 
-
 class FMCoreFeatures(CoreFeatures):
     """This implementation assumes that:
      (1) there are not any dead-features in the model.
@@ -28,8 +27,8 @@ class FMCoreFeatures(CoreFeatures):
         core_features = [model.root]
         features = [model.root]
         while features:
-            f = features.pop()
-            for relation in f.get_relations():
+            feature = features.pop()
+            for relation in feature.get_relations():
                 if relation.is_mandatory():
                     core_features.extend(relation.children)
                     features.extend(relation.children)

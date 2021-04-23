@@ -25,11 +25,11 @@ class JsonWriter(ModelToText):
             json.dump(data, outfile)
         return self.path
 
-    def process_feature(self, f: Feature):
+    def process_feature(self, feature: Feature):
         _dict = {}
-        _dict["featureName"] = f.name
+        _dict["featureName"] = feature.name
         relationships = []
-        for relation in f.get_relations():
+        for relation in feature.get_relations():
             relationships.append(self.process_relation(relation))
         _dict["relationships"] = relationships
         return _dict
@@ -47,11 +47,13 @@ class JsonWriter(ModelToText):
     def process_constraints(self):
         constraints = []
         for constraint in self.model.ctcs:
-            _ctc ={}
+            _ctc = {}
             _ctc["name"] = constraint.name
             _ctc["origin"] = constraint.ast.get_childs(constraint.ast.get_root())[0].get_name()
-            _ctc["destination"] = constraint.ast.get_childs(constraint.ast.get_root())[0].get_name()
+            _ctc["destination"] = constraint.ast.get_childs(
+                constraint.ast.get_root()
+            )[0].get_name()
             _ctc["ctctype"] = constraint.ast.get_root().get_name()
             constraints.append(_ctc)
-            
+
         return constraints

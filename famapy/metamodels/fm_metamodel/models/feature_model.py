@@ -1,11 +1,17 @@
-from typing import Sequence
-
-from famapy.core.models import VariabilityModel
 from famapy.core.models import AST
+from famapy.core.models import VariabilityModel
+
 
 class Relation:
 
-    def __init__(self, parent: 'Feature', children: Sequence['Feature'], card_min: int, card_max: int):
+    def __init__(
+        self,
+        parent: 'Feature',
+        children: list['Feature'],
+        card_min: int,
+        card_max: int
+    ):
+
         self.parent = parent
         self.children = children
         self.card_min = card_min
@@ -21,13 +27,18 @@ class Relation:
         return self.card_min == 0 and self.card_max == 1 and len(self.children) == 1
 
     def is_or(self) -> bool:
-        return self.card_min == 1 and self.card_max == len(self.children) and len(self.children) > 1
+        return (
+            self.card_min == 1 and
+            self.card_max == len(self.children) and
+            len(self.children) > 1
+        )
 
     def is_alternative(self) -> bool:
         return self.card_min == 1 and self.card_max == 1 and len(self.children) > 1
 
     def __str__(self):
-        res = (self.parent.name if self.parent else '') + '[' + str(self.card_min) + ',' + str(self.card_max) + ']'
+        parent_name = self.parent.name if self.parent else ''
+        res = f'{parent_name}[{self.card_min},{self.card_max}]'
         for _child in self.children:
             res += _child.name + ' '
         return res
@@ -35,7 +46,7 @@ class Relation:
 
 class Feature:
 
-    def __init__(self, name: str, relations: Sequence['Relation']):
+    def __init__(self, name: str, relations: list['Relation']):
         self.name = name
         self.relations = relations
 
@@ -54,14 +65,18 @@ class Feature:
     def __repr__(self):
         return self.name
 
+
 class Constraint:
-    #This is heavily limited. Currently this will only support requires and excludes
+    '''
+    This is heavily limited. Currently this will only support requires and excludes
+    '''
     def __init__(self, name: str, ast: AST):
         self.name = name
         self.ast = ast
         #self.origin = origin
         #self.destination = destination
         #self.ctc_type = ctc_type
+
 
 class FeatureModel(VariabilityModel):
 
@@ -72,9 +87,9 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: Feature,
-        constraint: Sequence['Constraint'] = [],
-        features: Sequence['Feature'] = [],
-        relations: Sequence['Relation'] = []
+        constraint: list['Constraint'] = list,
+        features: list['Feature'] = list,
+        relations: list['Relation'] = list
     ):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
@@ -108,7 +123,7 @@ class FeatureModel(VariabilityModel):
 
     def get_feature_by_name(self, feature_name: str) -> Feature:
         if feature_name not in self.features_by_name.keys():
-            raise ElementNotFoundException
+            raise Exception
         return self.features_by_name[feature_name]
 
     def __str__(self) -> str:
@@ -117,5 +132,7 @@ class FeatureModel(VariabilityModel):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
             root = ctc.ast.get_root()
-            res += ctc.ast.get_first_child(root).get_name() + " " + root.get_name() + " " + ctc.ast.get_second_child(root).get_name()
-        return(res)
+            first_child_name = ctc.ast.get_first_child(root).get_name()
+            second_child_name = ctc.ast.get_second_child(root).get_name()
+            res += f'{first_child_name} {root.get_name()} {second_child_name}'
+        return res
