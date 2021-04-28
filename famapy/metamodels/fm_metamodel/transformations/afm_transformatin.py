@@ -29,7 +29,7 @@ class AFMTransformation(TextToModel):
         relations = lines[index_r + 1:index_c]
         constraints = lines[index_c + 1:]
 
-        feature_model = FeatureModel(Feature("", []))
+        feature_model = FeatureModel(Feature("", []),[],[],[])
         for relation in relations:
             words = relation.split(" ")
             self.parse_features(words, feature_model)
@@ -44,12 +44,16 @@ class AFMTransformation(TextToModel):
     def parse_ctc(self, ctc: str) -> Constraint:
         if ctc.__contains__("REQUIRES"):
             self.ctc_counter[0] += 1
-            constraint = Constraint("Re-" + str(self.ctc_counter[0]), 
-            AST(ctc.replace("REQUIRES", "requires")))
+            constraint = Constraint(
+                "Re-" + str(self.ctc_counter[0]), 
+                AST(ctc.replace("REQUIRES", "requires"))
+            )
         elif ctc.__contains__("EXCLUDES"):
             self.ctc_counter[1] += 1
-            constraint = Constraint("Ex-" + str(self.ctc_counter[1]), 
-            AST(ctc.replace("EXCLUDES", "excludes")))
+            constraint = Constraint(
+                "Ex-" + str(self.ctc_counter[1]), 
+                AST(ctc.replace("EXCLUDES", "excludes"))
+            )
         elif ctc.__contains__("IMPLIES"):
             features = ctc.split("IMPLIES")
             parts = features[1].split("OR")
@@ -61,11 +65,27 @@ class AFMTransformation(TextToModel):
             transform = transform + ")" * i
             transform = transform.replace("AND", "and").replace("NOT", "not")
             self.ctc_counter[2] += 1
-            constraint = Constraint("Im-" + str(self.ctc_counter[2]), 
-            AST(features[0] + " implies " + transform))
+            constraint = Constraint(
+                "Im-" + str(self.ctc_counter[2]), 
+                AST(features[0] + " implies " + transform)
+            )
         return constraint
 
     def parse_features(self, words: list[str], model: FeatureModel) -> Feature:
+        def parse_relation(
+            relation_type: str, 
+            feature_parent: Feature, 
+            card_max: int = None
+        ) -> Relation:
+            if relation_type in ("Mandatory", "Alternative"):
+                relation = Relation(parent=feature_parent, children=[], card_min=1, card_max=1)
+            elif relation_type == "Optional":
+                relation = Relation(parent=feature_parent, children=[], card_min=0, card_max=1)
+            elif relation_type == "Or":
+                relation = Relation(parent=feature_parent, children=[], card_min=1, card_max=card_max)
+            feature_parent.relations.append(relation)
+            return relation
+
         name = words[0].replace(":", "")
         words.pop(0)
 
@@ -87,21 +107,21 @@ class AFMTransformation(TextToModel):
         if words.__contains__(alternative_rel) or words.__contains__(or_rel):
             if words.__contains__(alternative_rel):
                 words.remove(alternative_rel)
-                relation = self.parse_relation("Alternative", feature_parent)
+                relation = parse_relation("Alternative", feature_parent)
             elif words.__contains__(or_rel):
                 words.remove(or_rel)
-                relation = self.parse_relation("Or", feature_parent, len(words))
+                relation = parse_relation("Or", feature_parent, len(words))
             for word in words:
                 word = word.replace("{", "").replace("}", "").replace(";", "")
                 self.add_feature(relation, word, model)
         else:
             for word in words:
                 if word.__contains__("[") and word.__contains__("]"):
-                    relation = self.parse_relation("Optional", feature_parent)
+                    relation = parse_relation("Optional", feature_parent)
                     word = word.replace("[", "").replace("]", "").replace(";", "")
                     self.add_feature(relation, word, model)
                 else:
-                    relation = self.parse_relation("Mandatory", feature_parent)
+                    relation = parse_relation("Mandatory", feature_parent)
                     word = word.replace(";", "")
                     self.add_feature(relation, word, model)
 
@@ -115,13 +135,3 @@ class AFMTransformation(TextToModel):
         model.features.append(feature)
         self.name_feature[word] = feature
         relation.children.append(feature)
-
-    def parse_relation(self, relation_type: str, feature_parent: Feature, card_max: int = None) -> Relation:
-        if relation_type in ("Mandatory", "Alternative"):
-            relation = Relation(parent=feature_parent, children=[], card_min=1, card_max=1)
-        elif relation_type == "Optional":
-            relation = Relation(parent=feature_parent, children=[], card_min=0, card_max=1)
-        elif relation_type == "Or":
-            relation = Relation(parent=feature_parent, children=[], card_min=1, card_max=card_max)
-        feature_parent.relations.append(relation)
-        return relation
