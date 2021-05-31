@@ -45,7 +45,12 @@ class AFMTransformation(TextToModel):
         return feature_model
 
     def parse_ctc(self, ctc: str) -> Constraint:
-        ctc = ctc.replace('AND', 'and').replace('OR', 'or').replace('NOT', 'not').replace('IMPLIES','implies').replace('REQUIRES','requires').replace('EXCLUDES','excludes')
+        ctc = (ctc.replace('AND', 'and')
+               .replace('OR', 'or')
+               .replace('NOT', 'not')
+               .replace('IMPLIES', 'implies')
+               .replace('REQUIRES', 'requires')
+               .replace('EXCLUDES', 'excludes'))
         self.ctc_counter += 1
         constraint = Constraint(
             'Ctc-' + str(self.ctc_counter), 
