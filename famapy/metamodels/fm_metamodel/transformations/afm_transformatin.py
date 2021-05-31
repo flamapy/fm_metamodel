@@ -1,14 +1,12 @@
 import sys
 
-from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST
 from famapy.core.exceptions import DuplicatedFeature
-from famapy.metamodels.fm_metamodel.models.feature_model import (
-    Constraint,
-    Feature,
-    FeatureModel,
-    Relation,
-)
+from famapy.core.models.ast import AST
+from famapy.core.transformations import TextToModel
+from famapy.metamodels.fm_metamodel.models.feature_model import (Constraint,
+                                                                 Feature,
+                                                                 FeatureModel,
+                                                                 Relation)
 
 
 class AFMTransformation(TextToModel):
@@ -41,41 +39,18 @@ class AFMTransformation(TextToModel):
 
         for constraint in constraints:
             constraint = constraint.replace(";", "")
-            if not constraint.__contains__("IMPLIES"):
-                ctc = self.parse_ctc(constraint)
-                feature_model.ctcs.append(ctc)
+            ctc = self.parse_ctc(constraint)
+            feature_model.ctcs.append(ctc)
 
         return feature_model
 
     def parse_ctc(self, ctc: str) -> Constraint:
-        if ctc.__contains__("REQUIRES"):
-            self.ctc_counter[0] += 1
-            constraint = Constraint(
-                "Re-" + str(self.ctc_counter[0]), 
-                AST(ctc.replace("REQUIRES", "requires"))
-            )
-        elif ctc.__contains__("EXCLUDES"):
-            self.ctc_counter[1] += 1
-            constraint = Constraint(
-                "Ex-" + str(self.ctc_counter[1]), 
-                AST(ctc.replace("EXCLUDES", "excludes"))
-            )
-        # No hay soporte en la clase fm_to_pysat aún
-        # elif ctc.__contains__("IMPLIES"):
-        #     features = ctc.split("IMPLIES")
-        #     parts = features[1].split("OR")
-        #     i = 0
-        #     transform = parts[0].replace("(", "").replace(")", "")
-        #     for part in parts[1:]:
-        #         transform = transform + " or " + "(" + part.replace("(", "").replace(")", "")
-        #         i += 1
-        #     transform = transform + ")" * i
-        #     transform = transform.replace("AND", "and").replace("NOT", "not")
-        #     self.ctc_counter[2] += 1
-        #     constraint = Constraint(
-        #         "Im-" + str(self.ctc_counter[2]), 
-        #         AST(features[0] + " implies " + transform)
-        #     )
+        ctc = ctc.replace('AND', 'and').replace('OR', 'or').replace('NOT', 'not').replace('IMPLIES','implies').replace('REQUIRES','requires').replace('EXCLUDES','excludes')
+        self.ctc_counter += 1
+        constraint = Constraint(
+            'Ctc-' + str(self.ctc_counter), 
+            AST(ctc)
+        )
         return constraint
 
     def parse_features(self, words: list[str], model: FeatureModel) -> Feature:
