@@ -18,6 +18,6 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
         childrens = 0
         for feat in features:
             for relation in feat.get_relations():
-                childrens+=len(relation.children)
-        self.average_branching_factor = round(childrens/len(features))
+                childrens += len(relation.children)
+        self.average_branching_factor = round(childrens / len(features))
         return self

@@ -17,6 +17,6 @@ class FMCountLeafs(CountLeafs):
         number = 0
         for feat in model.get_features():
             if len(feat.get_relations()) == 0:
-                number+=1
+                number += 1
         self.number_of_leafs = number
         return self
