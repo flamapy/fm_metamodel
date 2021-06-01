@@ -20,6 +20,9 @@ class FMCoreFeatures(CoreFeatures):
     def get_core_features(self) -> list[Feature]:
         return self.result
 
+    def get_result(self):
+        return self.get_core_features()
+
     def execute(self, model: FeatureModel) -> 'FMCoreFeatures':
         if not model.root:  # void feature model
             return self
