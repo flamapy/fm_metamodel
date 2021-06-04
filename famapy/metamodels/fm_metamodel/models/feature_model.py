@@ -86,10 +86,16 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: Feature,
-        constraint: list['Constraint'] = [],
-        features: list['Feature'] = [],
-        relations: list['Relation'] = []
+        constraint: list['Constraint'] = None,
+        features: list['Feature'] = None,
+        relations: list['Relation'] = None
     ):
+        if constraint is None:
+            constraint = []
+        if features is None:
+            features = []
+        if relations is None:
+            relations = []
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
         self.features = features
