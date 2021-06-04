@@ -86,9 +86,9 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: Feature,
-        constraint: list['Constraint'] = list(),
-        features: list['Feature'] = list(),
-        relations: list['Relation'] = list()
+        constraint: list['Constraint'] = [],
+        features: list['Feature'] = [],
+        relations: list['Relation'] = []
     ):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
