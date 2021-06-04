@@ -1,5 +1,4 @@
-from famapy.core.models import AST
-from famapy.core.models import VariabilityModel
+from famapy.core.models import AST, VariabilityModel
 
 
 class Relation:
@@ -87,9 +86,9 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: Feature,
-        constraint: list['Constraint'] = list,
-        features: list['Feature'] = list,
-        relations: list['Relation'] = list
+        constraint: list['Constraint'] = list(),
+        features: list['Feature'] = list(),
+        relations: list['Relation'] = list()
     ):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
