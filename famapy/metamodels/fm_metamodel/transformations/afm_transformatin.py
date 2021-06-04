@@ -110,7 +110,7 @@ class AFMTransformation(TextToModel):
         self.name_feature[word] = feature
         relation.children.append(feature)
 
-    def parse_relation(
+    def parse_relation(  # pylint:disable=no-self-use
         self,
         relation_type: str, 
         feature_parent: Feature, 
