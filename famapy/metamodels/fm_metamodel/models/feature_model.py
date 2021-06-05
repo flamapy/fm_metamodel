@@ -98,16 +98,17 @@ class FeatureModel(VariabilityModel):
         self.features = features
         self.relations = relations
 
-    def get_relations(self, feature=None):
-        if not self.relations:
-            relations = []
-            if not feature:
-                feature = self.root
-            for relation in feature.relations:
-                relations.append(relation)
-                for _feature in relation.children:
-                    relations.extend(self.get_relations(_feature))
-            self.relations = relations
+    def get_relations(self, feature=None): 
+        # Keep away the idea of veryfying if the set has been created. 
+        # This is a recursive method. That check, will break the result
+        relations = []
+        if not feature:
+            feature = self.root
+        for relation in feature.relations:
+            relations.append(relation)
+            for _feature in relation.children:
+                relations.extend(self.get_relations(_feature))
+        self.relations = relations
         return self.relations
 
     def get_features(self):

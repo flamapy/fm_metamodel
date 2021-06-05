@@ -100,5 +100,6 @@ class XMLTransformation(TextToModel):
                     relation.card_max = int(child.attrib.get('max'))
                 else:
                     print("This XML contains non supported elements", file=sys.stderr)
-
+        else:
+            raise RuntimeError("Something is wrong on the xml")
         return relation
