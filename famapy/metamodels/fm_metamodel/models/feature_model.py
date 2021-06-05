@@ -1,3 +1,5 @@
+from typing import Optional
+
 from famapy.core.models import AST
 from famapy.core.models import VariabilityModel
 
@@ -87,9 +89,9 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: Feature,
-        constraint: list['Constraint'] = list,
-        features: list['Feature'] = list,
-        relations: list['Relation'] = list
+        constraint: Optional[list['Constraint']] = None,
+        features: Optional[list['Feature']] = None,
+        relations: Optional[list['Relation']] = None
     ):
         self.root = root
         self.ctcs = constraint  # implementar CTC con AST
