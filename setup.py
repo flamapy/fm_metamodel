@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="famapy-fm",
-    version="0.1.0",
+    version="0.2.0",
     author="Víctor Ramírez de la Corte",
     author_email="me@virako.es",
     description="famapy-fm is a plugin to FaMaPy module",
@@ -22,9 +22,9 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'famapy>=0.1.0'
+        'famapy>=0.2.0'
     ],
     dependency_links=[
-        'famapy>=0.1.0'
+        'famapy>=0.2.0'
     ],
 )
