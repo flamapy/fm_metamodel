@@ -1,6 +1,6 @@
 from famapy.core.operations import CoreFeatures
-from famapy.metamodels.fm_metamodel.models import FeatureModel
-from famapy.metamodels.fm_metamodel.models.feature_model import Feature
+
+from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
 class FMCoreFeatures(CoreFeatures):
