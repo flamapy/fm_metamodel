@@ -1,6 +1,6 @@
 from famapy.core.operations import AverageBranchingFactor
 
-from famapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
+from famapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class FMAverageBranchingFactor(AverageBranchingFactor):

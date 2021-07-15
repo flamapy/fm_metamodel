@@ -1,22 +1,23 @@
 from famapy.core.operations import CountLeafs
-from famapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
+
+from famapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class FMCountLeafs(CountLeafs):
 
     def __init__(self):
-        self.number_of_leafs = 0
-
-    def get_number_of_leafs(self):
-        return self.number_of_leafs
+        self.result = 0
 
     def get_result(self):
-        return self.get_number_of_leafs()
+        return self.result
 
     def execute(self, model: FeatureModel) -> 'FMCountLeafs':
-        number = 0
-        for feat in model.get_features():
-            if len(feat.get_relations()) == 0:
-                number += 1
-        self.number_of_leafs = number
+        self.result = count_leaf_features(model)
         return self
+
+    def get_number_of_leafs(self) -> int:
+        return self.get_result()
+
+
+def count_leaf_features(feature_model: FeatureModel) -> int:
+    return sum(len(f.get_relations()) == 0 for f in feature_model.get_features())
