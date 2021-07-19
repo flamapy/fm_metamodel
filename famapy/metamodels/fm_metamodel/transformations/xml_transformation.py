@@ -52,8 +52,7 @@ class XMLTransformation(TextToModel):
         elif ctc_type == 'requires':
             destination = self.name_feature[element.attrib.get('requires')]
 
-        #return Constraint(name,origin,destination,ctc_type)
-        return Constraint(name, AST(f'{origin.name} {ctc_type} {destination.name}'))
+        return Constraint(name, AST.create_binary_operation(ctc_type, origin.name, destination.name))
 
     def parse_feature(self, element) -> Feature:
         name = element.attrib.get('name')
