@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-from famapy.core.models.ast import AST
+from famapy.core.models.ast import AST,Node
 from famapy.core.transformations import TextToModel
 
 from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relation, Constraint
@@ -35,7 +35,7 @@ class FeatureIDEParser(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:
-        return 'xml'
+        return 'fide'
 
     def __init__(self, path: str):
         self._path = path
@@ -121,44 +121,69 @@ class FeatureIDEParser(TextToModel):
             if ctc[index].tag == FeatureIDEParser.TAG_GRAPHICS:
                 index += 1
             rule = ctc[index]
-            str_ast = self._parse_rule(rule)
-            if str_ast:
-                ctc = Constraint(str(number), AST(str_ast))
+            ast = AST(self._parse_rule(rule))
+            if ast:
+                ctc = Constraint(str(number), ast)
                 constraints.append(ctc)
             else:
                 raise Exception()
             number += 1
         return constraints
 
-    def _parse_rule(self, rule) -> str:
+    def _parse_rule(self, rule) -> AST:
         """Return the representation of the constraint (rule) in the AST syntax."""
-        str_ast = ''
+        #str_ast = ''
         #print(f'Rule tag: {rule.tag}')
         #print(f'Rule values: {[r for r in rule]}')
         #print(f'Rule text: {rule.text}')
         if rule.tag == FeatureIDEParser.TAG_VAR:
-            str_ast = rule.text
+            #str_ast = rule.text
+            node = Node(rule.text)
         elif rule.tag == FeatureIDEParser.TAG_NOT:
-            str_ast = 'not ' + self._parse_rule(rule[0])
+            #str_ast = 'not ' + self._parse_rule(rule[0])
+            node = Node("NOT")
+            node.left=self._parse_rule(rule[0])
         elif rule.tag == FeatureIDEParser.TAG_IMP:
-            str_ast = '(' + self._parse_rule(rule[0]) + ' implies ' \
-                          + self._parse_rule(rule[1]) + ')'
+            #str_ast = '(' + self._parse_rule(rule[0]) + ' implies ' \
+            #              + self._parse_rule(rule[1]) + ')'
+            node = Node("IMPLIES")
+            node.left=self._parse_rule(rule[0])
+            node.right=self._parse_rule(rule[1])
+            print(node)
         elif rule.tag == FeatureIDEParser.TAG_EQ:
-            str_ast = '(' + self._parse_rule(rule[0]) + ' implies ' \
-                          + self._parse_rule(rule[1]) + ') and (' \
-                          + self._parse_rule(rule[1]) + ' implies ' \
-                          + self._parse_rule(rule[0]) + ')'
+            #str_ast = '(' + self._parse_rule(rule[0]) + ' implies ' \
+            #              + self._parse_rule(rule[1]) + ') and (' \
+            #              + self._parse_rule(rule[1]) + ' implies ' \
+            #              + self._parse_rule(rule[0]) + ')'
+            node = Node("AND")
+            node.left= Node("IMPLIES")
+            node.left.left=self._parse_rule(rule[0])
+            node.left.right=self._parse_rule(rule[1])
+            node.right= Node("IMPLIES")
+            node.right.left=self._parse_rule(rule[1])
+            node.right.right=self._parse_rule(rule[0])
+            
+
         elif rule.tag == FeatureIDEParser.TAG_DISJ:
             if len(rule) > 1:
-                str_ast = '(' + self._parse_rule(rule[0]) + ' or ' \
-                              + self._parse_rule(rule[1]) + ')'
+                #str_ast = '(' + self._parse_rule(rule[0]) + ' or ' \
+                #              + self._parse_rule(rule[1]) + ')'
+                node = Node("OR")
+                node.left=self._parse_rule(rule[0])
+                node.left=self._parse_rule(rule[1])
+
             else:
-                str_ast = self._parse_rule(rule[0])
+                #str_ast = self._parse_rule(rule[0])
+                node = self._parse_rule(rule[0])
+
         elif rule.tag == FeatureIDEParser.TAG_CONJ:
             if len(rule) > 1:
-                str_ast = '(' + self._parse_rule(rule[0]) + ' and ' \
-                              + self._parse_rule(rule[1]) + ')'
+                #str_ast = '(' + self._parse_rule(rule[0]) + ' and ' \
+                #              + self._parse_rule(rule[1]) + ')'
+                node = Node("AND")
+                node.left=self._parse_rule(rule[0])
+                node.left=self._parse_rule(rule[1])
             else:
-                str_ast = self._parse_rule(rule[0])
-
-        return str_ast
+                #str_ast = self._parse_rule(rule[0])
+                node = self._parse_rule(rule[0])
+        return node
