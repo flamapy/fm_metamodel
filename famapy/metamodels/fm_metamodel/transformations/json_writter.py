@@ -49,7 +49,8 @@ class JsonWriter(ModelToText):
         for constraint in self.model.ctcs:
             _ctc = {}
             _ctc["name"] = constraint.name
-            _ctc["origin"] = constraint.ast.get_childs(constraint.ast.get_root())[0].get_name()
+            _ctc["origin"] = constraint.ast.get_childs(
+                constraint.ast.get_root())[0].get_name()
             _ctc["destination"] = constraint.ast.get_childs(
                 constraint.ast.get_root()
             )[0].get_name()
