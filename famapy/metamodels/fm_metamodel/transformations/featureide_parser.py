@@ -55,9 +55,9 @@ class FeatureIDEParser(TextToModel):
                     is_abstract = True
                 root_feature = Feature(name=root.attrib[FeatureIDEParser.ATTRIB_NAME], 
                                        relations=[], parent=None, is_abstract=is_abstract)
-                (features, _, relations) = self._read_features(root, root_feature)
-                features = [root_feature] + features
-                model = FeatureModel(root_feature, [], features, relations)
+                self._read_features(root, root_feature)
+                #features = [root_feature] + features
+                model = FeatureModel(root_feature, [])
             elif child.tag == FeatureIDEParser.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
                 model.ctcs.extend(constraints)
