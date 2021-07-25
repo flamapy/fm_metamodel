@@ -136,22 +136,13 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: 'Feature',
-        constraints: Optional[list['Constraint']] = None,
-        features: Optional[list['Feature']] = None,
-        relations: Optional[list['Relation']] = None
+        constraints: Optional[list['Constraint']] = None
     ):
         self.root = root
         self.ctcs = [] if constraints is None else constraints
 
-        # First initialize relations, then features
-        self.relations = self._get_relations() if relations is None else relations
-        self.features = self._get_features() if features is None else features
-        self.features_by_name = {f.name: f for f in self.features}
 
-    def get_relations(self) -> list['Relation']: 
-        return self.relations
-
-    def _get_relations(self, feature: 'Feature' = None) -> list['Relation']:
+    def get_relations(self, feature: 'Feature' = None) -> list['Relation']: 
         if self.root is None:   # Empty feature model
             return []
         if feature is None:
@@ -162,11 +153,8 @@ class FeatureModel(VariabilityModel):
             for _feature in relation.children:
                 relations.extend(self._get_relations(_feature))
         return relations
-
+        
     def get_features(self) -> list['Feature']:
-        return self.features
-
-    def _get_features(self) -> list['Feature']:
         features = []
         features.append(self.root)
         for relation in self.get_relations():
@@ -196,13 +184,13 @@ class FeatureModel(VariabilityModel):
 
     def __hash__(self) -> int:
         return hash((self.root, 
-                    frozenset(self.features), 
-                    frozenset(self.relations), 
+                    frozenset(self.get_features()), 
+                    frozenset(self.get_relations()), 
                     frozenset(self.ctcs)))
 
     def __eq__(self, other: object) -> bool:
         return (isinstance(other, FeatureModel)
                 and self.root == other.root 
-                and self.features == other.features 
-                and self.relations == other.relations 
+                and self.get_features() == other.get_features() 
+                and self.get_relations() == other.get_relations() 
                 and self.ctcs == other.ctcs)
