@@ -1,7 +1,7 @@
 import sys
 from antlr4 import *
-from UVLLexer import UVLLexer
-from UVLParser import UVLParser
+from .UVLLexer import UVLLexer
+from .UVLParser import UVLParser
 
 
 def get_tree(argv):

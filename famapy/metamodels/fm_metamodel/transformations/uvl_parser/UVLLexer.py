@@ -6,7 +6,7 @@ import sys
 
 
 from antlr_denter.DenterHelper import DenterHelper
-from UVLParser import UVLParser
+from .UVLParser import UVLParser
 
 
 
