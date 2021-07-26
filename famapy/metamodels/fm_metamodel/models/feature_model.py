@@ -151,7 +151,7 @@ class FeatureModel(VariabilityModel):
         for relation in feature.relations:
             relations.append(relation)
             for _feature in relation.children:
-                relations.extend(self._get_relations(_feature))
+                relations.extend(self.get_relations(_feature))
         return relations
         
     def get_features(self) -> list['Feature']:
@@ -176,10 +176,7 @@ class FeatureModel(VariabilityModel):
         for i, relation in enumerate(self.get_relations()):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
-            root = ctc.ast.get_root()
-            first_child_name = ctc.ast.get_first_child(root).get_name()
-            second_child_name = ctc.ast.get_second_child(root).get_name()
-            res += f'{first_child_name} {root.get_name()} {second_child_name}'
+            res += f'{ctc.ast}' + '\r\n'
         return res
 
     def __hash__(self) -> int:
