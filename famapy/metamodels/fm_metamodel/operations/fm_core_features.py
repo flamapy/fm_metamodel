@@ -12,12 +12,12 @@ class FMCoreFeatures(CoreFeatures):
 
     These assumptions imply that there are not any cross-tree constraints
     involving the core features, otherwise the model would contain:
-        dead-features (e.g., for 'excludes' constraints) and 
+        dead-features (e.g., for 'excludes' constraints) and
         false-optional features (e.g., for 'requires' constraints).
     """
 
-    def __init__(self):
-        self.result = []
+    def __init__(self) -> None:
+        self.result: list[Feature] = []
 
     def get_result(self) -> list[Feature]:
         return self.result

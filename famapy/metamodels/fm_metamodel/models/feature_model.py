@@ -12,14 +12,14 @@ class Relation:
         children: list['Feature'],
         card_min: int,
         card_max: int
-    ):
+    ) -> None:
 
         self.parent = parent
         self.children = children
         self.card_min = card_min
         self.card_max = card_max
 
-    def add_child(self, feature: 'Feature'):
+    def add_child(self, feature: 'Feature') -> None:
         self.children.append(feature)
 
     def is_mandatory(self) -> bool:
@@ -49,20 +49,20 @@ class Relation:
         return hash((self.parent, frozenset(self.children), self.card_min, self.card_max))
 
     def __eq__(self, other: object) -> bool:
-        return (isinstance(other, Relation) 
-                and self.parent == other.parent 
-                and self.children == other.children 
-                and self.card_min == other.card_min 
+        return (isinstance(other, Relation)
+                and self.parent == other.parent
+                and self.children == other.children
+                and self.card_min == other.card_min
                 and self.card_max == other.card_max)
 
 
 class Feature:
 
     def __init__(
-        self, 
-        name: str, 
-        relations: Optional[list['Relation']] = None, 
-        parent: Optional['Feature'] = None, 
+        self,
+        name: str,
+        relations: Optional[list['Relation']] = None,
+        parent: Optional['Feature'] = None,
         is_abstract: bool = False
     ):
 
@@ -71,7 +71,10 @@ class Feature:
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
 
-    def add_relation(self, relation: 'Relation'):
+    def is_empty(self) -> bool:
+        return self.parent is None and self.relations == []
+
+    def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
 
     def get_relations(self) -> list['Relation']:
@@ -84,7 +87,7 @@ class Feature:
         return next((r.parent for r in self.get_relations() if not r.children), None)
 
     def is_root(self) -> bool:
-        return self.parent is None 
+        return self.parent is None
 
     def is_mandatory(self) -> bool:
         return (self.parent is None
@@ -93,7 +96,7 @@ class Feature:
 
     def is_optional(self) -> bool:
         return (self.parent is not None
-                and any(r.is_optional() and self in r.children 
+                and any(r.is_optional() and self in r.children
                         for r in self.parent.get_relations()))
 
     def is_or_group(self) -> bool:
@@ -137,13 +140,12 @@ class FeatureModel(VariabilityModel):
         self,
         root: 'Feature',
         constraints: Optional[list['Constraint']] = None
-    ):
+    ) -> None:
         self.root = root
         self.ctcs = [] if constraints is None else constraints
 
-
-    def get_relations(self, feature: 'Feature' = None) -> list['Relation']: 
-        if self.root is None:   # Empty feature model
+    def get_relations(self, feature: Optional['Feature'] = None) -> list['Relation']:
+        if self.root.is_empty():
             return []
         if feature is None:
             feature = self.root
@@ -153,9 +155,9 @@ class FeatureModel(VariabilityModel):
             for _feature in relation.children:
                 relations.extend(self.get_relations(_feature))
         return relations
-        
+
     def get_features(self) -> list['Feature']:
-        features = []
+        features: list['Feature'] = []
         features.append(self.root)
         for relation in self.get_relations():
             features.extend(relation.children)
@@ -170,7 +172,7 @@ class FeatureModel(VariabilityModel):
         return self.features_by_name[feature_name]
 
     def __str__(self) -> str:
-        if self.root is None:
+        if self.root.is_empty():
             return '(empty feature model)'
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
@@ -180,14 +182,18 @@ class FeatureModel(VariabilityModel):
         return res
 
     def __hash__(self) -> int:
-        return hash((self.root, 
-                    frozenset(self.get_features()), 
-                    frozenset(self.get_relations()), 
-                    frozenset(self.ctcs)))
+        return hash((
+            self.root,
+            frozenset(self.get_features()),
+            frozenset(self.get_relations()),
+            frozenset(self.ctcs)
+        ))
 
     def __eq__(self, other: object) -> bool:
-        return (isinstance(other, FeatureModel)
-                and self.root == other.root 
-                and self.get_features() == other.get_features() 
-                and self.get_relations() == other.get_relations() 
-                and self.ctcs == other.ctcs)
+        return (
+            isinstance(other, FeatureModel) and
+            self.root == other.root and
+            self.get_features() == other.get_features() and
+            self.get_relations() == other.get_relations() and
+            self.ctcs == other.ctcs
+        )

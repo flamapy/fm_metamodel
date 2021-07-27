@@ -1,12 +1,15 @@
 import sys
+from typing import Any
 
 from famapy.core.exceptions import DuplicatedFeature
 from famapy.core.models.ast import AST
 from famapy.core.transformations import TextToModel
-from famapy.metamodels.fm_metamodel.models.feature_model import (Constraint,
-                                                                 Feature,
-                                                                 FeatureModel,
-                                                                 Relation)
+from famapy.metamodels.fm_metamodel.models.feature_model import (
+    Constraint,
+    Feature,
+    FeatureModel,
+    Relation,
+)
 
 
 class AFMTransformation(TextToModel):
@@ -15,19 +18,20 @@ class AFMTransformation(TextToModel):
     def get_source_extension() -> str:
         return 'afm'
 
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
         self.path = path
-        self.name_feature = {}
-        self.parents = []
+        self.name_feature: dict[Any, Any] = {}
+        self.parents: list[Any] = []
         self.ctc_counter = [0, 0, 0]
 
-    def transform(self):
-        with open(self.path, 'r') as lines:
-            lines = [line.strip() for line in lines.readlines() if line.strip() != ""]
+    def transform(self) -> FeatureModel:
+        with open(self.path, 'r') as _file:
+            lines = [line.strip() for line in _file.readlines() if line.strip() != ""]
+
         for line in lines:
-            if line.__contains__("%Relationships"):
+            if "%Relationships" in line:
                 index_r = lines.index(line)
-            if line.__contains__("%Constraints"):
+            if "%Constraints" in line:
                 index_c = lines.index(line)
         relations = lines[index_r + 1:index_c]
         constraints = lines[index_c + 1:]
@@ -45,18 +49,8 @@ class AFMTransformation(TextToModel):
         return feature_model
 
     def parse_ctc(self, ctc: str) -> Constraint:
-        ctc = (ctc.replace('AND', 'and')
-               .replace('OR', 'or')
-               .replace('NOT', 'not')
-               .replace('IMPLIES', 'implies')
-               .replace('REQUIRES', 'requires')
-               .replace('EXCLUDES', 'excludes'))
-        self.ctc_counter += 1
-        constraint = Constraint(
-            'Ctc-' + str(self.ctc_counter), 
-            AST(ctc)
-        )
-        return constraint
+        # TODO: review
+        return Constraint('Ctc-' + str(self.ctc_counter), AST(ctc))
 
     def parse_features(self, words: list[str], model: FeatureModel) -> Feature:
         name = words[0].replace(":", "")
@@ -101,7 +95,7 @@ class AFMTransformation(TextToModel):
                 model.relations.append(relation)
         return feature_parent
 
-    def add_feature(self, relation, word, model) -> None:
+    def add_feature(self, relation: Relation, word: str, model: FeatureModel) -> None:
         if word in self.name_feature:
             print("This AFM contains duplicated feature names", file=sys.stderr)
             raise DuplicatedFeature
@@ -110,11 +104,12 @@ class AFMTransformation(TextToModel):
         self.name_feature[word] = feature
         relation.children.append(feature)
 
-    def parse_relation(  # pylint:disable=no-self-use
-        self,
-        relation_type: str, 
-        feature_parent: Feature, 
-        c_max: int = None
+    @classmethod
+    def parse_relation(
+        cls,
+        relation_type: str,
+        feature_parent: Feature,
+        c_max: int = 1
     ) -> Relation:
         if relation_type in ("Mandatory", "Alternative"):
             relation = Relation(parent=feature_parent, children=[], card_min=1, card_max=1)

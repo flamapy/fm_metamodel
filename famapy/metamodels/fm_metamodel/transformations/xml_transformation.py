@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 from xml.etree import ElementTree
 
 from famapy.core.transformations import TextToModel
@@ -18,13 +19,13 @@ class XMLTransformation(TextToModel):
     def get_source_extension() -> str:
         return 'xml'
 
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
         self.path = path
         # TODO: add empty FeatureModel
         # self.model = FeatureModel(feature, [])
-        self.name_feature = {}
+        self.name_feature: dict[str, Feature] = {}
 
-    def transform(self):
+    def transform(self) -> FeatureModel:
         rootcounter = 1
         tree = ElementTree.parse(self.path)
         xml_root = tree.getroot()
@@ -42,20 +43,35 @@ class XMLTransformation(TextToModel):
 
         return feature_model
 
-    def parse_ctc(self, element) -> Constraint:
+    def parse_ctc(self, element: ElementTree.Element) -> Constraint:
+        origin: Optional[Feature] = None
+        destination: Optional[Feature] = None
+
         name = element.attrib.get('name')
         ctc_type = element.tag.casefold()
-        origin = self.name_feature[element.attrib.get('feature')]
 
-        if ctc_type == 'excludes':
-            destination = self.name_feature[element.attrib.get('excludes')]
-        elif ctc_type == 'requires':
-            destination = self.name_feature[element.attrib.get('requires')]
+        el_feature = element.attrib.get('feature')
 
-        return Constraint(name, AST.create_simple_binary_operation(ctc_type, origin.name, destination.name))
+        if el_feature in self.name_feature:
+            origin = self.name_feature[el_feature]
 
-    def parse_feature(self, element) -> Feature:
-        name = element.attrib.get('name')
+        el_exclude = element.attrib.get('excludes')
+        el_require = element.attrib.get('requires')
+        if ctc_type == 'excludes' and el_exclude in self.name_feature:
+            destination = self.name_feature[el_exclude]
+        elif ctc_type == 'requires' and el_require in self.name_feature:
+            destination = self.name_feature[el_require]
+
+        if origin is None or destination is None:
+            raise Exception('origin or destination not found')
+
+        return Constraint(
+            name,
+            AST.create_simple_binary_operation(ctc_type, origin.name, destination.name)
+        )
+
+    def parse_feature(self, element: ElementTree.Element) -> Feature:
+        name = str(element.attrib.get('name'))
 
         feature = Feature(name, [])
 
@@ -72,7 +88,7 @@ class XMLTransformation(TextToModel):
                 feature.relations.append(relation)
         return feature
 
-    def parse_relation(self, element) -> Relation:
+    def parse_relation(self, element: ElementTree.Element) -> Relation:
         relation = Relation(parent=None, children=[], card_min=0, card_max=0)
 
         if element.tag.casefold() == 'binaryrelation':
@@ -84,8 +100,8 @@ class XMLTransformation(TextToModel):
                     feature = self.parse_feature(child)
                     relation.children.append(feature)
                 elif child.tag.casefold() == 'cardinality':
-                    relation.card_min = int(child.attrib.get('min'))
-                    relation.card_max = int(child.attrib.get('max'))
+                    relation.card_min = int(str(child.attrib.get('min')))
+                    relation.card_max = int(str(child.attrib.get('max')))
                 else:
                     print("This XML contains non supported elements", file=sys.stderr)
 
@@ -95,8 +111,8 @@ class XMLTransformation(TextToModel):
                     feature = self.parse_feature(child)
                     relation.children.append(feature)
                 elif child.tag.casefold() == 'cardinality':
-                    relation.card_min = int(child.attrib.get('min'))
-                    relation.card_max = int(child.attrib.get('max'))
+                    relation.card_min = int(str(child.attrib.get('min')))
+                    relation.card_max = int(str(child.attrib.get('max')))
                 else:
                     print("This XML contains non supported elements", file=sys.stderr)
         else:

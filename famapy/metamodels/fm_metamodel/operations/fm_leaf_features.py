@@ -9,8 +9,8 @@ class FMLeafFeatures(Operation):
     (i.e., they have not children).
     """
 
-    def __init__(self):
-        self.result = []
+    def __init__(self) -> None:
+        self.result: list[Feature] = []
 
     def get_result(self) -> list[Feature]:
         return self.result
