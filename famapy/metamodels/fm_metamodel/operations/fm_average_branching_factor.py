@@ -1,6 +1,6 @@
 from famapy.core.operations import AverageBranchingFactor
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel
+from famapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
 
 
 class FMAverageBranchingFactor(AverageBranchingFactor):
@@ -9,17 +9,17 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
     The number of branches is the number of features that have at least one child.
     """
 
-    def __init__(self):
-        self.result = 0
+    def __init__(self) -> None:
+        self.result: float = 0
 
-    def get_result(self):
+    def get_result(self) -> float:
         return self.result
 
     def execute(self, model: FeatureModel) -> 'FMAverageBranchingFactor':
         self.result = average_branching_factor(model)
         return self
 
-    def get_average_branching_factor(self):
+    def get_average_branching_factor(self) -> float:
         return self.get_result()
 
 

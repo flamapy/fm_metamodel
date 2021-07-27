@@ -186,6 +186,3 @@ class UVLLexer(Lexer):
         if not self.denter:
             self.denter = self.UVLDenter(self, self.NL, UVLParser.INDENT, UVLParser.DEDENT, True)
         return self.denter.next_token()
-
-
-

@@ -7,7 +7,7 @@ from famapy.metamodels.fm_metamodel.operations import get_feature_ancestors, get
 class FMMaxDepthTree(Operation):
     """This operation returns the maximum depth of the feature model tree."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.result = 0
 
     def get_result(self) -> int:

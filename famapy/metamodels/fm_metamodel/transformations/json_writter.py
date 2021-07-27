@@ -1,7 +1,13 @@
 import json
+from typing import Any
 
 from famapy.core.transformations import ModelToText
-from famapy.metamodels.fm_metamodel.models.feature_model import Feature, FeatureModel, Relation
+from famapy.metamodels.fm_metamodel.models.feature_model import (
+    Constraint,
+    Feature,
+    FeatureModel,
+    Relation,
+)
 
 
 class JsonWriter(ModelToText):
@@ -14,8 +20,8 @@ class JsonWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self):
-        data = {}
+    def transform(self) -> FeatureModel:
+        data: dict[str, Any] = {}
         root = self.model.root
 
         data['hierachy'] = self.process_feature(root)
@@ -25,8 +31,8 @@ class JsonWriter(ModelToText):
             json.dump(data, outfile)
         return self.path
 
-    def process_feature(self, feature: Feature):
-        _dict = {}
+    def process_feature(self, feature: Feature) -> dict[str, Any]:
+        _dict: dict[str, Any] = {}
         _dict["featureName"] = feature.name
         relationships = []
         for relation in feature.get_relations():
@@ -34,8 +40,8 @@ class JsonWriter(ModelToText):
         _dict["relationships"] = relationships
         return _dict
 
-    def process_relation(self, relation: Relation):
-        _dict = {}
+    def process_relation(self, relation: Relation) -> dict[str, Any]:
+        _dict: dict[str, Any] = {}
         _dict["card_min"] = relation.card_min
         _dict["card_max"] = relation.card_max
 
@@ -44,7 +50,7 @@ class JsonWriter(ModelToText):
 
         return _dict
 
-    def process_constraints(self):
+    def process_constraints(self) -> list[Constraint]:
         constraints = []
         for constraint in self.model.ctcs:
             _ctc = {}

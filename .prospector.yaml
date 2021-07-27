@@ -4,6 +4,9 @@ doc-warnings: false
 
 ignore-paths:
   - tests
+  - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLLexer.py
+  - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLListener.py
+  - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLParser.py
 
 pep8:
   options:
@@ -12,6 +15,7 @@ pep8:
 pylint:
   disable:
     - super-init-not-called
+    - unsubscriptable-object
 
 mccabe:
   run: true

@@ -5,10 +5,10 @@ from famapy.metamodels.fm_metamodel.models import FeatureModel
 
 class FMCountLeafs(CountLeafs):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.result = 0
 
-    def get_result(self):
+    def get_result(self) -> int:
         return self.result
 
     def execute(self, model: FeatureModel) -> 'FMCountLeafs':
