@@ -9,7 +9,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
     FeatureModel,
     Relation,
 )
-from famapy.metamodels.fm_metamodel.transformations.uvl_parser.get_tree import get_tree
+from uvlparser import get_tree
 
 
 class UVLTransformation(TextToModel):
@@ -60,7 +60,7 @@ class UVLTransformation(TextToModel):
             for feature_node in features:
                 feature_text = self.get_feature_text(feature_node)
                 feature = Feature(feature_text, [])
-                #self.model.features.append(feature)
+                # self.model.features.append(feature)
                 children.append(feature)
             self.add_relation(node_feature, children, relation_text)
             for feature_node in features:
@@ -132,7 +132,8 @@ class UVLTransformation(TextToModel):
                 list(constraint_node.getChildren())[0].WORD()[0].getText(),
                 list(constraint_node.getChildren())[0].WORD()[1].getText()
             ]
-            operator = constraint_text.replace(features[0], "").replace(features[1], "")
+            operator = constraint_text.replace(
+                features[0], "").replace(features[1], "")
             operator_dict = {
                 '!': 'not',
                 '&': 'and',
@@ -143,7 +144,8 @@ class UVLTransformation(TextToModel):
             operator_name = operator_dict.get(operator)
             constraint = Constraint(
                 operator_name,
-                AST.create_simple_binary_operation(operator_name, features[0], features[1])
+                AST.create_simple_binary_operation(
+                    operator_name, features[0], features[1])
             )
             constraints.append(constraint)
         return constraints
