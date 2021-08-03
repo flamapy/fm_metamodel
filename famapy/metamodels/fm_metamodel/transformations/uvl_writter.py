@@ -21,7 +21,8 @@ class UVLWriter(ModelToText):
         model = self.model
         root = model.root
 
-        serialized_model = self.read_features(root, "features", 0)
+        serialized_model = self.read_features(
+            root, "features", 0) + "\n" + self.read_constraints()
         f = open(self.path, "w")
         f.write(serialized_model)
 
@@ -54,5 +55,27 @@ class UVLWriter(ModelToText):
                 result = "[" + str(min) + "]"
             else:
                 result = "[" + str(min) + ".." + str(max) + "]"
+
+        return result
+
+    def read_constraints(self):
+        result = "constraints"
+        constraints = self.model.ctcs
+        for constraint in constraints:
+            constraint_text = self.serialize_constraint(constraint)
+            result = result + "\n\t" + constraint_text
+
+        return result
+
+    def serialize_constraint(self, constraint: Constraint):
+        left = constraint.ast.root.left
+        right = constraint.ast.root.right
+        data = constraint.ast.root.data
+
+        symbol_dict = {'not': '!', 'and': '&', 'or': '|',
+                       'implies': '=>', 'equivalence': '<=>'}
+        symbol = symbol_dict.get(data)
+
+        result = str(left) + " " + symbol + " " + str(right)
 
         return result
