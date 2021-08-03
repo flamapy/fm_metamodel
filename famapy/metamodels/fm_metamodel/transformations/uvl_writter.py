@@ -39,13 +39,13 @@ class UVLWriter(ModelToText):
     def serialize_relation(self, relation: Relation):
         result = ""
 
-        if relation.is_alternative:
+        if relation.is_alternative():
             result = "alternative"
-        elif relation.is_mandatory:
+        elif relation.is_mandatory():
             result = "mandatory"
-        elif relation.is_optional:
+        elif relation.is_optional():
             result = "optional"
-        elif relation.is_or:
+        elif relation.is_or():
             result = "or"
         else:
             min = relation.card_min
