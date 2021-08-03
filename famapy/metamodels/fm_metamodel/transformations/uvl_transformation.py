@@ -62,9 +62,8 @@ class UVLTransformation(TextToModel):
                 feature = Feature(feature_text, [])
                 # self.model.features.append(feature)
                 children.append(feature)
-            self.add_relation(node_feature, children, relation_text)
-            for feature_node in features:
                 self.read_children(feature_node, feature)
+            self.add_relation(node_feature, children, relation_text)
 
     @classmethod
     def add_relation(cls, parent: Feature, children: Feature, relation_text: str) -> None:
