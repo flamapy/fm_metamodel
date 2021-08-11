@@ -52,14 +52,7 @@ class FeatureIDEParser(TextToModel):
         root = tree.getroot()
         for child in root:
             if child.tag == FeatureIDEParser.TAG_STRUCT:
-                root = child[0]
-                is_abstract = False
-                if (FeatureIDEParser.ATTRIB_ABSTRACT in root.attrib
-                        and root.attrib[FeatureIDEParser.ATTRIB_ABSTRACT]):
-                    is_abstract = True
-                root_feature = Feature(name=root.attrib[FeatureIDEParser.ATTRIB_NAME],
-                                       relations=[], parent=None, is_abstract=is_abstract)
-                self._read_features(root, root_feature)
+                (root_feature, _, _, _) = self._read_features(child, None)
                 model = FeatureModel(root_feature, [])
             elif child.tag == FeatureIDEParser.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
@@ -70,17 +63,18 @@ class FeatureIDEParser(TextToModel):
         self,
         root_tree: Element,
         parent: Feature
-    ) -> tuple[list[Feature], list[Feature], list[Relation]]:
+    ) -> tuple[Feature, list[Feature], list[Feature], list[Relation]]:
         features = []
         children = []
         relations = []
+        feature = None
         for child in root_tree:
             if not child.tag == FeatureIDEParser.TAG_GRAPHICS:
                 is_abstract = (
                     FeatureIDEParser.ATTRIB_ABSTRACT in child.attrib and
-                    child.attrib[FeatureIDEParser.ATTRIB_ABSTRACT]
+                    child.attrib[FeatureIDEParser.ATTRIB_ABSTRACT] == "true"
                 )
-
+                    
                 feature = Feature(
                     name=child.attrib[FeatureIDEParser.ATTRIB_NAME],
                     relations=[],
@@ -101,7 +95,7 @@ class FeatureIDEParser(TextToModel):
                         relations.append(rel)
 
                 if child.tag == FeatureIDEParser.TAG_ALT:
-                    (alt_children, direct_children,
+                    (_, alt_children, direct_children,
                      children_relations) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children,
                                    card_min=1, card_max=1)
@@ -110,7 +104,7 @@ class FeatureIDEParser(TextToModel):
                     relations.append(rel)
                     relations.extend(children_relations)
                 elif child.tag == FeatureIDEParser.TAG_OR:
-                    (or_children, direct_children,
+                    (_, or_children, direct_children,
                      children_relations) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children, card_min=1,
                                    card_max=len(direct_children))
@@ -119,11 +113,11 @@ class FeatureIDEParser(TextToModel):
                     relations.append(rel)
                     relations.extend(children_relations)
                 elif child.tag == FeatureIDEParser.TAG_AND:
-                    (and_children, direct_children,
+                    (_, and_children, direct_children,
                      children_relations) = self._read_features(child, feature)
                     features.extend(and_children)
                     relations.extend(children_relations)
-        return (features, children, relations)
+        return (feature, features, children, relations)
 
     def _read_constraints(self, ctcs_root: Element) -> list[Constraint]:
         number = 1
