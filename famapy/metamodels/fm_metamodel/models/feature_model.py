@@ -169,11 +169,6 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
-    def get_feature_by_name(self, feature_name: str) -> 'Feature':
-        if feature_name not in self.features_by_name.keys():
-            raise Exception(f'Not feature with name: {feature_name}')
-        return self.features_by_name[feature_name]
-
     def __str__(self) -> str:
         if self.root.is_empty():
             return '(empty feature model)'
