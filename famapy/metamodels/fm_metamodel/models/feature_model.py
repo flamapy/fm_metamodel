@@ -108,6 +108,9 @@ class Feature:
     def is_group(self) -> bool:
         return self.is_or_group() or self.is_alternative_group()
 
+    def is_leaf(self) -> bool:
+        return len(self.get_relations()) == 0
+
     def __str__(self) -> str:
         return self.name
 
