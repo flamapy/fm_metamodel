@@ -1,37 +1,37 @@
-from typing import Optional
 import math
 
-from famapy.core.operations import NumberOfConfigurations
+from famapy.core.operations import ProductsNumber
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature, FMConfiguration
+from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
-class FMNumberOfConfigurations(NumberOfConfigurations):
+class FMNumberOfConfigurations(ProductsNumber):
     """It computes the number of configurations of the feature model.
 
     It only uses the structure of the feature model, 
     without taking into account the cross-tree constraints,
     and thus, the number is an upper limit of the real number of configurations.
     """
-    
-    def __init__(self, partial_configuration: Optional[FMConfiguration] = None) -> None:
+
+    def __init__(self) -> None:
         self.result = 0
         self.feature_model = None
-        self.partial_configuration = partial_configuration
-    
-    def execute(self, feature_model: FeatureModel) -> 'FMNumberOfConfigurations':
-        self.feature_model = feature_model
-        self.result = self.get_number_of_configurations(self.partial_configuration)
+
+    def execute(self, model: FeatureModel) -> 'FMNumberOfConfigurations':
+        self.feature_model = model
+        self.result = self.get_number_of_configurations()
         return self
 
     def get_result(self) -> int:
         return self.result
 
-    def get_number_of_configurations(self, partial_configuration: Optional[FMConfiguration] = None) -> int:
-        return count_configurations(self.feature_model, partial_configuration)
+    def get_products_number(self) -> int:
+        return count_configurations(self.feature_model)
 
-def count_configurations(feature_model: FeatureModel, partial_configuration: Optional[FMConfiguration] = None) -> int:
+
+def count_configurations(feature_model: FeatureModel) -> int:
     return count_configurations_rec(feature_model.root)
+
 
 def count_configurations_rec(feature: Feature) -> int:
     if feature.is_leaf():
@@ -45,5 +45,6 @@ def count_configurations_rec(feature: Feature) -> int:
         elif relation.is_alternative():
             counts.append(sum((count_configurations_rec(f) for f in relation.children)))
         elif relation.is_or():
-            counts.append(math.prod([count_configurations_rec(f) + 1 for f in relation.children]) - 1)
+            children_counts = [count_configurations_rec(f) + 1 for f in relation.children]
+            counts.append(math.prod(children_counts) - 1)
     return math.prod(counts)
