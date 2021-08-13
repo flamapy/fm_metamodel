@@ -23,8 +23,7 @@ setuptools.setup(
     python_requires='>=3.9',
     install_requires=[
         'famapy>=0.5.0',
-        'antlr-denter>=1.3.1',
-        'antlr4-python3-runtime>=4.9.2'
+        'uvlparser>=0.3'
     ],
     dependency_links=[
         'famapy>=0.5.0'
