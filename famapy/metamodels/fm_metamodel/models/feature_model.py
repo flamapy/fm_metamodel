@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from famapy.core.models import AST
 from famapy.core.models import VariabilityModel
@@ -48,7 +48,7 @@ class Relation:
     def __hash__(self) -> int:
         return hash((self.parent, frozenset(self.children), self.card_min, self.card_max))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (isinstance(other, Relation)
                 and self.parent == other.parent
                 and self.children == other.children
@@ -121,7 +121,7 @@ class Feature:
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Feature) and self.name == other.name
 
 
@@ -133,7 +133,7 @@ class Constraint:
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Constraint) and self.name == other.name
 
 
@@ -196,7 +196,7 @@ class FeatureModel(VariabilityModel):
             frozenset(self.ctcs)
         ))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (
             isinstance(other, FeatureModel) and
             self.root == other.root and
@@ -213,31 +213,31 @@ class Range:
 
 
 class Domain:
-    def __init__(self, ranges: Optional[list['Range']], elements: Optional[list['object']]):
+    def __init__(self, ranges: Optional[list['Range']], elements: Optional[list['Any']]):
         self.range_list = [] if ranges is None else ranges
         self.element_list = [] if elements is None else elements
 
     def get_range_list(self) -> list['Range']:
         return self.range_list
 
-    def get_element_list(self) -> list['object']:
+    def get_element_list(self) -> list['Any']:
         return self.element_list
 
     def add_range(self, new_range: Range) -> None:
         self.range_list.append(new_range)
 
-    def add_element(self, element: object) -> None:
+    def add_element(self, element: Any) -> None:
         self.element_list.append(element)
 
     def set_range_list(self, range_list: list['Range']) -> None:
         self.range_list = range_list
 
-    def set_element_list(self, element_list: list['object']) -> None:
+    def set_element_list(self, element_list: list['Any']) -> None:
         self.element_list = element_list
 
 
 class Attribute:
-    def __init__(self, name: str, domain: Domain, default_value: object, null_value: object):
+    def __init__(self, name: str, domain: Domain, default_value: Any, null_value: Any):
         self.name = name
         self.domain = domain
         self.default_value = default_value
@@ -249,10 +249,10 @@ class Attribute:
     def get_domain(self) -> Domain:
         return self.domain
 
-    def get_default_value(self) -> object:
+    def get_default_value(self) -> Any:
         return self.default_value
 
-    def get_null_value(self) -> object:
+    def get_null_value(self) -> Any:
         return self.null_value
 
     def set_name(self, name: str) -> None:
@@ -261,8 +261,8 @@ class Attribute:
     def set_domain(self, domain: Domain) -> None:
         self.domain = domain
 
-    def set_default_value(self, default_value: object) -> None:
+    def set_default_value(self, default_value: Any) -> None:
         self.default_value = default_value
 
-    def set_null_value(self, null_value: object) -> None:
+    def set_null_value(self, null_value: Any) -> None:
         self.null_value = null_value
