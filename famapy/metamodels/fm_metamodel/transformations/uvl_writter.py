@@ -23,42 +23,43 @@ class UVLWriter(ModelToText):
 
         serialized_model = self.read_features(
             root, "features", 0) + "\n" + self.read_constraints()
-        f = open(self.path, "w")
-        f.write(serialized_model)
+        file = open(self.path, "w")
+        file.write(serialized_model)
 
-    def read_features(self, feature: Feature, result: str, tab_count: int):
+    def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
-        result = result + "\n" + tab_count*"\t" + feature.name
+        result = result + "\n" + tab_count * "\t" + feature.name
         tab_count = tab_count + 1
         for relation in feature.relations:
             relation_name = self.serialize_relation(relation)
-            result = result + "\n" + tab_count*"\t" + relation_name
-            for feature in relation.children:
-                result = self.read_features(feature, result, tab_count)
+            result = result + "\n" + tab_count * "\t" + relation_name
+            for feature_node in relation.children:
+                result = self.read_features(feature_node, result, tab_count)
         return result
 
-    def serialize_relation(self, relation: Relation):
+    @staticmethod
+    def serialize_relation(rel: Relation) -> str:
         result = ""
 
-        if relation.is_alternative():
+        if rel.is_alternative():
             result = "alternative"
-        elif relation.is_mandatory():
+        elif rel.is_mandatory():
             result = "mandatory"
-        elif relation.is_optional():
+        elif rel.is_optional():
             result = "optional"
-        elif relation.is_or():
+        elif rel.is_or():
             result = "or"
         else:
-            min = relation.card_min
-            max = relation.card_max
-            if min == max:
+            min_value = rel.card_min
+            max_value = rel.card_max
+            if min_value == max_value:
                 result = "[" + str(min) + "]"
             else:
                 result = "[" + str(min) + ".." + str(max) + "]"
 
         return result
 
-    def read_constraints(self):
+    def read_constraints(self) -> str:
         result = "constraints"
         constraints = self.model.ctcs
         for constraint in constraints:
@@ -67,15 +68,16 @@ class UVLWriter(ModelToText):
 
         return result
 
-    def serialize_constraint(self, constraint: Constraint):
-        left = constraint.ast.root.left
-        right = constraint.ast.root.right
-        data = constraint.ast.root.data
+    @staticmethod
+    def serialize_constraint(cst: Constraint) -> str:
+        left = cst.ast.root.left
+        right = cst.ast.root.right
+        data = cst.ast.root.data
 
         symbol_dict = {'not': '!', 'and': '&', 'or': '|',
                        'implies': '=>', 'equivalence': '<=>'}
         symbol = symbol_dict.get(data)
 
-        result = str(left) + " " + symbol + " " + str(right)
+        result = str(left) + " " + str(symbol) + " " + str(right)
 
         return result
