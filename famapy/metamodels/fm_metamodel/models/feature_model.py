@@ -70,7 +70,7 @@ class Feature:
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
-        self.attributes = []
+        self.attributes = list['Attribute']([])
 
     def is_empty(self) -> bool:
         return self.parent is None and self.relations == []
@@ -78,7 +78,7 @@ class Feature:
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
 
-    def set_attributes(self, attributes: list['Attribute']):
+    def set_attributes(self, attributes: list['Attribute']) -> None:
         self.attributes = attributes
 
     def get_relations(self) -> list['Relation']:
@@ -213,31 +213,31 @@ class Range:
 
 
 class Domain:
-    def __init__(self, range_list: Optional[list['Range']], element_list: Optional[list]):
-        self.range_list = [] if range_list is None else range_list
-        self.element_list = [] if element_list is None else element_list
+    def __init__(self, ranges: Optional[list['Range']], elements: Optional[list['object']]):
+        self.range_list = [] if ranges is None else ranges
+        self.element_list = [] if elements is None else elements
 
     def get_range_list(self) -> list['Range']:
         return self.range_list
 
-    def get_element_list(self) -> list:
+    def get_element_list(self) -> list['object']:
         return self.element_list
 
-    def add_range(self, new_range: Range):
+    def add_range(self, new_range: Range) -> None:
         self.range_list.append(new_range)
 
-    def add_element(self, element):
+    def add_element(self, element: object) -> None:
         self.element_list.append(element)
 
-    def set_range_list(self, range_list: list['Range']):
+    def set_range_list(self, range_list: list['Range']) -> None:
         self.range_list = range_list
 
-    def set_element_list(self, element_list: list):
+    def set_element_list(self, element_list: list['object']) -> None:
         self.element_list = element_list
 
 
 class Attribute:
-    def __init__(self, name: str, domain: Domain, default_value, null_value):
+    def __init__(self, name: str, domain: Domain, default_value: object, null_value: object):
         self.name = name
         self.domain = domain
         self.default_value = default_value
@@ -249,20 +249,20 @@ class Attribute:
     def get_domain(self) -> Domain:
         return self.domain
 
-    def get_default_value(self):
+    def get_default_value(self) -> object:
         return self.default_value
 
-    def get_null_value(self):
+    def get_null_value(self) -> object:
         return self.null_value
 
-    def set_name(self, name: str):
+    def set_name(self, name: str) -> None:
         self.name = name
 
-    def set_domain(self, domain: Domain):
+    def set_domain(self, domain: Domain) -> None:
         self.domain = domain
 
-    def set_default_value(self, default_value):
+    def set_default_value(self, default_value: object) -> None:
         self.default_value = default_value
 
-    def set_null_value(self, null_value):
+    def set_null_value(self, null_value: object) -> None:
         self.null_value = null_value

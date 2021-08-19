@@ -1,6 +1,7 @@
 import os
 from typing import Any, Optional
 
+from uvlparser import get_tree
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST
 from famapy.metamodels.fm_metamodel.models.feature_model import (
@@ -9,7 +10,6 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
     FeatureModel,
     Relation,
 )
-from uvlparser import get_tree
 
 
 class UVLTransformation(TextToModel):
