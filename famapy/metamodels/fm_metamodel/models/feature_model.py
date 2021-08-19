@@ -70,12 +70,16 @@ class Feature:
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
+        self.attributes = []
 
     def is_empty(self) -> bool:
         return self.parent is None and self.relations == []
 
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
+
+    def set_attributes(self, attributes: list['Attribute']):
+        self.attributes = attributes
 
     def get_relations(self) -> list['Relation']:
         return self.relations
@@ -85,6 +89,9 @@ class Feature:
 
     def _get_parent(self) -> Optional['Feature']:
         return next((r.parent for r in self.get_relations() if not r.children), None)
+
+    def get_attributes(self) -> list['Attribute']:
+        return self.attributes
 
     def is_root(self) -> bool:
         return self.parent is None
@@ -197,3 +204,65 @@ class FeatureModel(VariabilityModel):
             self.get_relations() == other.get_relations() and
             self.ctcs == other.ctcs
         )
+
+
+class Range:
+    def __init__(self, min_value: int, max_value: int):
+        self.min_value = min_value
+        self.max_value = max_value
+
+
+class Domain:
+    def __init__(self, range_list: Optional[list['Range']], element_list: Optional[list]):
+        self.range_list = [] if range_list is None else range_list
+        self.element_list = [] if element_list is None else element_list
+
+    def get_range_list(self) -> list['Range']:
+        return self.range_list
+
+    def get_element_list(self) -> list:
+        return self.element_list
+
+    def add_range(self, new_range: Range):
+        self.range_list.append(new_range)
+
+    def add_element(self, element):
+        self.element_list.append(element)
+
+    def set_range_list(self, range_list: list['Range']):
+        self.range_list = range_list
+
+    def set_element_list(self, element_list: list):
+        self.element_list = element_list
+
+
+class Attribute:
+    def __init__(self, name: str, domain: Domain, default_value, null_value):
+        self.name = name
+        self.domain = domain
+        self.default_value = default_value
+        self.null_value = null_value
+
+    def get_name(self) -> str:
+        return self.name
+
+    def get_domain(self) -> Domain:
+        return self.domain
+
+    def get_default_value(self):
+        return self.default_value
+
+    def get_null_value(self):
+        return self.null_value
+
+    def set_name(self, name: str):
+        self.name = name
+
+    def set_domain(self, domain: Domain):
+        self.domain = domain
+
+    def set_default_value(self, default_value):
+        self.default_value = default_value
+
+    def set_null_value(self, null_value):
+        self.null_value = null_value
