@@ -174,9 +174,13 @@ class FeatureModel(VariabilityModel):
         return self.ctcs
 
     def get_feature_by_name(self, feature_name: str) -> 'Feature':
-        if feature_name not in self.features_by_name.keys():
-            raise Exception(f'Not feature with name: {feature_name}')
-        return self.features_by_name[feature_name]
+        result = None
+        features = self.get_features()
+        for feature in features:
+            if feature.name == feature_name:
+                result = feature
+                break
+        return result
 
     def __str__(self) -> str:
         if self.root.is_empty():
