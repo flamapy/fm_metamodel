@@ -183,7 +183,7 @@ class FeatureModel(VariabilityModel):
         return result
 
     def __str__(self) -> str:
-        if self.root.is_empty():
+        if self.root is None:
             return '(empty feature model)'
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
