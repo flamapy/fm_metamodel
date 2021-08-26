@@ -193,6 +193,9 @@ class FeatureModel(VariabilityModel):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
             res += f'{ctc.ast}' + '\r\n'
+        for feature in self.get_features():
+            for attribute in feature.get_attributes():
+                res += f'{attribute}' + '\r\n'
         return res
 
     def __hash__(self) -> int:
@@ -215,8 +218,12 @@ class FeatureModel(VariabilityModel):
 
 class Range:
     def __init__(self, min_value: int, max_value: int):
-        self.min_value = min_value
-        self.max_value = max_value
+        self.min_value: int = min_value
+        self.max_value: int = max_value
+
+    def __str__(self) -> str:
+        return "[ " + str(self.min_value) + " to " + \
+            str(self.max_value) + "]"
 
 
 class Domain:
@@ -242,16 +249,35 @@ class Domain:
     def set_element_list(self, element_list: list['Any']) -> None:
         self.element_list = element_list
 
+    def __str__(self) -> str:
+
+        result = ""
+        element_list = self.element_list
+        if len(element_list) > 0:
+            result = str(element_list)
+
+        range_list = self.range_list
+        if len(range_list) > 0:
+            result = result + "Integer"
+            for rng in range_list:
+                result = result + str(rng)
+
+        return result
+
 
 class Attribute:
-    def __init__(self, name: str, domain: Domain, default_value: Any, null_value: Any):
-        self.name = name
-        self.domain = domain
-        self.default_value = default_value
-        self.null_value = null_value
+    def __init__(self, name: str, parent: Feature, domain: Domain, default_value: Any, null_value: Any):
+        self.name: 'str' = name
+        self.parent: 'Feature' = parent
+        self.domain: 'Domain' = domain
+        self.default_value: 'Any' = default_value
+        self.null_value: 'Any' = null_value
 
     def get_name(self) -> str:
         return self.name
+
+    def get_parent(self) -> str:
+        return self.parent
 
     def get_domain(self) -> Domain:
         return self.domain
@@ -265,6 +291,9 @@ class Attribute:
     def set_name(self, name: str) -> None:
         self.name = name
 
+    def set_parent(self, parent: Feature) -> None:
+        self.parent = parent
+
     def set_domain(self, domain: Domain) -> None:
         self.domain = domain
 
@@ -273,3 +302,11 @@ class Attribute:
 
     def set_null_value(self, null_value: Any) -> None:
         self.null_value = null_value
+
+    def __str__(self) -> str:
+
+        result = self.parent.name + "." + self.name + ": " + \
+            str(self.domain) + "," + str(self.default_value) + \
+            "," + str(self.null_value)
+
+        return result
