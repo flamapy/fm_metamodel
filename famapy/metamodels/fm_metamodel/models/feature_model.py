@@ -176,7 +176,7 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
-    def get_feature_by_name(self, feature_name: str) -> 'Feature':
+    def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
         result = None
         features = self.get_features()
         for feature in features:
@@ -186,8 +186,6 @@ class FeatureModel(VariabilityModel):
         return result
 
     def __str__(self) -> str:
-        if self.root is None:
-            return '(empty feature model)'
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
             res += f'relation {i}: {relation}\r\n'
@@ -266,9 +264,9 @@ class Domain:
 
 
 class Attribute:
-    def __init__(self, name: str, parent: Feature, domain: Domain, default_value: Any, null_value: Any):
+    def __init__(self, name: str, domain: Domain, default_value: Any, null_value: Any):
         self.name: 'str' = name
-        self.parent: 'Feature' = parent
+        self.parent: Optional['Feature'] = None
         self.domain: 'Domain' = domain
         self.default_value: 'Any' = default_value
         self.null_value: 'Any' = null_value
@@ -276,7 +274,7 @@ class Attribute:
     def get_name(self) -> str:
         return self.name
 
-    def get_parent(self) -> str:
+    def get_parent(self) -> Optional['Feature']:
         return self.parent
 
     def get_domain(self) -> Domain:
