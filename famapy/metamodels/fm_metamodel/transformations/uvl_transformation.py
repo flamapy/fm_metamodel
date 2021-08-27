@@ -1,6 +1,7 @@
 import os
 from typing import Any, Optional
 
+from uvlparser import get_tree
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST
 from famapy.metamodels.fm_metamodel.models.feature_model import (
@@ -9,7 +10,6 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
     FeatureModel,
     Relation,
 )
-from uvlparser import get_tree
 
 
 class UVLTransformation(TextToModel):
@@ -62,9 +62,8 @@ class UVLTransformation(TextToModel):
                 feature = Feature(feature_text, [])
                 # self.model.features.append(feature)
                 children.append(feature)
-            self.add_relation(node_feature, children, relation_text)
-            for feature_node in features:
                 self.read_children(feature_node, feature)
+            self.add_relation(node_feature, children, relation_text)
 
     @classmethod
     def add_relation(cls, parent: Feature, children: Feature, relation_text: str) -> None:

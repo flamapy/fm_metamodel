@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from famapy.core.models import AST
 from famapy.core.models import VariabilityModel
@@ -48,7 +48,7 @@ class Relation:
     def __hash__(self) -> int:
         return hash((self.parent, frozenset(self.children), self.card_min, self.card_max))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (isinstance(other, Relation)
                 and self.parent == other.parent
                 and self.children == other.children
@@ -70,12 +70,19 @@ class Feature:
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
+        self.attributes = list['Attribute']([])
 
     def is_empty(self) -> bool:
         return self.parent is None and self.relations == []
 
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
+
+    def add_attribute(self, attribute: 'Attribute') -> None:
+        self.attributes.append(attribute)
+
+    def set_attributes(self, attributes: list['Attribute']) -> None:
+        self.attributes = attributes
 
     def get_relations(self) -> list['Relation']:
         return self.relations
@@ -85,6 +92,9 @@ class Feature:
 
     def _get_parent(self) -> Optional['Feature']:
         return next((r.parent for r in self.get_relations() if not r.children), None)
+
+    def get_attributes(self) -> list['Attribute']:
+        return self.attributes
 
     def is_root(self) -> bool:
         return self.parent is None
@@ -114,7 +124,7 @@ class Feature:
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Feature) and self.name == other.name
 
 
@@ -126,7 +136,7 @@ class Constraint:
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Constraint) and self.name == other.name
 
 
@@ -166,19 +176,24 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
-    def get_feature_by_name(self, feature_name: str) -> 'Feature':
-        if feature_name not in self.features_by_name.keys():
-            raise Exception(f'Not feature with name: {feature_name}')
-        return self.features_by_name[feature_name]
+    def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
+        result = None
+        features = self.get_features()
+        for feature in features:
+            if feature.name == feature_name:
+                result = feature
+                break
+        return result
 
     def __str__(self) -> str:
-        if self.root.is_empty():
-            return '(empty feature model)'
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
             res += f'{ctc.ast}' + '\r\n'
+        for feature in self.get_features():
+            for attribute in feature.get_attributes():
+                res += f'{attribute}' + '\r\n'
         return res
 
     def __hash__(self) -> int:
@@ -189,7 +204,7 @@ class FeatureModel(VariabilityModel):
             frozenset(self.ctcs)
         ))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (
             isinstance(other, FeatureModel) and
             self.root == other.root and
@@ -197,3 +212,99 @@ class FeatureModel(VariabilityModel):
             self.get_relations() == other.get_relations() and
             self.ctcs == other.ctcs
         )
+
+
+class Range:
+    def __init__(self, min_value: int, max_value: int):
+        self.min_value: int = min_value
+        self.max_value: int = max_value
+
+    def __str__(self) -> str:
+        return "[ " + str(self.min_value) + " to " + \
+            str(self.max_value) + "]"
+
+
+class Domain:
+    def __init__(self, ranges: Optional[list['Range']], elements: Optional[list['Any']]):
+        self.range_list = [] if ranges is None else ranges
+        self.element_list = [] if elements is None else elements
+
+    def get_range_list(self) -> list['Range']:
+        return self.range_list
+
+    def get_element_list(self) -> list['Any']:
+        return self.element_list
+
+    def add_range(self, new_range: Range) -> None:
+        self.range_list.append(new_range)
+
+    def add_element(self, element: Any) -> None:
+        self.element_list.append(element)
+
+    def set_range_list(self, range_list: list['Range']) -> None:
+        self.range_list = range_list
+
+    def set_element_list(self, element_list: list['Any']) -> None:
+        self.element_list = element_list
+
+    def __str__(self) -> str:
+
+        result = ""
+        element_list = self.element_list
+        if len(element_list) > 0:
+            result = str(element_list)
+
+        range_list = self.range_list
+        if len(range_list) > 0:
+            result = result + "Integer"
+            for rng in range_list:
+                result = result + str(rng)
+
+        return result
+
+
+class Attribute:
+    def __init__(self, name: str, domain: Domain, default_value: Any, null_value: Any):
+        self.name: 'str' = name
+        self.parent: Optional['Feature'] = None
+        self.domain: 'Domain' = domain
+        self.default_value: 'Any' = default_value
+        self.null_value: 'Any' = null_value
+
+    def get_name(self) -> str:
+        return self.name
+
+    def get_parent(self) -> Optional['Feature']:
+        return self.parent
+
+    def get_domain(self) -> Domain:
+        return self.domain
+
+    def get_default_value(self) -> Any:
+        return self.default_value
+
+    def get_null_value(self) -> Any:
+        return self.null_value
+
+    def set_name(self, name: str) -> None:
+        self.name = name
+
+    def set_parent(self, parent: Feature) -> None:
+        self.parent = parent
+
+    def set_domain(self, domain: Domain) -> None:
+        self.domain = domain
+
+    def set_default_value(self, default_value: Any) -> None:
+        self.default_value = default_value
+
+    def set_null_value(self, null_value: Any) -> None:
+        self.null_value = null_value
+
+    def __str__(self) -> str:
+
+        result = self.parent.name + "." + self.name + ": " + \
+            str(self.domain) + "," + str(self.default_value) + \
+            "," + str(self.null_value)
+
+        return result
