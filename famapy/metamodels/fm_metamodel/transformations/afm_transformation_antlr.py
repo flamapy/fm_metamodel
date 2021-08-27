@@ -5,7 +5,7 @@ import os
 from typing import Any, Optional
 
 from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST
+from famapy.core.models.ast import AST, Node
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
     Domain,
@@ -36,6 +36,7 @@ class AFM_ANTLR_Transformation(TextToModel):
         self.set_parse_tree()
         self.set_relations()
         self.set_attributes()
+        self.set_constraints()
 
     def set_relations(self) -> None:
         root_feature_node = self.parse_tree
@@ -128,6 +129,89 @@ class AFM_ANTLR_Transformation(TextToModel):
         attribute = Attribute(attribute_name, attribute_feature, domain,
                               default_value, null_value)
         attribute_feature.add_attribute(attribute)
+
+    def set_constraints(self) -> None:
+        constraints_block = self.parse_tree.constraints_block()
+
+        for constraint_spec in constraints_block.constraint_spec():
+
+            simple_spec = constraint_spec.simple_spec()
+            if simple_spec is not None:
+                prefix = ""
+                self.read_expression(simple_spec.expression(), prefix)
+
+            brackets_spec = constraint_spec.brackets_spec()
+            if brackets_spec is not None:
+                prefix = brackets_spec.WORD().getText() + "."
+                for spec in brackets_spec.simple_spec():
+                    self.read_expression(spec.expression(), prefix)
+
+    def read_expression(self, expression: AFMParser.ExpressionContext, prefix: str) -> None:
+
+        root_node = self.build_ast_node(expression, prefix)
+        ast = AST(root_node)
+        cst = Constraint(expression.getText(), ast)
+        self.model.ctcs.append(cst)
+
+    def build_ast_node(self, expression: AFMParser.ExpressionContext, prefix: str) -> Node:
+
+        if isinstance(expression, AFMParser.AtomContext):
+            if expression.variable() is not None:
+                var_name = prefix + expression.variable().getText()
+            if expression.number() is not None:
+                var_name = expression.number().getText()
+
+            return Node(var_name)
+
+        if isinstance(expression, AFMParser.LogicalExpContext):
+            result = Node(expression.logical_operator().getText())
+            result.left = self.build_ast_node(
+                expression.expression()[0], prefix)
+            result.right = self.build_ast_node(
+                expression.expression()[1], prefix)
+            return result
+
+        if isinstance(expression, AFMParser.OrExpContext):
+            result = Node("OR")
+            result.left = self.build_ast_node(
+                expression.expression()[0], prefix)
+            result.right = self.build_ast_node(
+                expression.expression()[1], prefix)
+            return result
+
+        if isinstance(expression, AFMParser.AndExpContext):
+            result = Node("AND")
+            result.left = self.build_ast_node(
+                expression.expression()[0], prefix)
+            result.right = self.build_ast_node(
+                expression.expression()[1], prefix)
+            return result
+
+        if isinstance(expression, AFMParser.RelationalExpContext):
+            result = Node(expression.relational_operator().getText())
+            result.left = self.build_ast_node(
+                expression.expression()[0], prefix)
+            result.right = self.build_ast_node(
+                expression.expression()[1], prefix)
+            return result
+
+        if isinstance(expression, AFMParser.ArithmeticExpContext):
+            result = Node(expression.arithmetic_operator().getText())
+            result.left = self.build_ast_node(
+                expression.expression()[0], prefix)
+            result.right = self.build_ast_node(
+                expression.expression()[1], prefix)
+            return result
+
+        if isinstance(expression, AFMParser.NotExpContext):
+            result = Node("NOT")
+            result.right = self.build_ast_node(
+                expression.expression(), prefix)
+            return result
+
+        if isinstance(expression, AFMParser.ParenthesisExpContext):
+            result = self.build_ast_node(expression.expression(), prefix)
+            return result
 
 
 afmtransf = AFM_ANTLR_Transformation("test.afm")
