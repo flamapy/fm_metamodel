@@ -38,7 +38,8 @@ class UVLWriter(ModelToText):
                 result = self.read_features(feature_node, result, tab_count)
         return result
 
-    def read_attributes(self, feature: Feature) -> str:
+    @classmethod
+    def read_attributes(cls, feature: Feature) -> str:
         attributes = feature.get_attributes()
         result = ""
 
