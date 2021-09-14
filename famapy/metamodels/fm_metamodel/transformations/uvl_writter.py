@@ -28,13 +28,33 @@ class UVLWriter(ModelToText):
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
-        result = result + "\n" + tab_count * "\t" + feature.name
+        result = result + "\n" + tab_count * "\t" + \
+            feature.name + self.read_attributes(feature)
         tab_count = tab_count + 1
         for relation in feature.relations:
             relation_name = self.serialize_relation(relation)
             result = result + "\n" + tab_count * "\t" + relation_name
             for feature_node in relation.children:
                 result = self.read_features(feature_node, result, tab_count)
+        return result
+
+    @classmethod
+    def read_attributes(cls, feature: Feature) -> str:
+        attributes = feature.get_attributes()
+        result = ""
+
+        if len(attributes) > 0:
+            result = "{"
+            first = True
+            for attribute in attributes:
+                if not first:
+                    result += ", "
+                result += attribute.name
+                if attribute.default_value is not None:
+                    result += ' "' + attribute.default_value + '"'
+                first = False
+            result += "}"
+
         return result
 
     @staticmethod

@@ -1,7 +1,7 @@
 import os
 from typing import Any, Optional
 
-from uvlparser import get_tree
+from uvlparser import get_tree, UVLParser
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST
 from famapy.metamodels.fm_metamodel.models.feature_model import (
@@ -9,6 +9,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
     Feature,
     FeatureModel,
     Relation,
+    Attribute,
 )
 
 
@@ -33,6 +34,7 @@ class UVLTransformation(TextToModel):
         parse_tree_root_feature = self.find_root_feature()
         root_feature_text = self.get_feature_text(parse_tree_root_feature)
         root_feature = Feature(root_feature_text, [])
+        self.add_attributes(parse_tree_root_feature, root_feature)
         # Feature model created with root feature
         self.model = FeatureModel(root_feature, [])
         # Recursively read the ParseTree root feature subnode to find all features and relations
@@ -60,6 +62,7 @@ class UVLTransformation(TextToModel):
             for feature_node in features:
                 feature_text = self.get_feature_text(feature_node)
                 feature = Feature(feature_text, [])
+                self.add_attributes(feature_node, feature)
                 # self.model.features.append(feature)
                 children.append(feature)
                 self.read_children(feature_node, feature)
@@ -83,6 +86,24 @@ class UVLTransformation(TextToModel):
             parent.add_relation(relation)
         else:
             cls.__add_relation_min_max(parent, children, relation_text)
+
+    @classmethod
+    def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
+
+        attributes_node = feature_node.feature_spec().attributes()
+
+        attribute_node = []
+        if attributes_node is not None:
+            attribute_node = attributes_node.attribute()
+
+        for att_node in attribute_node:
+            name = att_node.key().getText()
+            value = None
+            if att_node.value() is not None:
+                value = att_node.value().getText()
+            attribute = Attribute(name, None, value, None)
+            attribute.set_parent(feature)
+            feature.add_attribute(attribute)
 
     @classmethod
     def __add_relation_min_max(
@@ -148,3 +169,8 @@ class UVLTransformation(TextToModel):
             )
             constraints.append(constraint)
         return constraints
+
+
+trs = UVLTransformation("test.uvl")
+trs.transform()
+print(trs.model)
