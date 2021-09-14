@@ -4,7 +4,6 @@ from typing import Any, Optional
 from uvlparser import get_tree, UVLParser
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST
-import uvlparser
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
     Feature,
@@ -87,7 +86,8 @@ class UVLTransformation(TextToModel):
         else:
             cls.__add_relation_min_max(parent, children, relation_text)
 
-    def add_attributes(self, feature_node: UVLParser.FeaturesContext, feature: Feature):
+    @classmethod
+    def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
 
         attributes_node = feature_node.feature_spec().attributes()
 
