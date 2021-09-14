@@ -34,6 +34,7 @@ class UVLTransformation(TextToModel):
         parse_tree_root_feature = self.find_root_feature()
         root_feature_text = self.get_feature_text(parse_tree_root_feature)
         root_feature = Feature(root_feature_text, [])
+        self.add_attributes(parse_tree_root_feature, root_feature)
         # Feature model created with root feature
         self.model = FeatureModel(root_feature, [])
         # Recursively read the ParseTree root feature subnode to find all features and relations
