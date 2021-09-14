@@ -303,8 +303,12 @@ class Attribute:
 
     def __str__(self) -> str:
 
-        result = self.parent.name + "." + self.name + ": " + \
-            str(self.domain) + "," + str(self.default_value) + \
-            "," + str(self.null_value)
+        result = "[" + self.parent.name + "." + self.name + "]"
+        if self.domain is not None:
+            result = result + "Domain: " + str(self.domain)
+        if self.default_value is not None:
+            result = result + "Default value: " + str(self.default_value)
+        if self.null_value is not None:
+            result = result + "Null value: " + str(self.null_value)
 
         return result
