@@ -5,7 +5,6 @@ from typing import Optional
 from afmparser import AFMParser
 from afmparser import get_tree
 
-
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, Node
 from famapy.metamodels.fm_metamodel.models.feature_model import (
@@ -19,7 +18,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class AfmAntlrTransformation(TextToModel):
+class AFMTransformation(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:
@@ -187,8 +186,3 @@ class AfmAntlrTransformation(TextToModel):
             result = self.build_ast_node(expression.expression(), prefix)
 
         return result
-
-
-afmtransf = AfmAntlrTransformation("test.afm")
-afmtransf.transform()
-print(afmtransf.model)
