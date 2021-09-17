@@ -159,7 +159,9 @@ class UVLTransformation(TextToModel):
                 '&': 'and',
                 '|': 'or',
                 '=>': 'implies',
-                '<=>': 'equivalence'
+                '<=>': 'equivalence',
+                'requires': 'requires',
+                'excludes': 'excludes'
             }
             operator_name = operator_dict.get(operator)
             constraint = Constraint(
