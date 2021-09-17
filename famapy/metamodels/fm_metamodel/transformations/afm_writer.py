@@ -1,16 +1,9 @@
-import os
-
-from typing import Optional
 from famapy.core.transformations import ModelToText
 
-from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST, Node
+from famapy.core.models.ast import Node
 from famapy.metamodels.fm_metamodel.models.feature_model import (
-    Constraint,
-    Domain,
     Feature,
     FeatureModel,
-    Range,
     Relation,
     Attribute
 )
@@ -60,7 +53,8 @@ class AFMWriter(ModelToText):
 
         return result
 
-    def read_relation(self, relation: Relation) -> str:
+    @classmethod
+    def read_relation(cls, relation: Relation) -> str:
         children = relation.children
         result = ""
 
@@ -93,16 +87,17 @@ class AFMWriter(ModelToText):
 
         return result + "\n"
 
-    def read_attribute(self, attribute: Attribute) -> str:
+    @classmethod
+    def read_attribute(cls, attribute: Attribute) -> str:
         result = attribute.name + ": "
 
         domain = attribute.domain
 
         if len(domain.get_range_list()) > 0:
             result += "Integer "
-            for range in domain.get_range_list():
-                result += "[" + str(range.min_value) + \
-                    " to " + str(range.max_value) + "]"
+            for _range in domain.get_range_list():
+                result += "[" + str(_range.min_value) + \
+                    " to " + str(_range.max_value) + "]"
 
         if len(domain.get_element_list()) > 0:
             result += "[" + ",".join(domain.get_element_list()) + "]"
