@@ -51,7 +51,7 @@ class AFMWriter(ModelToText):
 
         children = []
         for relation in relations:
-            result += self.read_relation(relation) + " "
+            result += " " + self.read_relation(relation)
             children += relation.children
         result += ";\n"
         for child in children:
@@ -126,14 +126,18 @@ class AFMWriter(ModelToText):
 
     def recursive_constraint_read(self, node: Node) -> str:
 
+        data = node.data
+        if data in Node.operations:
+            data = data.upper()
+
         if node.left and node.right:
             result = self.recursive_constraint_read(
-                node.left) + node.data + self.recursive_constraint_read(node.right)
+                node.left) + data + self.recursive_constraint_read(node.right)
         elif not node.left and node.right:
-            result = node.data + self.recursive_constraint_read(node.right)
+            result = data + self.recursive_constraint_read(node.right)
         elif node.left and not node.right:
             result = self.recursive_constraint_read(node.left) + node.data
         else:
-            result = " " + node.data + " "
+            result = " " + data + " "
 
         return result
