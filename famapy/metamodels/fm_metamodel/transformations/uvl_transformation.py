@@ -79,10 +79,10 @@ class UVLTransformation(TextToModel):
                 relation = Relation(parent, [child], 0, 1)
                 parent.add_relation(relation)
         elif relation_text == 'or':
-            relation = Relation(parent, children, 1, 1)
+            relation = Relation(parent, children, 1, len(children))
             parent.add_relation(relation)
         elif relation_text == 'alternative':
-            relation = Relation(parent, children, 1, len(children))
+            relation = Relation(parent, children, 1, 1)
             parent.add_relation(relation)
         else:
             cls.__add_relation_min_max(parent, children, relation_text)
