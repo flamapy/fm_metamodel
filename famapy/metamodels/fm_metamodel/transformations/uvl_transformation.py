@@ -169,8 +169,3 @@ class UVLTransformation(TextToModel):
             )
             constraints.append(constraint)
         return constraints
-
-
-trs = UVLTransformation("test.uvl")
-trs.transform()
-print(trs.model)
