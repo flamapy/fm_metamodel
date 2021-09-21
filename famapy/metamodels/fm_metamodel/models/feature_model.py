@@ -56,10 +56,7 @@ class Relation:
                 and self.card_max == other.card_max)
 
     def __lt__(self, other: Any) -> bool:
-        if (isinstance(other, Relation)):
-            return str(self) < str(other)
-        else:
-            return None
+        return str(self) < str(other)
 
 
 class Feature:
@@ -134,10 +131,7 @@ class Feature:
         return isinstance(other, Feature) and self.name == other.name
 
     def __lt__(self, other: Any) -> bool:
-        if (isinstance(other, Feature)):
-            return str(self) < str(other)
-        else:
-            return None
+        return str(self) < str(other)
 
 
 class Constraint:
@@ -155,10 +149,7 @@ class Constraint:
         return isinstance(other, Constraint) and str(self.ast).lower() == str(other.ast).lower()
 
     def __lt__(self, other: Any) -> bool:
-        if (isinstance(other, Constraint)):
-            return str(self) < str(other)
-        else:
-            return None
+        return str(self) < str(other)
 
 
 class FeatureModel(VariabilityModel):
