@@ -71,8 +71,8 @@ class AFMTransformation(TextToModel):
 
             children = []
             cardinality = cardinal_spec.cardinality()
-            card_min = cardinality.INT()[0]
-            card_max = cardinality.INT()[1]
+            card_min = int(str(cardinality.INT()[0]))
+            card_max = int(str(cardinality.INT()[1]))
 
             for feature_node in cardinal_spec.obligatory_spec():
                 child = Feature(feature_node.WORD().getText(), [])
