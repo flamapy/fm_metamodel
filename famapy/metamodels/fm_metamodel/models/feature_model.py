@@ -55,6 +55,12 @@ class Relation:
                 and self.card_min == other.card_min
                 and self.card_max == other.card_max)
 
+    def __lt__(self, other: Any) -> bool:
+        if (isinstance(other, Relation)):
+            return str(self) < str(other)
+        else:
+            return None
+
 
 class Feature:
 
@@ -127,17 +133,32 @@ class Feature:
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Feature) and self.name == other.name
 
+    def __lt__(self, other: Any) -> bool:
+        if (isinstance(other, Feature)):
+            return str(self) < str(other)
+        else:
+            return None
+
 
 class Constraint:
     def __init__(self, name: str, ast: AST):
         self.name = name
         self.ast = ast
 
+    def __str__(self) -> str:
+        return str(self.ast)
+
     def __hash__(self) -> int:
         return hash(self.name)
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Constraint) and self.name == other.name
+        return isinstance(other, Constraint) and str(self.ast).lower() == str(other.ast).lower()
+
+    def __lt__(self, other: Any) -> bool:
+        if (isinstance(other, Constraint)):
+            return str(self) < str(other)
+        else:
+            return None
 
 
 class FeatureModel(VariabilityModel):
@@ -208,9 +229,9 @@ class FeatureModel(VariabilityModel):
         return (
             isinstance(other, FeatureModel) and
             self.root == other.root and
-            self.get_features() == other.get_features() and
-            self.get_relations() == other.get_relations() and
-            self.ctcs == other.ctcs
+            self.get_features().sort() == other.get_features().sort() and
+            self.get_relations().sort() == other.get_relations().sort() and
+            self.get_constraints().sort() == other.get_constraints().sort()
         )
 
 
