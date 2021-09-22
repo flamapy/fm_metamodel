@@ -1,0 +1,11 @@
+features
+	A
+		mandatory
+			B
+		mandatory
+			C
+				or
+					D
+					E
+constraints
+	D excludes B

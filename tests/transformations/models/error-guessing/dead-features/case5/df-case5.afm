@@ -1,0 +1,7 @@
+%Relationships
+A :  B C;
+
+%Attributes
+
+%Constraints
+B EXCLUDES C;

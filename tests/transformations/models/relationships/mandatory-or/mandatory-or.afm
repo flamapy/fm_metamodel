@@ -1,0 +1,8 @@
+%Relationships
+A :  B [1,2]{C D};
+B :  [1,2]{E F};
+D :  G;
+
+%Attributes
+
+%Constraints
