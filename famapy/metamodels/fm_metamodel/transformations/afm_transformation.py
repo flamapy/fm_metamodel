@@ -66,32 +66,33 @@ class AFMTransformation(TextToModel):
         parent_feature = self.model.get_feature_by_name(
             feature_spec.init_spec().WORD().getText())
 
-        cardinal_spec = feature_spec.cardinal_spec()
-        if cardinal_spec is not None:
+        for non_cardinal_spec in feature_spec.non_cardinal_spec():
+            child_node = non_cardinal_spec.getChild(0)
+
+            if isinstance(child_node, AFMParser.Obligatory_specContext):
+                feature = Feature(child_node.WORD().getText(), [])
+                relation = Relation(parent_feature, [feature], 1, 1)
+                parent_feature.add_relation(relation)
+
+            if isinstance(child_node, AFMParser.Optional_specContext):
+                feature = Feature(child_node.WORD().getText(), [])
+                relation = Relation(parent_feature, [feature], 0, 1)
+                parent_feature.add_relation(relation)
+
+        for cardinal_spec in feature_spec.cardinal_spec():
+            cardinality_node = cardinal_spec.cardinality()
+
+            card_min = int(cardinality_node.INT()[0].getText())
+            card_max = int(cardinality_node.INT()[1].getText())
 
             children = []
-            cardinality = cardinal_spec.cardinality()
-            card_min = int(str(cardinality.INT()[0]))
-            card_max = int(str(cardinality.INT()[1]))
 
             for feature_node in cardinal_spec.obligatory_spec():
-                child = Feature(feature_node.WORD().getText(), [])
-                children.append(child)
+                feature = Feature(feature_node.WORD().getText(), [])
+                children.append(feature)
+
             relation = Relation(parent_feature, children, card_min, card_max)
             parent_feature.add_relation(relation)
-
-        non_cardinal_spec = feature_spec.non_cardinal_spec()
-        if non_cardinal_spec is not None:
-
-            for obligatory in non_cardinal_spec.obligatory_spec():
-                child = Feature(obligatory.WORD().getText())
-                relation = Relation(parent_feature, [child], 1, 1)
-                parent_feature.add_relation(relation)
-
-            for optional in non_cardinal_spec.optional_spec():
-                child = Feature(optional.WORD().getText())
-                relation = Relation(parent_feature, [child], 0, 1)
-                parent_feature.add_relation(relation)
 
     def set_attributes(self) -> None:
         attributes_block = self.parse_tree.attributes_block()
