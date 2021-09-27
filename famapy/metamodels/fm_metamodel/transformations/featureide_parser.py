@@ -52,14 +52,7 @@ class FeatureIDEParser(TextToModel):
         root = tree.getroot()
         for child in root:
             if child.tag == FeatureIDEParser.TAG_STRUCT:
-                root = child[0]
-                is_abstract = False
-                if (FeatureIDEParser.ATTRIB_ABSTRACT in root.attrib
-                        and root.attrib[FeatureIDEParser.ATTRIB_ABSTRACT]):
-                    is_abstract = True
-                root_feature = Feature(name=root.attrib[FeatureIDEParser.ATTRIB_NAME],
-                                       relations=[], parent=None, is_abstract=is_abstract)
-                self._read_features(root, root_feature)
+                (root_feature, _) = self._read_features(child, None)
                 model = FeatureModel(root_feature, [])
             elif child.tag == FeatureIDEParser.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
@@ -70,15 +63,14 @@ class FeatureIDEParser(TextToModel):
         self,
         root_tree: Element,
         parent: Feature
-    ) -> tuple[list[Feature], list[Feature], list[Relation]]:
-        features = []
+    ) -> tuple[Feature, list[Feature]]:
         children = []
-        relations = []
+        feature = None
         for child in root_tree:
             if not child.tag == FeatureIDEParser.TAG_GRAPHICS:
                 is_abstract = (
                     FeatureIDEParser.ATTRIB_ABSTRACT in child.attrib and
-                    child.attrib[FeatureIDEParser.ATTRIB_ABSTRACT]
+                    child.attrib[FeatureIDEParser.ATTRIB_ABSTRACT] == "true"
                 )
 
                 feature = Feature(
@@ -88,42 +80,28 @@ class FeatureIDEParser(TextToModel):
                     is_abstract=is_abstract
                 )
 
-                features.append(feature)
                 children.append(feature)
                 if root_tree.tag == FeatureIDEParser.TAG_AND:
                     if FeatureIDEParser.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
                         rel = Relation(parent=parent, children=[feature], card_min=1, card_max=1)
                         parent.add_relation(rel)
-                        relations.append(rel)
                     else:  # Optional feature
                         rel = Relation(parent=parent, children=[feature], card_min=0, card_max=1)
                         parent.add_relation(rel)
-                        relations.append(rel)
 
                 if child.tag == FeatureIDEParser.TAG_ALT:
-                    (alt_children, direct_children,
-                     children_relations) = self._read_features(child, feature)
+                    (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children,
                                    card_min=1, card_max=1)
                     feature.add_relation(rel)
-                    features.extend(alt_children)
-                    relations.append(rel)
-                    relations.extend(children_relations)
                 elif child.tag == FeatureIDEParser.TAG_OR:
-                    (or_children, direct_children,
-                     children_relations) = self._read_features(child, feature)
+                    (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children, card_min=1,
                                    card_max=len(direct_children))
                     feature.add_relation(rel)
-                    features.extend(or_children)
-                    relations.append(rel)
-                    relations.extend(children_relations)
                 elif child.tag == FeatureIDEParser.TAG_AND:
-                    (and_children, direct_children,
-                     children_relations) = self._read_features(child, feature)
-                    features.extend(and_children)
-                    relations.extend(children_relations)
-        return (features, children, relations)
+                    (_, direct_children) = self._read_features(child, feature)
+        return (feature, children)
 
     def _read_constraints(self, ctcs_root: Element) -> list[Constraint]:
         number = 1
