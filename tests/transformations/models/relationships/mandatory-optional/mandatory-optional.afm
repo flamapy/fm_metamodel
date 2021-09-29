@@ -1,0 +1,8 @@
+%Relationships
+A :  B [C];
+B :  [D];
+C :  E;
+
+%Attributes
+
+%Constraints

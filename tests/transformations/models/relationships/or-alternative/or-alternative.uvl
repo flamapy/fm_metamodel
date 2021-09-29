@@ -1,0 +1,15 @@
+features
+	A
+		alternative
+			B
+				or
+					F
+					G
+			C
+		or
+			D
+			E
+				alternative
+					H
+					I
+constraints

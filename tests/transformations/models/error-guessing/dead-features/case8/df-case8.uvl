@@ -1,0 +1,9 @@
+features
+	A
+		optional
+			B
+		optional
+			C
+constraints
+	B excludes C
+	B requires C

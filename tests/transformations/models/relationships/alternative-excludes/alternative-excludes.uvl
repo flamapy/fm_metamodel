@@ -1,0 +1,7 @@
+features
+	A
+		alternative
+			B
+			C
+constraints
+	B excludes C
