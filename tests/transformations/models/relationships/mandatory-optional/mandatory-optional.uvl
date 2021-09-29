@@ -1,0 +1,11 @@
+features
+	A
+		mandatory
+			B
+				optional
+					D
+		optional
+			C
+				mandatory
+					E
+constraints

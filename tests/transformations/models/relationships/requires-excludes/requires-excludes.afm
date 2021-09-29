@@ -1,0 +1,8 @@
+%Relationships
+A :  [B] [C];
+
+%Attributes
+
+%Constraints
+B REQUIRES C;
+B EXCLUDES C;

@@ -1,0 +1,7 @@
+features
+	A
+		or
+			B
+			C
+constraints
+	B requires C

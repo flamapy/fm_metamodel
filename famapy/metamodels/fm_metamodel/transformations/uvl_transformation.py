@@ -79,10 +79,10 @@ class UVLTransformation(TextToModel):
                 relation = Relation(parent, [child], 0, 1)
                 parent.add_relation(relation)
         elif relation_text == 'or':
-            relation = Relation(parent, children, 1, 1)
+            relation = Relation(parent, children, 1, len(children))
             parent.add_relation(relation)
         elif relation_text == 'alternative':
-            relation = Relation(parent, children, 1, len(children))
+            relation = Relation(parent, children, 1, 1)
             parent.add_relation(relation)
         else:
             cls.__add_relation_min_max(parent, children, relation_text)
@@ -159,7 +159,9 @@ class UVLTransformation(TextToModel):
                 '&': 'and',
                 '|': 'or',
                 '=>': 'implies',
-                '<=>': 'equivalence'
+                '<=>': 'equivalence',
+                'requires': 'requires',
+                'excludes': 'excludes'
             }
             operator_name = operator_dict.get(operator)
             constraint = Constraint(
@@ -169,8 +171,3 @@ class UVLTransformation(TextToModel):
             )
             constraints.append(constraint)
         return constraints
-
-
-trs = UVLTransformation("test.uvl")
-trs.transform()
-print(trs.model)

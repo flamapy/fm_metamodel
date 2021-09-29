@@ -95,7 +95,9 @@ class UVLWriter(ModelToText):
         data = cst.ast.root.data
 
         symbol_dict = {'not': '!', 'and': '&', 'or': '|',
-                       'implies': '=>', 'equivalence': '<=>'}
+                       'implies': '=>', 'equivalence': '<=>',
+                       'requires': 'requires',
+                       'excludes': 'excludes'}
         symbol = symbol_dict.get(data)
 
         result = str(left) + " " + str(symbol) + " " + str(right)

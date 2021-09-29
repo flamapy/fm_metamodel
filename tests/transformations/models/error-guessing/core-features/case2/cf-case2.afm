@@ -1,0 +1,7 @@
+%Relationships
+A :  [B];
+
+%Attributes
+
+%Constraints
+A REQUIRES B;
