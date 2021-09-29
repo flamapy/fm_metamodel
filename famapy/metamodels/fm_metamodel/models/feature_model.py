@@ -314,6 +314,8 @@ class Attribute:
         self.null_value = null_value
 
     def __str__(self) -> str:
+        if self.parent is None:
+            raise TypeError('self.parent is None, expected Feature type')
 
         result = "[" + self.parent.name + "." + self.name + "]"
         if self.domain is not None:

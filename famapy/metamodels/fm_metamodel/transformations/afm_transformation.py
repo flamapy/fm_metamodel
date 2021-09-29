@@ -63,6 +63,9 @@ class AFMTransformation(TextToModel):
                 self.read_children(relationship_spec)
 
     def read_children(self, feature_spec: AFMParser.Relationship_specContext) -> None:
+        if self.model is None:
+            raise TypeError('self.model is None, expected FeatureModel type')
+
         parent_feature = self.model.get_feature_by_name(
             feature_spec.init_spec().WORD().getText())
 
@@ -102,6 +105,10 @@ class AFMTransformation(TextToModel):
     def read_attribute(self, attribute_spec: AFMParser.Attribute_specContext) -> None:
         attribute_name_node = attribute_spec.attribute_name()
         attribute_name = attribute_name_node.LOWERCASE().getText()
+
+        if self.model is None:
+            raise TypeError('self.model is None, expected FeatureModel type')
+
         attribute_feature = self.model.get_feature_by_name(
             attribute_name_node.WORD().getText())
 
@@ -150,6 +157,10 @@ class AFMTransformation(TextToModel):
         root_node = self.build_ast_node(expression, prefix)
         ast = AST(root_node)
         cst = Constraint(expression.getText(), ast)
+
+        if self.model is None:
+            raise TypeError('self.model is None, expected FeatureModel type')
+
         self.model.ctcs.append(cst)
 
     def build_ast_node(self, expression: AFMParser.ExpressionContext, prefix: str) -> Node:
