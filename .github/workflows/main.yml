@@ -35,18 +35,19 @@ jobs:
       - name: Running static types with mypy
         run: |
           mypy famapy
-  #pytest:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #    - name: Set up Python 3.9
-  #      uses: actions/setup-python@v2
-  #      with:
-  #        python-version: 3.9
-  #    - name: Install dependencies
-  #      run: |
-  #        python -m pip install --upgrade pip
-  #        pip install pytest==5.4.3
-  #    - name: Running test
-  #      run: |
-  #        python -m pytest
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip install pytest==5.4.3
+      - name: Running test
+        run: |
+          python -m pytest
