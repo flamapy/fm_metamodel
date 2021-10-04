@@ -144,7 +144,7 @@ class FeatureIDEParser(TextToModel):
             if len(rule) > 1:
                 node = Node("OR")
                 node.left = self._parse_rule(rule[0])
-                node.left = self._parse_rule(rule[1])
+                node.right = self._parse_rule(rule[1])
 
             else:
                 node = self._parse_rule(rule[0])
@@ -153,7 +153,7 @@ class FeatureIDEParser(TextToModel):
             if len(rule) > 1:
                 node = Node("AND")
                 node.left = self._parse_rule(rule[0])
-                node.left = self._parse_rule(rule[1])
+                node.right = self._parse_rule(rule[1])
             else:
                 node = self._parse_rule(rule[0])
         return node
