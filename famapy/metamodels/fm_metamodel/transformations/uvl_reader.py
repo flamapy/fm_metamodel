@@ -19,13 +19,16 @@ class UVLReader(TextToModel):
     def get_source_extension() -> str:
         return 'uvl'
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, file: str) -> None:
         self.path: str = path
+        self.file: str = file
         self.parse_tree: Any = None
         self.model: Optional[FeatureModel] = None
+        self.imports: Optional[dict[str, FeatureModel]] = {}
+        self.import_root: Optional[dict[str, str]] = {}
 
     def set_parse_tree(self) -> None:
-        absolute_path = os.path.abspath(self.path)
+        absolute_path = os.path.abspath(self.path + "/" + self.file)
         self.parse_tree = get_tree(absolute_path)
 
     def transform(self) -> FeatureModel:
@@ -38,8 +41,11 @@ class UVLReader(TextToModel):
         # Feature model created with root feature
         self.model = FeatureModel(root_feature, [])
         # Recursively read the ParseTree root feature subnode to find all features and relations
+        if self.parse_tree.imports():
+            self.read_imports()
         self.read_children(parse_tree_root_feature, root_feature)
-        self.read_constraints()
+        if self.parse_tree.constraints():
+            self.read_constraints()
         return self.model
 
     def find_root_feature(self) -> Feature:
@@ -53,6 +59,28 @@ class UVLReader(TextToModel):
     def get_relation_text(cls, node: Feature) -> str:
         return node.relation_spec().RELATION_WORD().getText()
 
+    def read_imports(self) -> None:
+        imports_node = self.parse_tree.imports()
+
+        for import_node in imports_node.imp():
+            spec_node = import_node.imp_spec()
+            model_name = spec_node.WORD()[0].getText()
+            feature_chain = list(
+                map(lambda x: x.getText(), spec_node.WORD()[1:]))
+
+            if import_node.WORD():
+                key = import_node.WORD().getText()
+            else:
+                key = feature_chain[-1]
+
+            uvl_transformation = UVLTransformation(
+                self.path, model_name + ".uvl")
+            uvl_transformation.transform()
+
+            self.imports[key] = uvl_transformation.model
+            self.import_root[key] = feature_chain[-1]
+    # TODO: Check if feature chain is valid
+
     def read_children(self, parse_tree_node: Feature, node_feature: Feature) -> None:
         relations = parse_tree_node.relation()
         for relation_node in relations:
@@ -64,8 +92,15 @@ class UVLReader(TextToModel):
                 feature = Feature(feature_text, [])
                 self.add_attributes(feature_node, feature)
                 # self.model.features.append(feature)
-                children.append(feature)
-                self.read_children(feature_node, feature)
+                if feature_text in self.imports.keys():
+                    model_to_import = self.imports.get(feature_text)
+                    root = model_to_import.get_feature_by_name(
+                        self.import_root.get(feature_text))
+                    self.model.import_model(root, feature)
+                    children.append(root)
+                else:
+                    children.append(feature)
+                    self.read_children(feature_node, feature)
             self.add_relation(node_feature, children, relation_text)
 
     @classmethod
