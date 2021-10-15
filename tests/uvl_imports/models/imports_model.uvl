@@ -1,0 +1,16 @@
+imports
+    FileSystem
+    OperatingSystem as mac
+    Logging as lging
+
+features
+    Server { abstract }
+        mandatory
+            FileSystem
+            OperatingSystem { abstract }
+                alternative
+                    Windows
+                    mac
+                    Debian
+        optional
+            lging
