@@ -1,18 +1,15 @@
+imports
+    FileSystem.FileSystem
+    OperatingSystem.OS.macOS as mac
+    Logging.Logging as lging
 features
     Server { abstract }
         mandatory
             FileSystem
-                or
-                    NTFS
-                    APFS
-                    EXT4
             OperatingSystem { abstract }
                 alternative
                     Windows
-                    macOS
+                    mac
                     Debian
         optional
-            Logging {
-            default,
-            log_level "warn"
-        }
+            lging

@@ -1,16 +1,15 @@
-imports
-    FileSystem
-    OperatingSystem as mac
-    Logging as lging
-
 features
     Server { abstract }
         mandatory
             FileSystem
+                or
+                    NTFS
+                    APFS
+                    EXT4
             OperatingSystem { abstract }
                 alternative
                     Windows
-                    mac
+                    macOS
                     Debian
         optional
-            lging
+            Logging {default, log_level "warn"}
