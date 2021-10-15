@@ -34,7 +34,7 @@ def uvl_write_to_transformation(path: str, model: FeatureModel) -> None:
     original_model = model
     uvl_writer = UVLWriter(original_model, path + ".uvl")
     uvl_writer.transform()
-    uvl_transformation = UVLTransformation(path + ".uvl")
+    uvl_transformation = UVLTransformation(path + ".uvl", "")
     uvl_transformation.transform()
     transformed_model = uvl_transformation.model
 

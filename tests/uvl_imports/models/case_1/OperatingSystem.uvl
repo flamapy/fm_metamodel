@@ -1,5 +1,5 @@
 features
-    OperatingSystem { abstract }
+    OS { abstract }
         alternative
             Windows
             macOS
