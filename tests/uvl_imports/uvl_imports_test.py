@@ -26,3 +26,6 @@ def normalize_path(path: str) -> str:
 def test_case_1() -> None:
     path = normalize_path("models/case_1")
     run(path)
+
+
+# TODO: Add more tests, testing ctcs imports and iterative imports
