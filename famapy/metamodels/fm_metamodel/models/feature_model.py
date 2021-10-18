@@ -202,10 +202,6 @@ class FeatureModel(VariabilityModel):
                 break
         return result
 
-    def import_model(self, imported_model_root: Feature, parent: Feature):
-        imported_model_root.parent = parent
-        # TODO: Import ctcs
-
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
         for i, relation in enumerate(self.get_relations()):
