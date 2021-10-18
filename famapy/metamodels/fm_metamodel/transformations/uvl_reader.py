@@ -63,23 +63,53 @@ class UVLReader(TextToModel):
         imports_node = self.parse_tree.imports()
 
         for import_node in imports_node.imp():
-            spec_node = import_node.imp_spec()
-            model_name = spec_node.WORD()[0].getText()
-            feature_chain = list(
-                map(lambda x: x.getText(), spec_node.WORD()[1:]))
+            self.parse_import(import_node)
 
-            if import_node.WORD():
-                key = import_node.WORD().getText()
-            else:
-                key = feature_chain[-1]
+    def parse_import(self, import_node: UVLParser.ImpContext) -> None:
+        spec_node = import_node.imp_spec()
+        model_name = spec_node.WORD()[0].getText()
+        feature_chain = list(
+            map(lambda x: x.getText(), spec_node.WORD()[1:]))
 
-            uvl_transformation = UVLTransformation(
-                self.path, model_name + ".uvl")
-            uvl_transformation.transform()
+        if import_node.WORD():
+            key = import_node.WORD().getText()
+        else:
+            key = feature_chain[-1]
 
-            self.imports[key] = uvl_transformation.model
-            self.import_root[key] = feature_chain[-1]
-    # TODO: Check if feature chain is valid
+        uvl_transformation = UVLTransformation(
+            self.path, model_name + ".uvl")
+        uvl_transformation.transform()
+
+        model = uvl_transformation.model
+
+        assert(self.is_feature_chain_valid(feature_chain, model))
+
+        self.imports[key] = model
+        self.import_root[key] = feature_chain[-1]
+
+    def is_feature_chain_valid(self, feature_chain: list[str], model: FeatureModel) -> bool:
+        feature_chain_c = feature_chain.copy()
+        feature_chain_c.reverse()
+        result = True
+        i = 0
+
+        if len(feature_chain_c) > 1:
+            while i < len(feature_chain_c) - 1:
+                current_feature = model.get_feature_by_name(
+                    feature_chain_c[i])
+                parent_feature = model.get_feature_by_name(
+                    feature_chain_c[i+1])
+
+                if current_feature is None or parent_feature is None or current_feature.get_parent() != parent_feature:
+                    result = False
+                    break
+                i += 1
+        else:
+            feature = model.get_feature_by_name(feature_chain_c[0])
+            if feature is None or model.root != feature:
+                result = False
+
+        return result
 
     def read_children(self, parse_tree_node: Feature, node_feature: Feature) -> None:
         relations = parse_tree_node.relation()
