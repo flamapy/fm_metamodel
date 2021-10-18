@@ -199,9 +199,9 @@ class FeatureModel(VariabilityModel):
                 break
         return result
 
-    def import_model(self, imported_model_root: Feature, parent: Feature):
+    def import_model(self, imported_model_root: Feature, parent: Feature, ctcs: list[Constraint]):
         imported_model_root.parent = parent
-        # TODO: Import ctcs
+        self.ctcs += ctcs
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'

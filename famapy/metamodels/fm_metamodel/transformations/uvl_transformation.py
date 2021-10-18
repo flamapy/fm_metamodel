@@ -126,7 +126,8 @@ class UVLTransformation(TextToModel):
                     model_to_import = self.imports.get(feature_text)
                     root = model_to_import.get_feature_by_name(
                         self.import_root.get(feature_text))
-                    self.model.import_model(root, feature)
+                    ctcs = model_to_import.get_constraints()
+                    self.model.import_model(root, feature, ctcs)
                     children.append(root)
                 else:
                     children.append(feature)
