@@ -80,6 +80,8 @@ class Feature:
 
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
+        for child in relation.children:
+            child.parent = self
 
     def add_attribute(self, attribute: 'Attribute') -> None:
         self.attributes.append(attribute)
