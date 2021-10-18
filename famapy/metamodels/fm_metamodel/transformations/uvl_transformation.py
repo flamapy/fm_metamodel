@@ -46,6 +46,7 @@ class UVLTransformation(TextToModel):
         self.read_children(parse_tree_root_feature, root_feature)
         if self.parse_tree.constraints():
             self.read_constraints()
+        self.clear_invalid_constraints()
         return self.model
 
     def find_root_feature(self) -> Feature:
@@ -237,3 +238,11 @@ class UVLTransformation(TextToModel):
             )
             constraints.append(constraint)
         return constraints
+
+    def clear_invalid_constraints(self) -> None:
+
+        for constraint in self.model.ctcs.copy():
+            if self.model.get_feature_by_name(constraint.ast.root.left.data) is None:
+                self.model.ctcs.remove(constraint)
+            if self.model.get_feature_by_name(constraint.ast.root.right.data) is None:
+                self.model.ctcs.remove(constraint)
