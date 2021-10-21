@@ -57,6 +57,10 @@ class UVLTransformation(TextToModel):
         return node.feature_spec().ref().WORD()[0].getText()
 
     @classmethod
+    def get_feature_chain(cls, node: UVLParser.ChildContext) -> str:
+        return list(map(lambda x: x.getText(), node.feature_spec().ref().WORD()))
+
+    @classmethod
     def get_relation_text(cls, node: Feature) -> str:
         return node.relation_spec().RELATION_WORD().getText()
 
@@ -120,16 +124,29 @@ class UVLTransformation(TextToModel):
             children = []
             for feature_node in features:
                 feature_text = self.get_feature_text(feature_node)
+                feature_chain = self.get_feature_chain(feature_node)
                 feature = Feature(feature_text, [])
                 self.add_attributes(feature_node, feature)
                 # self.model.features.append(feature)
                 if feature_text in self.imports.keys():
-                    model_to_import = self.imports.get(feature_text)
-                    root = model_to_import.get_feature_by_name(
-                        self.import_root.get(feature_text))
-                    ctcs = model_to_import.get_constraints()
-                    self.model.import_model(root, feature, ctcs)
-                    children.append(root)
+
+                    if len(feature_chain) > 1 and feature_chain[0] in self.imports.keys():
+                        model_to_import = self.imports.get(feature_text)
+                        root = model_to_import.get_feature_by_name(
+                            feature_chain[-1])
+                        assert(self.is_feature_chain_valid(
+                            feature_chain, model_to_import))
+                        ctcs = model_to_import.get_constraints()
+                        self.model.import_model(root, feature, ctcs)
+                        children.append(root)
+                    else:
+                        model_to_import = self.imports.get(feature_text)
+                        root = model_to_import.get_feature_by_name(
+                            self.import_root.get(feature_text))
+                        ctcs = model_to_import.get_constraints()
+                        self.model.import_model(root, feature, ctcs)
+                        children.append(root)
+
                 else:
                     children.append(feature)
                     self.read_children(feature_node, feature)
@@ -242,7 +259,7 @@ class UVLTransformation(TextToModel):
     def clear_invalid_constraints(self) -> None:
 
         for constraint in self.model.ctcs.copy():
-            if self.model.get_feature_by_name(constraint.ast.root.left.data) is None:
+            if self.model.get_feature_by_name(constraint.ast.root.left.data) is None and constraint in self.model.ctcs:
                 self.model.ctcs.remove(constraint)
-            if self.model.get_feature_by_name(constraint.ast.root.right.data) is None:
+            if self.model.get_feature_by_name(constraint.ast.root.right.data) is None and constraint in self.model.ctcs:
                 self.model.ctcs.remove(constraint)

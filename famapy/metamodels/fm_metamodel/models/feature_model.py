@@ -202,6 +202,7 @@ class FeatureModel(VariabilityModel):
     def import_model(self, imported_model_root: Feature, parent: Feature, ctcs: list[Constraint]):
         imported_model_root.parent = parent
         self.ctcs += ctcs
+        self.ctcs = list(dict.fromkeys(self.ctcs))
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
