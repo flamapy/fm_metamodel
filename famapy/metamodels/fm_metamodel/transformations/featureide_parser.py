@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-from famapy.core.models.ast import AST, Node
+from famapy.core.models.ast import AST, Node, ASTOperation
 from famapy.core.transformations import TextToModel
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
@@ -125,35 +125,35 @@ class FeatureIDEParser(TextToModel):
         if rule.tag == FeatureIDEParser.TAG_VAR:
             node = Node(rule.text)
         elif rule.tag == FeatureIDEParser.TAG_NOT:
-            node = Node("NOT")
+            node = Node(ASTOperation.NOT)
             node.left = self._parse_rule(rule[0])
         elif rule.tag == FeatureIDEParser.TAG_IMP:
-            node = Node("IMPLIES")
+            node = Node(ASTOperation.IMPLIES)
             node.left = self._parse_rule(rule[0])
             node.right = self._parse_rule(rule[1])
         elif rule.tag == FeatureIDEParser.TAG_EQ:
-            node = Node("AND")
-            node.left = Node("IMPLIES")
+            node = Node(ASTOperation.AND)
+            node.left = Node(ASTOperation.IMPLIES)
             node.left.left = self._parse_rule(rule[0])
             node.left.right = self._parse_rule(rule[1])
-            node.right = Node("IMPLIES")
+            node.right = Node(ASTOperation.IMPLIES)
             node.right.left = self._parse_rule(rule[1])
             node.right.right = self._parse_rule(rule[0])
 
         elif rule.tag == FeatureIDEParser.TAG_DISJ:
             if len(rule) > 1:
-                node = Node("OR")
+                node = Node(ASTOperation.OR)
                 node.left = self._parse_rule(rule[0])
-                node.left = self._parse_rule(rule[1])
+                node.right = self._parse_rule(rule[1])
 
             else:
                 node = self._parse_rule(rule[0])
 
         elif rule.tag == FeatureIDEParser.TAG_CONJ:
             if len(rule) > 1:
-                node = Node("AND")
+                node = Node(ASTOperation.AND)
                 node.left = self._parse_rule(rule[0])
-                node.left = self._parse_rule(rule[1])
+                node.right = self._parse_rule(rule[1])
             else:
                 node = self._parse_rule(rule[0])
         return node
