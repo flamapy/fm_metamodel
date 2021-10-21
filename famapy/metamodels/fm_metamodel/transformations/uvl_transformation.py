@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Any
 
 from uvlparser import get_tree, UVLParser
 from famapy.core.transformations import TextToModel
@@ -23,9 +23,9 @@ class UVLTransformation(TextToModel):
         self.path: str = path
         self.file: str = file
         self.parse_tree: Any = None
-        self.model: Optional[FeatureModel] = None
-        self.imports: Optional[dict[str, FeatureModel]] = {}
-        self.import_root: Optional[dict[str, str]] = {}
+        self.model: FeatureModel = None
+        self.imports: dict[str, FeatureModel] = {}
+        self.import_root: dict[str, str] = {}
 
     def set_parse_tree(self) -> None:
         absolute_path = os.path.abspath(self.path + "/" + self.file)
@@ -57,7 +57,7 @@ class UVLTransformation(TextToModel):
         return node.feature_spec().ref().WORD()[0].getText()
 
     @classmethod
-    def get_feature_chain(cls, node: UVLParser.ChildContext) -> str:
+    def get_feature_chain(cls, node: UVLParser.ChildContext) -> list[str]:
         return list(map(lambda x: x.getText(), node.feature_spec().ref().WORD()))
 
     @classmethod
@@ -87,12 +87,13 @@ class UVLTransformation(TextToModel):
 
         model = uvl_transformation.model
 
-        assert(self.is_feature_chain_valid(feature_chain, model))
+        assert self.is_feature_chain_valid(feature_chain, model)
 
         self.imports[key] = model
         self.import_root[key] = feature_chain[-1]
 
-    def is_feature_chain_valid(self, feature_chain: list[str], model: FeatureModel) -> bool:
+    @classmethod
+    def is_feature_chain_valid(cls, feature_chain: list[str], model: FeatureModel) -> bool:
         feature_chain_c = feature_chain.copy()
         feature_chain_c.reverse()
         result = True
@@ -103,9 +104,11 @@ class UVLTransformation(TextToModel):
                 current_feature = model.get_feature_by_name(
                     feature_chain_c[i])
                 parent_feature = model.get_feature_by_name(
-                    feature_chain_c[i+1])
+                    feature_chain_c[i + 1])
 
-                if current_feature is None or parent_feature is None or current_feature.get_parent() != parent_feature:
+                is_not_parent = current_feature.parent != parent_feature
+
+                if (current_feature or parent_feature) is None or is_not_parent:
                     result = False
                     break
                 i += 1
@@ -131,7 +134,8 @@ class UVLTransformation(TextToModel):
                 if feature_text in self.imports.keys():
 
                     if len(feature_chain) > 1 and feature_chain[0] in self.imports.keys():
-                        model_to_import = self.imports.get(feature_text)
+                        model_to_import: FeatureModel = self.imports.get(
+                            feature_text)
                         root = model_to_import.get_feature_by_name(
                             feature_chain[-1])
                         assert(self.is_feature_chain_valid(
@@ -140,7 +144,8 @@ class UVLTransformation(TextToModel):
                         self.model.import_model(root, feature, ctcs)
                         children.append(root)
                     else:
-                        model_to_import = self.imports.get(feature_text)
+                        model_to_import = self.imports.get(
+                            feature_text)
                         root = model_to_import.get_feature_by_name(
                             self.import_root.get(feature_text))
                         ctcs = model_to_import.get_constraints()
@@ -259,7 +264,11 @@ class UVLTransformation(TextToModel):
     def clear_invalid_constraints(self) -> None:
 
         for constraint in self.model.ctcs.copy():
-            if self.model.get_feature_by_name(constraint.ast.root.left.data) is None and constraint in self.model.ctcs:
+            left_feature = self.model.get_feature_by_name(
+                constraint.ast.root.left.data)
+            right_feature = self.model.get_feature_by_name(
+                constraint.ast.root.right.data)
+            if left_feature is None and constraint in self.model.ctcs:
                 self.model.ctcs.remove(constraint)
-            if self.model.get_feature_by_name(constraint.ast.root.right.data) is None and constraint in self.model.ctcs:
+            if right_feature is None and constraint in self.model.ctcs:
                 self.model.ctcs.remove(constraint)

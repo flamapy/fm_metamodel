@@ -199,8 +199,8 @@ class FeatureModel(VariabilityModel):
                 break
         return result
 
-    def import_model(self, imported_model_root: Feature, parent: Feature, ctcs: list[Constraint]):
-        imported_model_root.parent = parent
+    def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
+        root.parent = parent
         self.ctcs += ctcs
         self.ctcs = list(dict.fromkeys(self.ctcs))
 
