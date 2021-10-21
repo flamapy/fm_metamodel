@@ -1,0 +1,9 @@
+features
+    Hardware
+        mandatory
+            Components
+                mandatory
+                    RAM
+                    CPU
+                    Disk
+                    Motherboard

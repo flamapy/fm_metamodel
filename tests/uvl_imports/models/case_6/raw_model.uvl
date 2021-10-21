@@ -1,0 +1,20 @@
+features
+    Server { abstract }
+        mandatory
+            FileSystem
+                or
+                    NTFS
+                    APFS
+                    EXT4
+            OperatingSystem { abstract }
+                alternative
+                    Windows
+                        mandatory
+                            Version
+                                alternative
+                                    V10
+                                    V11
+                    macOS
+                    Debian
+        optional
+            Logging {default, log_level "warn"}
