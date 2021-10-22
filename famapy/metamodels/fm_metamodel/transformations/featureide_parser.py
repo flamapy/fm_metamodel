@@ -111,7 +111,7 @@ class FeatureIDEParser(TextToModel):
             if ctc[index].tag == FeatureIDEParser.TAG_GRAPHICS:
                 index += 1
             rule = ctc[index]
-            ast = AST(self._parse_rule(rule))
+            ast = self._parse_rule(rule)
             if ast:
                 ctc = Constraint(str(number), ast)
                 constraints.append(ctc)
@@ -126,34 +126,34 @@ class FeatureIDEParser(TextToModel):
             node = Node(rule.text)
         elif rule.tag == FeatureIDEParser.TAG_NOT:
             node = Node(ASTOperation.NOT)
-            node.left = self._parse_rule(rule[0])
+            node.left = self._parse_rule(rule[0]).root
         elif rule.tag == FeatureIDEParser.TAG_IMP:
             node = Node(ASTOperation.IMPLIES)
-            node.left = self._parse_rule(rule[0])
-            node.right = self._parse_rule(rule[1])
+            node.left = self._parse_rule(rule[0]).root
+            node.right = self._parse_rule(rule[1]).root
         elif rule.tag == FeatureIDEParser.TAG_EQ:
             node = Node(ASTOperation.AND)
             node.left = Node(ASTOperation.IMPLIES)
-            node.left.left = self._parse_rule(rule[0])
-            node.left.right = self._parse_rule(rule[1])
+            node.left.left = self._parse_rule(rule[0]).root
+            node.left.right = self._parse_rule(rule[1]).root
             node.right = Node(ASTOperation.IMPLIES)
-            node.right.left = self._parse_rule(rule[1])
-            node.right.right = self._parse_rule(rule[0])
+            node.right.left = self._parse_rule(rule[1]).root
+            node.right.right = self._parse_rule(rule[0]).root
 
         elif rule.tag == FeatureIDEParser.TAG_DISJ:
             if len(rule) > 1:
                 node = Node(ASTOperation.OR)
-                node.left = self._parse_rule(rule[0])
-                node.right = self._parse_rule(rule[1])
+                node.left = self._parse_rule(rule[0]).root
+                node.right = self._parse_rule(rule[1]).root
 
             else:
-                node = self._parse_rule(rule[0])
+                node = self._parse_rule(rule[0]).root
 
         elif rule.tag == FeatureIDEParser.TAG_CONJ:
             if len(rule) > 1:
                 node = Node(ASTOperation.AND)
-                node.left = self._parse_rule(rule[0])
-                node.right = self._parse_rule(rule[1])
+                node.left = self._parse_rule(rule[0]).root
+                node.right = self._parse_rule(rule[1]).root
             else:
-                node = self._parse_rule(rule[0])
-        return node
+                node = self._parse_rule(rule[0]).root
+        return AST(node)
