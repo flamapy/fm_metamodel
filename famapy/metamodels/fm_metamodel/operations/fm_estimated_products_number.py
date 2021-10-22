@@ -5,21 +5,21 @@ from famapy.core.operations import ProductsNumber
 from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
-class FMNumberOfConfigurations(ProductsNumber):
-    """It computes the number of configurations of the feature model.
+class FMEstimatedProductsNumber(ProductsNumber):
+    """It computes an estimation of the number of products of the feature model.
 
     It only uses the structure of the feature model, 
     without taking into account the cross-tree constraints,
-    and thus, the number is an upper limit of the real number of configurations.
+    and thus, the number is an upper limit of the real number of products.
     """
 
     def __init__(self) -> None:
         self.result = 0
         self.feature_model = None
 
-    def execute(self, model: FeatureModel) -> 'FMNumberOfConfigurations':
+    def execute(self, model: FeatureModel) -> 'FMEstimatedProductsNumber':
         self.feature_model = model
-        self.result = self.get_number_of_configurations()
+        self.result = self.get_products_number()
         return self
 
     def get_result(self) -> int:
