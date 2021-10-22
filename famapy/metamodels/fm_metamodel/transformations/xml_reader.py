@@ -13,7 +13,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class XMLTransformation(TextToModel):
+class XMLReader(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:

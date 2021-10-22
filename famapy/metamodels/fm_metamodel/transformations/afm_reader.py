@@ -12,7 +12,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class AFMTransformation(TextToModel):
+class AFMReader(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:

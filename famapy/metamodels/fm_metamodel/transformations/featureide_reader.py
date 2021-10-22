@@ -11,8 +11,8 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class FeatureIDEParser(TextToModel):
-    """Parser for FeatureIDE models (.xml)."""
+class FeatureIDEReader(TextToModel):
+    """Reader for FeatureIDE models (.xml)."""
 
     # Main tags
     TAG_STRUCT = 'struct'
@@ -51,10 +51,10 @@ class FeatureIDEParser(TextToModel):
         tree = ElementTree.parse(filepath)
         root = tree.getroot()
         for child in root:
-            if child.tag == FeatureIDEParser.TAG_STRUCT:
+            if child.tag == FeatureIDEReader.TAG_STRUCT:
                 (root_feature, _) = self._read_features(child, None)
                 model = FeatureModel(root_feature, [])
-            elif child.tag == FeatureIDEParser.TAG_CONSTRAINTS:
+            elif child.tag == FeatureIDEReader.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
                 model.ctcs.extend(constraints)
         return model
@@ -67,39 +67,39 @@ class FeatureIDEParser(TextToModel):
         children = []
         feature = None
         for child in root_tree:
-            if not child.tag == FeatureIDEParser.TAG_GRAPHICS:
+            if not child.tag == FeatureIDEReader.TAG_GRAPHICS:
                 is_abstract = (
-                    FeatureIDEParser.ATTRIB_ABSTRACT in child.attrib and
-                    child.attrib[FeatureIDEParser.ATTRIB_ABSTRACT] == "true"
+                    FeatureIDEReader.ATTRIB_ABSTRACT in child.attrib and
+                    child.attrib[FeatureIDEReader.ATTRIB_ABSTRACT] == "true"
                 )
 
                 feature = Feature(
-                    name=child.attrib[FeatureIDEParser.ATTRIB_NAME],
+                    name=child.attrib[FeatureIDEReader.ATTRIB_NAME],
                     relations=[],
                     parent=parent,
                     is_abstract=is_abstract
                 )
 
                 children.append(feature)
-                if root_tree.tag == FeatureIDEParser.TAG_AND:
-                    if FeatureIDEParser.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
+                if root_tree.tag == FeatureIDEReader.TAG_AND:
+                    if FeatureIDEReader.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
                         rel = Relation(parent=parent, children=[feature], card_min=1, card_max=1)
                         parent.add_relation(rel)
                     else:  # Optional feature
                         rel = Relation(parent=parent, children=[feature], card_min=0, card_max=1)
                         parent.add_relation(rel)
 
-                if child.tag == FeatureIDEParser.TAG_ALT:
+                if child.tag == FeatureIDEReader.TAG_ALT:
                     (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children,
                                    card_min=1, card_max=1)
                     feature.add_relation(rel)
-                elif child.tag == FeatureIDEParser.TAG_OR:
+                elif child.tag == FeatureIDEReader.TAG_OR:
                     (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children, card_min=1,
                                    card_max=len(direct_children))
                     feature.add_relation(rel)
-                elif child.tag == FeatureIDEParser.TAG_AND:
+                elif child.tag == FeatureIDEReader.TAG_AND:
                     (_, direct_children) = self._read_features(child, feature)
         return (feature, children)
 
@@ -108,7 +108,7 @@ class FeatureIDEParser(TextToModel):
         constraints = []
         for ctc in ctcs_root:
             index = 0
-            if ctc[index].tag == FeatureIDEParser.TAG_GRAPHICS:
+            if ctc[index].tag == FeatureIDEReader.TAG_GRAPHICS:
                 index += 1
             rule = ctc[index]
             ast = self._parse_rule(rule)
@@ -122,16 +122,16 @@ class FeatureIDEParser(TextToModel):
 
     def _parse_rule(self, rule: Element) -> AST:
         """Return the representation of the constraint (rule) in the AST syntax."""
-        if rule.tag == FeatureIDEParser.TAG_VAR:
+        if rule.tag == FeatureIDEReader.TAG_VAR:
             node = Node(rule.text)
-        elif rule.tag == FeatureIDEParser.TAG_NOT:
+        elif rule.tag == FeatureIDEReader.TAG_NOT:
             node = Node(ASTOperation.NOT)
             node.left = self._parse_rule(rule[0]).root
-        elif rule.tag == FeatureIDEParser.TAG_IMP:
+        elif rule.tag == FeatureIDEReader.TAG_IMP:
             node = Node(ASTOperation.IMPLIES)
             node.left = self._parse_rule(rule[0]).root
             node.right = self._parse_rule(rule[1]).root
-        elif rule.tag == FeatureIDEParser.TAG_EQ:
+        elif rule.tag == FeatureIDEReader.TAG_EQ:
             node = Node(ASTOperation.AND)
             node.left = Node(ASTOperation.IMPLIES)
             node.left.left = self._parse_rule(rule[0]).root
@@ -140,7 +140,7 @@ class FeatureIDEParser(TextToModel):
             node.right.left = self._parse_rule(rule[1]).root
             node.right.right = self._parse_rule(rule[0]).root
 
-        elif rule.tag == FeatureIDEParser.TAG_DISJ:
+        elif rule.tag == FeatureIDEReader.TAG_DISJ:
             if len(rule) > 1:
                 node = Node(ASTOperation.OR)
                 node.left = self._parse_rule(rule[0]).root
@@ -149,7 +149,7 @@ class FeatureIDEParser(TextToModel):
             else:
                 node = self._parse_rule(rule[0]).root
 
-        elif rule.tag == FeatureIDEParser.TAG_CONJ:
+        elif rule.tag == FeatureIDEReader.TAG_CONJ:
             if len(rule) > 1:
                 node = Node(ASTOperation.AND)
                 node.left = self._parse_rule(rule[0]).root
