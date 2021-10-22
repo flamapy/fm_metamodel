@@ -2,7 +2,7 @@ import os
 from typing import Any, Optional
 
 from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST
+from famapy.core.models.ast import AST, ASTOperation
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
     Feature,
@@ -12,7 +12,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 from famapy.metamodels.fm_metamodel.transformations.uvl_parser.get_tree import get_tree
 
 
-class UVLTransformation(TextToModel):
+class UVLReader(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:
@@ -134,16 +134,17 @@ class UVLTransformation(TextToModel):
             ]
             operator = constraint_text.replace(features[0], "").replace(features[1], "")
             operator_dict = {
-                '!': 'not',
-                '&': 'and',
-                '|': 'or',
-                '=>': 'implies',
-                '<=>': 'equivalence'
+                '!': ASTOperation.NOT,
+                '&': ASTOperation.AND,
+                '|': ASTOperation.OR,
+                '=>': ASTOperation.IMPLIES,
+                '<=>': ASTOperation.EQUIVALENCE
             }
-            operator_name = operator_dict.get(operator)
+            operator_type = operator_dict.get(operator)
+            assert operator_type is not None
             constraint = Constraint(
-                operator_name,
-                AST.create_simple_binary_operation(operator_name, features[0], features[1])
+                operator_type.name,
+                AST.create_simple_binary_operation(operator_type, features[0], features[1])
             )
             constraints.append(constraint)
         return constraints

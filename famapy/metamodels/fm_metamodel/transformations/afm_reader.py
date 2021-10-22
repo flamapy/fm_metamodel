@@ -2,7 +2,7 @@ import sys
 from typing import Any
 
 from famapy.core.exceptions import DuplicatedFeature
-from famapy.core.models.ast import AST
+from famapy.core.models.ast import AST, Node
 from famapy.core.transformations import TextToModel
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
@@ -50,7 +50,7 @@ class AFMReader(TextToModel):
 
     def parse_ctc(self, ctc: str) -> Constraint:
         # TODO: review
-        return Constraint('Ctc-' + str(self.ctc_counter), AST(ctc))
+        return Constraint('Ctc-' + str(self.ctc_counter), AST(Node(ctc)))
 
     def parse_features(self, words: list[str], model: FeatureModel) -> Feature:
         name = words[0].replace(":", "")
