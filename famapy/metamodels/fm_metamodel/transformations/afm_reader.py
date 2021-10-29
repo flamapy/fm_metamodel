@@ -6,7 +6,7 @@ from afmparser import AFMParser
 from afmparser import get_tree
 
 from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST, Node
+from famapy.core.models.ast import AST, Node, ASTOperation
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
     Domain,
@@ -183,6 +183,7 @@ class AFMTransformation(TextToModel):
         binary_operation_types.append(AFMParser.ArithmeticExpContext)
 
         if expression.__class__ in binary_operation_types:
+            # TODO: change str binary operation types for enumerations in ASTOperation 
             result = result = Node(expression.getChild(1).getText())
             result.left = self.build_ast_node(
                 expression.expression()[0], prefix)
@@ -190,7 +191,7 @@ class AFMTransformation(TextToModel):
                 expression.expression()[1], prefix)
 
         if isinstance(expression, AFMParser.NotExpContext):
-            result = Node("NOT")
+            result = Node(ASTOperation.NOT)
             result.right = self.build_ast_node(
                 expression.expression(), prefix)
 
