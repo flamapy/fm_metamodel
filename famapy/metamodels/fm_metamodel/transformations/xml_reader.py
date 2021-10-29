@@ -3,7 +3,7 @@ from typing import Optional
 from xml.etree import ElementTree
 
 from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST
+from famapy.core.models.ast import AST, ASTOperation
 from famapy.core.exceptions import DuplicatedFeature
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Constraint,
@@ -13,7 +13,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class XMLTransformation(TextToModel):
+class XMLReader(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:
@@ -59,15 +59,17 @@ class XMLTransformation(TextToModel):
         el_require = element.attrib.get('requires')
         if ctc_type == 'excludes' and el_exclude in self.name_feature:
             destination = self.name_feature[el_exclude]
+            operator_type = ASTOperation.EXCLUDES
         elif ctc_type == 'requires' and el_require in self.name_feature:
             destination = self.name_feature[el_require]
+            operator_type = ASTOperation.REQUIRES
 
         if origin is None or destination is None:
             raise Exception('origin or destination not found')
 
         return Constraint(
             name,
-            AST.create_simple_binary_operation(ctc_type, origin.name, destination.name)
+            AST.create_simple_binary_operation(operator_type, origin.name, destination.name)
         )
 
     def parse_feature(self, element: ElementTree.Element) -> Feature:
