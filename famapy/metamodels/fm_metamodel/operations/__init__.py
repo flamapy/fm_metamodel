@@ -4,12 +4,12 @@ from .fm_leaf_features import FMLeafFeatures, get_leaf_features
 from .fm_average_branching_factor import FMAverageBranchingFactor, average_branching_factor
 from .fm_feature_ancestors import FMFeatureAncestors, get_feature_ancestors
 from .fm_max_depth_tree import FMMaxDepthTree, max_depth_tree
-from .fm_number_of_configurations import FMNumberOfConfigurations, count_configurations
+from .fm_estimated_products_number import FMEstimatedProductsNumber, count_configurations
 
 __all__ = ['FMCoreFeatures', 'get_core_features',
            'FMCountLeafs', 'count_leaf_features',
-           'FMLeafFeatures', 'get_leaf_features', 
+           'FMLeafFeatures', 'get_leaf_features',
            'FMAverageBranchingFactor', 'average_branching_factor',
            'FMFeatureAncestors', 'get_feature_ancestors',
            'FMMaxDepthTree', 'max_depth_tree',
-           'FMNumberOfConfigurations', 'count_configurations']
+           'FMEstimatedProductsNumber', 'count_configurations']

@@ -22,12 +22,21 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'famapy>=0.6.0',
+        'famapy>=0.6.1',
         'uvlparser>=0.3',
         'afmparser>=0.1',
         'antlr-denter>=1.3.1',
     ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'pytest-mock',
+            'prospector',
+            'mypy',
+            'coverage',
+        ]
+    },
     dependency_links=[
-        'famapy>=0.6.0'
+        'famapy>=0.6.1'
     ],
 )

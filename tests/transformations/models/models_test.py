@@ -1,16 +1,16 @@
 from pathlib import Path
 from famapy.core.models.ast import AST, Node
 from famapy.metamodels.fm_metamodel.models.feature_model import Constraint, Feature, FeatureModel, Relation
-from famapy.metamodels.fm_metamodel.transformations.xml_transformation import XMLTransformation
-from famapy.metamodels.fm_metamodel.transformations.afm_transformation import AFMTransformation
+from famapy.metamodels.fm_metamodel.transformations.xml_reader import XMLReader
+from famapy.metamodels.fm_metamodel.transformations.afm_reader import AFMTransformation
 from famapy.metamodels.fm_metamodel.transformations.afm_writer import AFMWriter
-from famapy.metamodels.fm_metamodel.transformations.uvl_transformation import UVLTransformation
+from famapy.metamodels.fm_metamodel.transformations.uvl_reader import UVLReader
 from famapy.metamodels.fm_metamodel.transformations.uvl_writter import UVLWriter
 
 
 def xml_transform(path: str, model: FeatureModel) -> None:
     original_model = model
-    xml_transformation = XMLTransformation(path + ".xml")
+    xml_transformation = XMLReader(path + ".xml")
     transformed_model = xml_transformation.transform()
 
     assert(original_model == transformed_model)
@@ -34,7 +34,7 @@ def uvl_write_to_transformation(path: str, model: FeatureModel) -> None:
     original_model = model
     uvl_writer = UVLWriter(original_model, path + ".uvl")
     uvl_writer.transform()
-    uvl_transformation = UVLTransformation(path + ".uvl")
+    uvl_transformation = UVLReader(path + ".uvl")
     uvl_transformation.transform()
     transformed_model = uvl_transformation.model
 

@@ -23,8 +23,9 @@ class UVLWriter(ModelToText):
 
         serialized_model = self.read_features(
             root, "features", 0) + "\n" + self.read_constraints()
-        file = open(self.path, "w")
-        file.write(serialized_model)
+
+        with open(self.path, 'w', encoding='utf8') as file:
+            file.write(serialized_model)
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1

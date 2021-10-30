@@ -8,7 +8,7 @@ from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 class FMEstimatedProductsNumber(ProductsNumber):
     """It computes an estimation of the number of products of the feature model.
 
-    It only uses the structure of the feature model, 
+    It only uses the structure of the feature model,
     without taking into account the cross-tree constraints,
     and thus, the number is an upper limit of the real number of products.
     """

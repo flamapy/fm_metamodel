@@ -155,33 +155,19 @@ class UVLReader(TextToModel):
             operator = constraint_text.replace(
                 features[0], "").replace(features[1], "")
             operator_dict = {
-<<<<<<< HEAD:famapy/metamodels/fm_metamodel/transformations/uvl_transformation.py
-                '!': 'not',
-                '&': 'and',
-                '|': 'or',
-                '=>': 'implies',
-                '<=>': 'equivalence',
-                'requires': 'requires',
-                'excludes': 'excludes'
-=======
                 '!': ASTOperation.NOT,
                 '&': ASTOperation.AND,
                 '|': ASTOperation.OR,
                 '=>': ASTOperation.IMPLIES,
-                '<=>': ASTOperation.EQUIVALENCE
->>>>>>> 4e48c78bb513686a7ff23d84a9d39c4f1f9d0df8:famapy/metamodels/fm_metamodel/transformations/uvl_reader.py
+                '<=>': ASTOperation.EQUIVALENCE,
+                'requires': ASTOperation.REQUIRES,
+                'excludes': ASTOperation.EXCLUDES,
             }
             operator_type = operator_dict.get(operator)
-            assert operator_type is not None
+            assert operator_type is not None, operator
             constraint = Constraint(
-<<<<<<< HEAD:famapy/metamodels/fm_metamodel/transformations/uvl_transformation.py
-                operator_name,
-                AST.create_simple_binary_operation(
-                    operator_name, features[0], features[1])
-=======
                 operator_type.name,
                 AST.create_simple_binary_operation(operator_type, features[0], features[1])
->>>>>>> 4e48c78bb513686a7ff23d84a9d39c4f1f9d0df8:famapy/metamodels/fm_metamodel/transformations/uvl_reader.py
             )
             constraints.append(constraint)
         return constraints
