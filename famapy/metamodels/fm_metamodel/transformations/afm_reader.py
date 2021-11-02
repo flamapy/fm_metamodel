@@ -184,7 +184,7 @@ class AFMTransformation(TextToModel):
 
         if expression.__class__ in binary_operation_types:
             # TODO: change str binary operation types for enumerations in ASTOperation 
-            result = result = Node(expression.getChild(1).getText())
+            result = result = Node(ASTOperation[expression.getChild(1).getText()])
             result.left = self.build_ast_node(
                 expression.expression()[0], prefix)
             result.right = self.build_ast_node(
