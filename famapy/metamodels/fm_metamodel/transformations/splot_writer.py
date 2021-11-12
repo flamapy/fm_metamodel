@@ -25,19 +25,20 @@ class SPLOTWriter(ModelToText):
         return splot_str
 
 
-def fm_to_splot(fm: FeatureModel) -> str:
+def fm_to_splot(model: FeatureModel) -> str:
     lines = []
     lines.append('<?xml version="1.0" encoding="UTF-8" standalone="no"?>')
-    lines.append(f'<feature_model name="{fm.root.name}">')
+    lines.append(f'<feature_model name="{model.root.name}">')
     lines.append(TAB + '<feature_tree>')
-    lines.append(TAB * 2 + f':r {fm.root.name} ({fm.root.name})')
-    lines.extend(add_features(fm.root, 3))
+    lines.append(TAB * 2 + f':r {model.root.name} ({model.root.name})')
+    lines.extend(add_features(model.root, 3))
     lines.append(TAB + '</feature_tree>')
     lines.append(TAB + '<constraints>')
-    lines.extend(add_constraints(fm.ctcs))
+    lines.extend(add_constraints(model.ctcs))
     lines.append(TAB + '</constraints>')
     lines.append('</feature_model>')
     return '\n'.join(lines)
+
 
 def add_features(feature: Feature, n_tabs: int) -> list[str]:
     lines = []
@@ -58,6 +59,7 @@ def add_features(feature: Feature, n_tabs: int) -> list[str]:
                 lines.extend(add_features(child, n_tabs + 2))
     return lines
 
+
 def add_constraints(constraints: list[Constraint]) -> list[str]:
     lines = []
     index = 1
@@ -65,8 +67,8 @@ def add_constraints(constraints: list[Constraint]) -> list[str]:
     for ctc in constraints:
         cnf_clauses = ctc.ast.get_clauses()
         for clause in cnf_clauses:
-            clause_str = ['~' + t[1:] if t.startswith('-') else t for t in clause]
-            clause_str = ' or '.join(clause_str)
+            clause_list_str = ['~' + t[1:] if t.startswith('-') else t for t in clause]
+            clause_str = ' or '.join(clause_list_str)
             lines.append(indentation + f'C{index}: {clause_str}')
             index += 1
     return lines
