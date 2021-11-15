@@ -22,6 +22,7 @@ class UVLReader(TextToModel):
     def __init__(self, path: str) -> None:
         self.path: str = "/".join(path.split("/")[:-1])
         self.file: str = path.split("/")[-1]
+        self.namespace: str = None
         self.parse_tree: Any = None
         self.model: FeatureModel = None
         self.imports: dict[str, FeatureModel] = {}
@@ -40,6 +41,10 @@ class UVLReader(TextToModel):
         self.add_attributes(parse_tree_root_feature, root_feature)
         # Feature model created with root feature
         self.model = FeatureModel(root_feature, [])
+        # Set model namespace
+        self.namespace = root_feature.name
+        if self.parse_tree.namespace() is not None:
+            self.namespace = self.parse_tree.namespace().WORD().getText()
         # Recursively read the ParseTree root feature subnode to find all features and relations
         if self.parse_tree.imports():
             self.read_imports()
