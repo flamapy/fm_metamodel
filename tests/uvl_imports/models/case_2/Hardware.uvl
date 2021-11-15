@@ -1,3 +1,5 @@
+namespace Hardware
+
 features
     Hardware
         mandatory
