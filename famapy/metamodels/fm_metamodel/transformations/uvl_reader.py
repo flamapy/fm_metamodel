@@ -22,7 +22,7 @@ class UVLReader(TextToModel):
     def __init__(self, path: str) -> None:
         self.path: str = "/".join(path.split("/")[:-1])
         self.file: str = path.split("/")[-1]
-        self.namespace: str = None
+        self.namespace: str = ""
         self.parse_tree: Any = None
         self.model: FeatureModel = None
         self.imports: dict[str, FeatureModel] = {}
