@@ -191,14 +191,28 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
+    def get_mandatory_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_mandatory()]
+
+    def get_optional_features(self) -> list['Feature']:
+        """Feature that can be or not in a product.
+        
+        This includes possible false-optional features.
+        """
+        return [f for f in self.get_features() if not f.is_mandatory()]
+
+    def get_real_optional_features(self) -> list['Feature']:
+        """Features with the optional relation."""
+        return [f for f in self.get_features() if f.is_optional()]
+
+    def get_alternative_group_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_alternative_group()]
+
+    def get_or_group_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_or_group()]
+
     def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
-        result = None
-        features = self.get_features()
-        for feature in features:
-            if feature.name == feature_name:
-                result = feature
-                break
-        return result
+        return next((f for f in self.get_features() if f.name == feature_name), None)
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'
