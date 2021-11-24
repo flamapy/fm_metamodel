@@ -84,6 +84,9 @@ class Feature:
     def add_attribute(self, attribute: 'Attribute') -> None:
         self.attributes.append(attribute)
 
+    def get_attributes(self) -> list['Attribute']:
+        return self.attributes
+
     def set_attributes(self, attributes: list['Attribute']) -> None:
         self.attributes = attributes
 
@@ -96,8 +99,9 @@ class Feature:
     def _get_parent(self) -> Optional['Feature']:
         return next((r.parent for r in self.get_relations() if not r.children), None)
 
-    def get_attributes(self) -> list['Attribute']:
-        return self.attributes
+    def get_children(self) -> list['Feature']:
+        """Direct children of the feature regardless the relation type."""
+        return [f for r in self.get_relations() for f in r.children]
 
     def is_root(self) -> bool:
         return self.parent is None
