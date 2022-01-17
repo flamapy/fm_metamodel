@@ -1,18 +1,17 @@
 from pathlib import Path
 import pytest
 
-from famapy.metamodels.fm_metamodel.models.feature_model import Constraint, Feature, FeatureModel, Relation
-from famapy.metamodels.fm_metamodel.transformations.uvl_transformation import UVLTransformation
+from famapy.metamodels.fm_metamodel.transformations.uvl_reader import UVLReader
 
 
 def run(path) -> None:
 
-    raw_model_transformation = UVLTransformation(path, "raw_model.uvl")
+    raw_model_transformation = UVLReader(path + "/raw_model.uvl")
     raw_model_transformation.transform()
     raw_model = raw_model_transformation.model
     print(raw_model)
 
-    imports_model_transformation = UVLTransformation(path, "imports_model.uvl")
+    imports_model_transformation = UVLReader(path + "/imports_model.uvl")
     imports_model_transformation.transform()
     imports_model = imports_model_transformation.model
     print(imports_model)
