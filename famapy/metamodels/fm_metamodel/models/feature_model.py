@@ -38,6 +38,20 @@ class Relation:
 
     def is_alternative(self) -> bool:
         return self.card_min == 1 and self.card_max == 1 and len(self.children) > 1
+    
+    def is_mutex(self) -> bool:
+        return self.card_min == 0 and self.card_max == 1 and len(self.children) > 1
+
+    def is_cardinal(self) -> bool:
+        return (
+            self.is_group() and 
+            not self.is_alternative() and 
+            not self.is_or() and 
+            not self.is_mutex()
+        )
+
+    def is_group(self) -> bool:
+        return len(self.children) > 1
 
     def __str__(self) -> str:
         parent_name = self.parent.name if self.parent else ''
@@ -123,8 +137,14 @@ class Feature:
     def is_alternative_group(self) -> bool:
         return any(r.is_alternative() for r in self.get_relations())
 
+    def is_mutex_group(self) -> bool:
+        return any(r.is_mutex() for r in self.get_relations())
+
+    def is_cardinality_group(self) -> bool:
+        return any(r.is_cardinal() for r in self.get_relations())
+
     def is_group(self) -> bool:
-        return self.is_or_group() or self.is_alternative_group()
+        return any(r.is_group() for r in self.get_relations())
 
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
