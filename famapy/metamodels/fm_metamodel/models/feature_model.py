@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from functools import total_ordering
 
 from famapy.core.models import AST
 from famapy.core.models import VariabilityModel
@@ -58,7 +59,7 @@ class Relation:
     def __lt__(self, other: Any) -> bool:
         return str(self) < str(other)
 
-
+@total_ordering
 class Feature:
 
     def __init__(
@@ -174,7 +175,7 @@ class FeatureModel(VariabilityModel):
         self.ctcs = [] if constraints is None else constraints
 
     def get_relations(self, feature: Optional['Feature'] = None) -> list['Relation']:
-        if self.root.is_empty():
+        if self.root is None or self.root.is_empty():
             return []
         if feature is None:
             feature = self.root
@@ -187,6 +188,8 @@ class FeatureModel(VariabilityModel):
 
     def get_features(self) -> list['Feature']:
         features: list['Feature'] = []
+        if self.root is None:
+            return features
         features.append(self.root)
         for relation in self.get_relations():
             features.extend(relation.children)
@@ -219,7 +222,7 @@ class FeatureModel(VariabilityModel):
         return next((f for f in self.get_features() if f.name == feature_name), None)
 
     def __str__(self) -> str:
-        res = 'root: ' + self.root.name + '\r\n'
+        res = 'root: ' + ('None' if self.root is None else self.root.name) + '\r\n'
         for i, relation in enumerate(self.get_relations()):
             res += f'relation {i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
