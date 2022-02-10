@@ -108,8 +108,8 @@ class Feature:
         return self.parent is None
 
     def is_mandatory(self) -> bool:
-        return (self.parent is None
-                or any(r.is_mandatory() and self in r.children
+        return (not self.is_root()
+                and any(r.is_mandatory() and self in r.children
                        for r in self.parent.get_relations()))
 
     def is_optional(self) -> bool:
@@ -202,14 +202,6 @@ class FeatureModel(VariabilityModel):
         return [f for f in self.get_features() if f.is_mandatory()]
 
     def get_optional_features(self) -> list['Feature']:
-        """Feature that can be or not in a product.
-        
-        This includes possible false-optional features.
-        """
-        return [f for f in self.get_features() if not f.is_mandatory()]
-
-    def get_real_optional_features(self) -> list['Feature']:
-        """Features with the optional relation."""
         return [f for f in self.get_features() if f.is_optional()]
 
     def get_alternative_group_features(self) -> list['Feature']:
