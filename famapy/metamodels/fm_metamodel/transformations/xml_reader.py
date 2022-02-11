@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, ASTOperation
 from famapy.core.exceptions import DuplicatedFeature
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

@@ -1,8 +1,9 @@
 from typing import Any, Optional
 from functools import total_ordering
 
-from famapy.core.models import AST
 from famapy.core.models import VariabilityModel
+
+from famapy.metamodels.fm_metamodel.models import Constraint
 
 
 class Relation:
@@ -58,6 +59,19 @@ class Relation:
         res = f'{parent_name}[{self.card_min},{self.card_max}]'
         for _child in self.children:
             res += _child.name + ' '
+        if self.is_alternative():
+            relation_type = 'alternative'
+        if self.is_or():
+            relation_type = 'or'
+        if self.is_mandatory():
+            relation_type = 'mandatory'
+        if self.is_optional():
+            relation_type = 'optional'
+        if self.is_mutex():
+            relation_type = 'mutex'
+        if self.is_cardinal():
+            relation_type = 'cardinality'
+        res = f'({relation_type}) ' + res
         return res
 
     def __hash__(self) -> int:
@@ -162,74 +176,6 @@ class Feature:
         return str(self) < str(other)
 
 
-class Constraint:
-
-    def __init__(self, name: str, ast: AST):
-        self.name = name
-        self.ast = ast
-        self._clauses = self.ast.get_clauses()
-        assert len(self._clauses) > 0
-
-    def is_simple_constraint(self) -> bool:
-        return self.is_requires_constraint() or self.is_excludes_constraint()
-    
-    def is_complex_constraint(self) -> bool:
-        return self.is_pseudocomplex_constraint() or self.is_strictcomplex_constraint()
-
-    def is_requires_constraint(self) -> bool:
-        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
-            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
-            return nof_negative_clauses == 1
-        return False
-
-    def is_excludes_constraint(self) -> bool:
-        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
-            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
-            return nof_negative_clauses == 2
-        return False
-
-    def is_strictcomplex_constraint(self) -> bool:
-        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
-            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
-            return nof_negative_clauses == 0
-        strictcomplex = False
-        i = iter(self._clauses)
-        while not strictcomplex and (cls := next(i, None)) is not None:
-            if len(cls) != 2:
-                strictcomplex = True
-            else:
-                nof_negative_clauses = sum(var.startswith('-') for var in cls)
-                if nof_negative_clauses not in [1, 2]:
-                    strictcomplex = True
-        return strictcomplex
-    
-    def is_pseudocomplex_constraint(self) -> bool:
-        if len(self._clauses) == 1:
-            return False
-        strictcomplex = False
-        i = iter(self._clauses)
-        while not strictcomplex and (cls := next(i, None)) is not None:
-            if len(cls) != 2:
-                strictcomplex = True
-            else:
-                nof_negative_clauses = sum(var.startswith('-') for var in cls)
-                if nof_negative_clauses not in [1, 2]:
-                    strictcomplex = True
-        return not strictcomplex
-
-    def __str__(self) -> str:
-        return str(self.ast)
-
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Constraint) and str(self.ast).lower() == str(other.ast).lower()
-
-    def __lt__(self, other: Any) -> bool:
-        return str(self) < str(other)
-
-
 class FeatureModel(VariabilityModel):
 
     @staticmethod
@@ -239,7 +185,7 @@ class FeatureModel(VariabilityModel):
     def __init__(
         self,
         root: 'Feature',
-        constraints: Optional[list['Constraint']] = None
+        constraints: Optional[list[Constraint]] = None
     ) -> None:
         self.root = root
         self.ctcs = [] if constraints is None else constraints
@@ -265,25 +211,25 @@ class FeatureModel(VariabilityModel):
             features.extend(relation.children)
         return features
 
-    def get_constraints(self) -> list['Constraint']:
+    def get_constraints(self) -> list[Constraint]:
         return self.ctcs
     
-    def get_simple_constraints(self) -> list['Constraint']:
+    def get_simple_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_simple_constraint()]
 
-    def get_complex_constraints(self) -> list['Constraint']:
+    def get_complex_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_complex_constraint()]
 
-    def get_requires_constraints(self) -> list['Constraint']:
+    def get_requires_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_requires_constraint()]
     
-    def get_excludes_constraints(self) -> list['Constraint']:
+    def get_excludes_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_excludes_constraint()]
 
-    def get_pseudocomplex_constraints(self) -> list['Constraint']:
+    def get_pseudocomplex_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_pseudocomplex_constraint()]
 
-    def get_strictcomplex_constraints(self) -> list['Constraint']:
+    def get_strictcomplex_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_strictcomplex_constraint()]
 
     def get_mandatory_features(self) -> list['Feature']:
@@ -303,10 +249,11 @@ class FeatureModel(VariabilityModel):
 
     def __str__(self) -> str:
         res = 'root: ' + ('None' if self.root is None else self.root.name) + '\r\n'
+        res += 'Relations:\r\n'
         for i, relation in enumerate(self.get_relations()):
-            res += f'relation {i}: {relation}\r\n'
+            res += f'R{i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
-            res += f'{ctc.ast}' + '\r\n'
+            res += f'CTC{i}: {ctc}\r\n'
         for feature in self.get_features():
             for attribute in feature.get_attributes():
                 res += f'{attribute}' + '\r\n'

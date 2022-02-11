@@ -4,7 +4,7 @@ from typing import Any, Optional
 from uvlparser import get_tree, UVLParser
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, ASTOperation
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

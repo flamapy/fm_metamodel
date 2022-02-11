@@ -1,5 +1,5 @@
 from famapy.core.transformations import ModelToText
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,
