@@ -1,0 +1,46 @@
+from famapy.core.operations import CoreFeatures
+from famapy.core.operations.atomic_sets import AtomicSets
+
+from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+
+
+class FMAtomicSets(AtomicSets):
+
+    def __init__(self) -> None:
+        self.result: list[Feature] = []
+
+    def get_result(self) -> list[Feature]:
+        return self.result
+
+    def execute(self, model: FeatureModel) -> 'FMAtomicSets':
+        self.result = atomic_sets(model)
+        return self
+
+    def atomic_sets(self) -> list[set[Feature]]:
+        return self.get_result()
+
+
+def atomic_sets(feature_model: FeatureModel) -> list[set[Feature]]:
+    if feature_model.root is None:
+        return []
+
+    atomic_sets = []
+    root = feature_model.root
+    atomic_set = {root}
+    atomic_sets.append(atomic_set)
+    compute_atomic_sets(atomic_sets, root, atomic_set)
+    return atomic_sets
+
+def compute_atomic_sets(atomic_sets: list[set[Feature]], 
+                        feature: Feature, 
+                        current_set: set[Feature]) -> None:
+    for feature in feature.get_children():
+        if feature.is_mandatory():
+            current_set.add(feature)
+            compute_atomic_sets(atomic_sets, feature, current_set)
+        else:
+            new_as = {feature}
+            atomic_sets.append(new_as)
+            compute_atomic_sets(atomic_sets, feature, new_as)
+
+
