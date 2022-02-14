@@ -11,7 +11,7 @@ class Constraint:
         self._clauses = self.ast.get_clauses()
         if len(self._clauses) == 0:
             raise ValueError(f'Error: wrong definition of constraint in AST: {ast}')
-        self._sorted_clauses = list(map(lambda x: sorted(x), self._clauses))
+        self._sorted_clauses = list(map(sorted, self._clauses))
         self._sorted_clauses.sort(key=len)
 
     @property
@@ -27,7 +27,7 @@ class Constraint:
 
     def is_simple_constraint(self) -> bool:
         return self.is_requires_constraint() or self.is_excludes_constraint()
-    
+
     def is_complex_constraint(self) -> bool:
         return self.is_pseudocomplex_constraint() or self.is_strictcomplex_constraint()
 
@@ -57,7 +57,7 @@ class Constraint:
                 if nof_negative_clauses not in [1, 2]:
                     strictcomplex = True
         return strictcomplex
-    
+
     def is_pseudocomplex_constraint(self) -> bool:
         if len(self._clauses) == 1:
             return False

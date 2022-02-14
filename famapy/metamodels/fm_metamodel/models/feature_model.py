@@ -39,7 +39,7 @@ class Relation:
 
     def is_alternative(self) -> bool:
         return self.card_min == 1 and self.card_max == 1 and len(self.children) > 1
-    
+
     def is_mutex(self) -> bool:
         return self.card_min == 0 and self.card_max == 1 and len(self.children) > 1
 
@@ -86,6 +86,7 @@ class Relation:
 
     def __lt__(self, other: Any) -> bool:
         return str(self) < str(other)
+
 
 @total_ordering
 class Feature:
@@ -136,9 +137,9 @@ class Feature:
         return self.parent is None
 
     def is_mandatory(self) -> bool:
-        return (not self.is_root()
+        return (self.parent is not None
                 and any(r.is_mandatory() and self in r.children
-                       for r in self.parent.get_relations()))
+                        for r in self.parent.get_relations()))
 
     def is_optional(self) -> bool:
         return (self.parent is not None
@@ -204,16 +205,15 @@ class FeatureModel(VariabilityModel):
 
     def get_features(self) -> list['Feature']:
         features: list['Feature'] = []
-        if self.root is None:
-            return features
-        features.append(self.root)
-        for relation in self.get_relations():
-            features.extend(relation.children)
+        if self.root is not None:
+            features.append(self.root)
+            for relation in self.get_relations():
+                features.extend(relation.children)
         return features
 
     def get_constraints(self) -> list[Constraint]:
         return self.ctcs
-    
+
     def get_simple_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_simple_constraint()]
 
@@ -222,7 +222,7 @@ class FeatureModel(VariabilityModel):
 
     def get_requires_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_requires_constraint()]
-    
+
     def get_excludes_constraints(self) -> list[Constraint]:
         return [ctc for ctc in self.ctcs if ctc.is_excludes_constraint()]
 
