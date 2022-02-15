@@ -1,6 +1,6 @@
-from .fm_constraint import Constraint
 from .feature_model import (
     Feature,
+    Constraint,
     FeatureModel,
     Relation,
     Domain,
