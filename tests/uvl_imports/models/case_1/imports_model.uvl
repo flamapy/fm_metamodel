@@ -1,0 +1,15 @@
+imports
+    FileSystem.FileSystem
+    OperatingSystem.OS.macOS as mac
+    Logging.Logging as lging
+features
+    Server { abstract }
+        mandatory
+            FileSystem
+            OperatingSystem { abstract }
+                alternative
+                    Windows
+                    mac
+                    Debian
+        optional
+            lging

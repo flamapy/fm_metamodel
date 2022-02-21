@@ -1,0 +1,8 @@
+imports
+    Windows.Windows
+features
+    OS { abstract }
+        alternative
+            Windows
+            macOS
+            Debian

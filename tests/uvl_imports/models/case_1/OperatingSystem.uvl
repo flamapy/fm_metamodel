@@ -1,0 +1,6 @@
+features
+    OS { abstract }
+        alternative
+            Windows
+            macOS
+            Debian
