@@ -20,4 +20,4 @@ class FMCountLeafs(CountLeafs):
 
 
 def count_leaf_features(feature_model: FeatureModel) -> int:
-    return sum(len(f.get_relations()) == 0 for f in feature_model.get_features())
+    return sum(f.is_leaf() for f in feature_model.get_features())
