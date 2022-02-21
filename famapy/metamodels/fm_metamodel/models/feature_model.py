@@ -180,7 +180,7 @@ class Constraint:
     def __init__(self, name: str, ast: AST):
         self.name = name
         self._ast = ast
-        self._clauses = self.ast.get_clauses()
+        self._clauses = self._ast.get_clauses()
         if len(self._clauses) == 0:
             raise ValueError(f'Error: wrong definition of constraint in AST: {ast}')
         self._sorted_clauses = list(map(sorted, self._clauses))
@@ -193,7 +193,7 @@ class Constraint:
     @ast.setter
     def ast(self, ast: AST) -> None:
         self._ast = ast
-        self._clauses = self.ast.get_clauses()
+        self._clauses = self._ast.get_clauses()
         if len(self._clauses) == 0:
             raise ValueError(f'Error: wrong definition of constraint in AST: {ast}')
 

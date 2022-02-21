@@ -1,3 +1,6 @@
+import re
+
+from famapy.core.models.ast import ASTOperation
 from famapy.core.transformations import ModelToText
 from famapy.metamodels.fm_metamodel.models import (
     Constraint,
@@ -90,17 +93,13 @@ class UVLWriter(ModelToText):
         return result
 
     @staticmethod
-    def serialize_constraint(cst: Constraint) -> str:
-        left = cst.ast.root.left
-        right = cst.ast.root.right
-        data = cst.ast.root.data
-
-        symbol_dict = {'not': '!', 'and': '&', 'or': '|',
-                       'implies': '=>', 'equivalence': '<=>',
-                       'requires': 'requires',
-                       'excludes': 'excludes'}
-        symbol = symbol_dict.get(data)
-
-        result = str(left) + " " + str(symbol) + " " + str(right)
-
-        return result
+    def serialize_constraint(ctc: Constraint) -> str:
+        ctc = ctc.ast.pretty_str()
+        ctc = re.sub(fr'\b{ASTOperation.NOT.value}\ \b', '!', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.AND.value}\b', '&', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.OR.value}\b', '|', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.IMPLIES.value}\b', '=>', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.EQUIVALENCE.value}\b', '<=>', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.REQUIRES.value}\b', 'requires', ctc)
+        ctc = re.sub(fr'\b{ASTOperation.EXCLUDES.value}\b', 'excludes', ctc)
+        return ctc

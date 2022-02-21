@@ -122,8 +122,8 @@ class AFMWriter(ModelToText):
     def recursive_constraint_read(self, node: Node) -> str:
 
         data = node.data
-        if data in Node.operations:
-            data = data.upper()
+        if node.is_op():
+            data = data.value.upper()
 
         if node.left and node.right:
             result = self.recursive_constraint_read(
