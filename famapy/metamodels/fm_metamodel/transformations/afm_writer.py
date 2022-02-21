@@ -1,6 +1,6 @@
 from famapy.core.transformations import ModelToText
 
-from famapy.core.models.ast import Node
+from famapy.core.models.ast import Node, ASTOperation
 from famapy.metamodels.fm_metamodel.models.feature_model import (
     Feature,
     FeatureModel,
@@ -122,7 +122,7 @@ class AFMWriter(ModelToText):
     def recursive_constraint_read(self, node: Node) -> str:
 
         data = node.data
-        if data in Node.operations:
+        if data in [str(operation.value).lower() for operation in ASTOperation]:
             data = data.upper()
 
         if node.left and node.right:

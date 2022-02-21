@@ -80,6 +80,8 @@ class Feature:
 
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
+        for child in relation.children:
+            child.parent = self
 
     def add_attribute(self, attribute: 'Attribute') -> None:
         self.attributes.append(attribute)
@@ -199,6 +201,11 @@ class FeatureModel(VariabilityModel):
                 result = feature
                 break
         return result
+
+    def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
+        root.parent = parent
+        self.ctcs += ctcs
+        self.ctcs = list(dict.fromkeys(self.ctcs))
 
     def __str__(self) -> str:
         res = 'root: ' + self.root.name + '\r\n'

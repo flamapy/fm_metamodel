@@ -1,0 +1,9 @@
+imports
+    Hardware.Hardware.RAM
+
+features
+    System
+        mandatory
+            Disk
+        mandatory
+            RAM

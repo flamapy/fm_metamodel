@@ -1,0 +1,13 @@
+features
+    Hardware
+        mandatory
+            Components
+                mandatory
+                    RAM
+                    CPU
+                    Disk
+                    Motherboard
+constraints
+    RAM => Disk
+    Disk => Motherboard
+    CPU => RAM
