@@ -45,25 +45,25 @@ def get_core_features(feature_model: FeatureModel) -> list[Feature]:
                 features.extend(relation.children)
     
     # Get core features from the cross-tree constraints (this takes a while)
-    requires_ctcs = feature_model.get_requires_constraints()
-    new_core_features = core_features
-    while new_core_features:
-        new_core_features = []
-        for ctc in requires_ctcs:
-            ctc_cnf = ctc.ast.to_cnf()
-            left_node = ctc_cnf.root.left
-            right_node = ctc_cnf.root.right
-            if left_node.is_op():
-                left = left_node.left.data 
-                right = right_node.data
-            elif right_node.is_op():
-                left = right_node.left.data
-                right = left_node.data
-            left_feature = feature_model.get_feature_by_name(left)
-            right_feature = feature_model.get_feature_by_name(right)
-            if left_feature in core_features and right_feature not in core_features:
-                new_core_features.append(right_feature)
-                core_features.append(right_feature)
+    # requires_ctcs = feature_model.get_requires_constraints()
+    # new_core_features = core_features
+    # while new_core_features:
+    #     new_core_features = []
+    #     for ctc in requires_ctcs:
+    #         ctc_cnf = ctc.ast.to_cnf()
+    #         left_node = ctc_cnf.root.left
+    #         right_node = ctc_cnf.root.right
+    #         if left_node.is_op():
+    #             left = left_node.left.data 
+    #             right = right_node.data
+    #         elif right_node.is_op():
+    #             left = right_node.left.data
+    #             right = left_node.data
+    #         left_feature = feature_model.get_feature_by_name(left)
+    #         right_feature = feature_model.get_feature_by_name(right)
+    #         if left_feature in core_features and right_feature not in core_features:
+    #             new_core_features.append(right_feature)
+    #             core_features.append(right_feature)
 
     return core_features
 
