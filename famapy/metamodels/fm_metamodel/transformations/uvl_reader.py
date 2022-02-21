@@ -44,11 +44,19 @@ class UVLReader(TextToModel):
         self.model = FeatureModel(root_feature, [])
         # Set model namespace
         self.namespace = root_feature.name
-        if self.parse_tree.namespace() is not None:
-            self.namespace = self.parse_tree.namespace().WORD().getText()
-        # Recursively read the ParseTree root feature subnode to find all features and relations
-        if self.parse_tree.imports():
-            self.read_imports()
+        try:
+            if self.parse_tree.namespace() is not None:
+                self.namespace = self.parse_tree.namespace().WORD().getText()
+            # Recursively read ParseTree root feature subnode to find all features and relations
+        except AttributeError as exception:
+            print(f'Warning: Feature model has not a "namespace" declared. {exception}')
+
+        try:
+            if self.parse_tree.imports():
+                self.read_imports()
+        except AttributeError as exception:
+            print(f'Warning: Feature model has not a "imports" declared. {exception}')
+
         self.read_children(parse_tree_root_feature, root_feature)
         if self.parse_tree.constraints():
             self.read_constraints()
@@ -137,27 +145,21 @@ class UVLReader(TextToModel):
                 feature = Feature(feature_text, [])
                 self.add_attributes(feature_node, feature)
                 # self.model.features.append(feature)
-                if feature_text in self.imports.keys():
-
-                    if len(feature_chain) > 1 and feature_chain[0] in self.imports.keys():
-                        model_to_import: FeatureModel = self.imports.get(
-                            feature_text)
-                        root = model_to_import.get_feature_by_name(
-                            feature_chain[-1])
-                        assert(self.is_feature_chain_valid(
-                            feature_chain, model_to_import))
+                if feature_text in self.imports:
+                    if len(feature_chain) > 1 and feature_chain[0] in self.imports:
+                        model_to_import: FeatureModel = self.imports.get(feature_text)
+                        root = model_to_import.get_feature_by_name(feature_chain[-1])
+                        assert self.is_feature_chain_valid(feature_chain, model_to_import)
                         ctcs = model_to_import.get_constraints()
                         self.model.import_model(root, feature, ctcs)
                         children.append(root)
                     else:
-                        model_to_import = self.imports.get(
-                            feature_text)
+                        model_to_import = self.imports.get(feature_text)
                         root = model_to_import.get_feature_by_name(
                             self.import_root.get(feature_text))
                         ctcs = model_to_import.get_constraints()
                         self.model.import_model(root, feature, ctcs)
                         children.append(root)
-
                 else:
                     children.append(feature)
                     self.read_children(feature_node, feature)
@@ -184,9 +186,7 @@ class UVLReader(TextToModel):
 
     @classmethod
     def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
-
         attributes_node = feature_node.feature_spec().attributes()
-
         attribute_node = []
         if attributes_node is not None:
             attribute_node = attributes_node.attribute()
@@ -242,10 +242,7 @@ class UVLReader(TextToModel):
     def parse_constraints(cls, constraints_node: list[Any]) -> list[Constraint]:
         constraints: list[Constraint] = []
         for constraint_node in constraints_node:
-            print(f'constraint_node: {constraint_node}')
-            print(f'getChildren: {list(constraint_node.getChildren())}')
             constraint_text = constraint_node.getText()
-            print(f'constraint_text: {constraint_text}')
             features = [
                 list(constraint_node.getChildren())[0].WORD()[0].getText(),
                 list(constraint_node.getChildren())[0].WORD()[1].getText()
@@ -253,13 +250,13 @@ class UVLReader(TextToModel):
             operator = constraint_text.replace(
                 features[0], "").replace(features[1], "")
             operator_dict = {
-                '!': 'not',
-                '&': 'and',
-                '|': 'or',
-                '=>': 'implies',
-                '<=>': 'equivalence',
-                'requires': 'requires',
-                'excludes': 'excludes'
+                '!': ASTOperation.NOT,
+                '&': ASTOperation.AND,
+                '|': ASTOperation.OR,
+                '=>': ASTOperation.IMPLIES,
+                '<=>': ASTOperation.EQUIVALENCE,
+                'requires': ASTOperation.REQUIRES,
+                'excludes': ASTOperation.EXCLUDES
             }
             operator_name = operator_dict.get(operator)
             constraint = Constraint(
@@ -271,7 +268,6 @@ class UVLReader(TextToModel):
         return constraints
 
     def clear_invalid_constraints(self) -> None:
-
         for constraint in self.model.ctcs.copy():
             left_feature = self.model.get_feature_by_name(
                 constraint.ast.root.left.data)

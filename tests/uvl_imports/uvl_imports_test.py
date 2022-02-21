@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 
-from famapy.metamodels.fm_metamodel.transformations.uvl_reader import UVLReader
+from famapy.metamodels.fm_metamodel.transformations import UVLReader
 
 
 def run(path) -> None:
