@@ -259,6 +259,8 @@ class UVLReader(TextToModel):
                 'excludes': ASTOperation.EXCLUDES
             }
             operator_name = operator_dict.get(operator)
+            if operator_name is None:
+                raise Exception(f'Constraints not supported in UVL Reader: {operator}.')
             constraint = Constraint(
                 operator_name,
                 AST.create_simple_binary_operation(
