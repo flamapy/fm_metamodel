@@ -1,0 +1,8 @@
+features
+    System
+        mandatory
+            CPU
+        mandatory
+            RAM
+constraints
+    CPU => RAM

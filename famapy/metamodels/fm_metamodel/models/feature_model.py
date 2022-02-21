@@ -108,6 +108,8 @@ class Feature:
 
     def add_relation(self, relation: 'Relation') -> None:
         self.relations.append(relation)
+        for child in relation.children:
+            child.parent = self
 
     def add_attribute(self, attribute: 'Attribute') -> None:
         self.attributes.append(attribute)
@@ -326,6 +328,11 @@ class FeatureModel(VariabilityModel):
 
     def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
         return next((f for f in self.get_features() if f.name == feature_name), None)
+
+    def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
+        root.parent = parent
+        self.ctcs += ctcs
+        self.ctcs = list(dict.fromkeys(self.ctcs))
 
     def __str__(self) -> str:
         res = 'root: ' + ('None' if self.root is None else self.root.name) + '\r\n'
