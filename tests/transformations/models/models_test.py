@@ -1,11 +1,13 @@
 from pathlib import Path
-from famapy.core.models.ast import AST, Node
+from famapy.core.models.ast import AST, Node, ASTOperation
 from famapy.metamodels.fm_metamodel.models.feature_model import Constraint, Feature, FeatureModel, Relation
-from famapy.metamodels.fm_metamodel.transformations.xml_reader import XMLReader
-from famapy.metamodels.fm_metamodel.transformations.afm_reader import AFMTransformation
-from famapy.metamodels.fm_metamodel.transformations.afm_writer import AFMWriter
-from famapy.metamodels.fm_metamodel.transformations.uvl_reader import UVLReader
-from famapy.metamodels.fm_metamodel.transformations.uvl_writter import UVLWriter
+from famapy.metamodels.fm_metamodel.transformations import (
+    XMLReader,
+    AFMReader,
+    AFMWriter,
+    UVLReader,
+    UVLWriter
+)
 
 
 def xml_transform(path: str, model: FeatureModel) -> None:
@@ -20,7 +22,7 @@ def afm_write_to_transformation(path: str, model: FeatureModel) -> None:
     original_model = model
     afm_writer = AFMWriter(original_model, path + ".afm")
     afm_writer.transform()
-    afm_transformation = AFMTransformation(path + ".afm")
+    afm_transformation = AFMReader(path + ".afm")
     afm_transformation.transform()
     transformed_model = afm_transformation.model
 
@@ -63,7 +65,7 @@ def test_error_guessing_core_features_case_1() -> None:
     relation_1 = Relation(feature_1, [feature_2, feature_3], 1, 2)
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("C")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
@@ -83,7 +85,7 @@ def test_error_guessing_core_features_case_2() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("A")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
@@ -106,7 +108,7 @@ def test_error_guessing_core_features_case_3() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -135,7 +137,7 @@ def test_error_guessing_core_features_case_4() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -163,7 +165,7 @@ def test_error_guessing_core_features_case_5() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -185,7 +187,7 @@ def test_error_guessing_core_features_case_6() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -213,7 +215,7 @@ def test_error_guessing_dead_features_case_1() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("D")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
@@ -241,7 +243,7 @@ def test_error_guessing_dead_features_case_2() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -269,7 +271,7 @@ def test_error_guessing_dead_features_case_3() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("D")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
@@ -291,7 +293,7 @@ def test_error_guessing_dead_features_case_4() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -313,7 +315,7 @@ def test_error_guessing_dead_features_case_4() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -335,7 +337,7 @@ def test_error_guessing_dead_features_case_5() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -355,7 +357,7 @@ def test_error_guessing_dead_features_case_6() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -379,7 +381,7 @@ def test_error_guessing_dead_features_case_7() -> None:
 
     feature_2.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -401,13 +403,13 @@ def test_error_guessing_dead_features_case_8() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("B")
     node_2.right = Node("C")
     ast_2 = AST(node_2)
@@ -429,7 +431,7 @@ def test_error_guessing_false_optional_features_case_1() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -458,7 +460,7 @@ def test_error_guessing_false_optional_features_case_2() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -487,7 +489,7 @@ def test_error_guessing_false_optional_features_case_3() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -508,7 +510,7 @@ def test_error_guessing_false_optional_features_case_4() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -529,7 +531,7 @@ def test_error_guessing_false_optional_features_case_5() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -561,13 +563,13 @@ def test_error_guessing_false_optional_features_case_6() -> None:
 
     feature_3.add_relation(relation_4)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("E")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("excludes")
+    node_2 = Node(ASTOperation.EXCLUDES)
     node_2.left = Node("D")
     node_2.right = Node("F")
     ast_2 = AST(node_2)
@@ -590,7 +592,7 @@ def test_error_guessing_redundancies_case_1() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -616,13 +618,13 @@ def test_error_guessing_redundancies_case_2() -> None:
     feature_1.add_relation(relation_2)
     feature_1.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("C")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("D")
     node_2.right = Node("B")
     ast_2 = AST(node_2)
@@ -651,13 +653,13 @@ def test_refinement_alternative_no_or() -> None:
 
     feature_2.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("E")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("E")
     node_2.right = Node("D")
     ast_2 = AST(node_2)
@@ -686,13 +688,13 @@ def test_refinement_alternative_no_parent_last_child() -> None:
 
     feature_2.add_relation(relation_3)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("E")
     node_1.right = Node("B")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("E")
     node_2.right = Node("D")
     ast_2 = AST(node_2)
@@ -725,13 +727,13 @@ def test_refinement_alternative_odd_children() -> None:
 
     feature_2.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("H")
     node_1.right = Node("G")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("H")
     node_2.right = Node("E")
     ast_2 = AST(node_2)
@@ -760,7 +762,7 @@ def test_refinement_df_alternative_excludes() -> None:
 
     feature_3.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
@@ -809,13 +811,13 @@ def test_refinement_or_no_alternative() -> None:
 
     feature_2.add_relation(relation_3)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("E")
     node_1.right = Node("D")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("requires")
+    node_2 = Node(ASTOperation.REQUIRES)
     node_2.left = Node("E")
     node_2.right = Node("C")
     ast_2 = AST(node_2)
@@ -850,13 +852,13 @@ def test_relationships_allrelationships() -> None:
 
     feature_3.add_relation(relation_4)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("E")
     node_1.right = Node("F")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("excludes")
+    node_2 = Node(ASTOperation.EXCLUDES)
     node_2.left = Node("D")
     node_2.right = Node("G")
     ast_2 = AST(node_2)
@@ -892,7 +894,7 @@ def test_relationships_alternative_excludes() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -913,7 +915,7 @@ def test_relationships_alternative_requires() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -936,7 +938,7 @@ def test_relationships_excludes() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1002,7 +1004,7 @@ def test_relationships_mandatory_excludes() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1081,7 +1083,7 @@ def test_relationships_mandatory_requires() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1220,7 +1222,7 @@ def test_relationships_or_excludes() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("excludes")
+    node_1 = Node(ASTOperation.EXCLUDES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1241,7 +1243,7 @@ def test_relationships_or_requires() -> None:
 
     feature_1.add_relation(relation_1)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1264,7 +1266,7 @@ def test_relationships_requires() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
@@ -1287,13 +1289,13 @@ def test_relationships_requires_excludes() -> None:
     feature_1.add_relation(relation_1)
     feature_1.add_relation(relation_2)
 
-    node_1 = Node("requires")
+    node_1 = Node(ASTOperation.REQUIRES)
     node_1.left = Node("B")
     node_1.right = Node("C")
     ast_1 = AST(node_1)
     ctc_1 = Constraint("ctc_1", ast_1)
 
-    node_2 = Node("excludes")
+    node_2 = Node(ASTOperation.EXCLUDES)
     node_2.left = Node("B")
     node_2.right = Node("C")
     ast_2 = AST(node_2)

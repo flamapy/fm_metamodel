@@ -2,9 +2,10 @@ import os
 from typing import Any
 
 from uvlparser import get_tree, UVLParser
+
 from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.core.models.ast import AST, ASTOperation
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,
@@ -241,7 +242,10 @@ class UVLReader(TextToModel):
     def parse_constraints(cls, constraints_node: list[Any]) -> list[Constraint]:
         constraints: list[Constraint] = []
         for constraint_node in constraints_node:
+            print(f'constraint_node: {constraint_node}')
+            print(f'getChildren: {list(constraint_node.getChildren())}')
             constraint_text = constraint_node.getText()
+            print(f'constraint_text: {constraint_text}')
             features = [
                 list(constraint_node.getChildren())[0].WORD()[0].getText(),
                 list(constraint_node.getChildren())[0].WORD()[1].getText()
