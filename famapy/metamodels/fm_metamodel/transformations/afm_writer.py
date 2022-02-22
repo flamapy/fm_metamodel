@@ -19,15 +19,16 @@ class AFMWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self) -> None:
+    def transform(self) -> str:
         serialized_model = ""
-
         serialized_model += self.serialize_relationships()
         serialized_model += self.serialize_attributes()
         serialized_model += self.serialize_constraints()
 
         with open(self.path, 'w', encoding='utf8') as file:
             file.write(serialized_model)
+
+        return serialized_model
 
     def serialize_relationships(self) -> str:
         result = "%Relationships\n"

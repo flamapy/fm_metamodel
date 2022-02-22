@@ -33,7 +33,7 @@ class AFMReader(TextToModel):
         absolute_path = os.path.abspath(self.path)
         self.parse_tree = get_tree(absolute_path)
 
-    def transform(self) -> None:
+    def transform(self) -> FeatureModel:
         self.set_parse_tree()
         self.set_relations()
         self.set_attributes()
@@ -164,8 +164,6 @@ class AFMReader(TextToModel):
         self.model.ctcs.append(cst)
 
     def build_ast_node(self, expression: AFMParser.ExpressionContext, prefix: str) -> Node:
-        result = None
-
         if isinstance(expression, AFMParser.AtomContext):
             if expression.variable() is not None:
                 var_name = prefix + expression.variable().getText()
@@ -201,5 +199,8 @@ class AFMReader(TextToModel):
 
         if isinstance(expression, AFMParser.ParenthesisExpContext):
             result = self.build_ast_node(expression.expression(), prefix)
+
+        if result is None:
+            raise Exception(f'Constraint not support in AFM Reader: {expression}, {prefix}')
 
         return result
