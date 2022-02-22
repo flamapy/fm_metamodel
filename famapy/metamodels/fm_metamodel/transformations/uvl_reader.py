@@ -64,6 +64,7 @@ class UVLReader(TextToModel):
         return self.model
 
     def find_root_feature(self) -> Feature:
+        print(f'self.parse_tree: {self.parse_tree}')
         return self.parse_tree.features().child()
 
     @classmethod

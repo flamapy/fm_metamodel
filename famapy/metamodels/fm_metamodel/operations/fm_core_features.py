@@ -43,7 +43,9 @@ def get_core_features(feature_model: FeatureModel) -> list[Feature]:
             if relation.is_mandatory():
                 core_features.extend(relation.children)
                 features.extend(relation.children)
-    
+
+    return core_features
+
     # Get core features from the cross-tree constraints (this takes a while)
     # requires_ctcs = feature_model.get_requires_constraints()
     # new_core_features = core_features
@@ -64,6 +66,3 @@ def get_core_features(feature_model: FeatureModel) -> list[Feature]:
     #         if left_feature in core_features and right_feature not in core_features:
     #             new_core_features.append(right_feature)
     #             core_features.append(right_feature)
-
-    return core_features
-
