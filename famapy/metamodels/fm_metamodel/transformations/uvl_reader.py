@@ -1,7 +1,7 @@
 import os
 from typing import Any
 
-from famapy.metamodels.fm_metamodel.transformations.uvlparser import get_tree, UVLParser
+from uvlparser import get_tree, UVLParser
 
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, ASTOperation, Node
@@ -65,14 +65,14 @@ class UVLReader(TextToModel):
         self.read_children(parse_tree_root_feature, root_feature)
         if self.parse_tree.constraints():
             self.read_constraints()
-        
+
         # Remove invalid constraints due to the imported models
         if exist_imports:  # this variable exist due to performance reasons with large-scale FMs
             self._clear_invalid_constraints()
 
         # Convert abstract attributes in features to abstract features in the Feature Model
         self._convert_abstract_features()
-        
+
         return self.model
 
     def find_root_feature(self) -> Feature:
@@ -247,7 +247,7 @@ class UVLReader(TextToModel):
             ast_root_node = self._parse_expression(constraint_node)
             constraints.append(Constraint(f'CTC{i}', AST(ast_root_node)))
         return constraints
-    
+
     def _parse_expression(self, expression: Any) -> Node:
         if isinstance(expression, UVLParser.TermContext):
             return Node(expression.WORD().getText())
@@ -278,7 +278,7 @@ class UVLReader(TextToModel):
     def _clear_invalid_constraints(self) -> None:
         """Remove duplicate constraints and constraints that involve features not present 
         in the feature model.
-        
+
         This can occur due to the 'imports' statement that allows importing partial sub-trees
         in the feature model, and therefore only constraints involving existing features should
         be considered.
@@ -292,4 +292,5 @@ class UVLReader(TextToModel):
         for feature in self.model.get_features():
             if any(attribute.name == 'abstract' for attribute in feature.get_attributes()):
                 feature.is_abstract = True 
-                feature.attributes = list(filter(lambda a: a.name != 'abstract', feature.get_attributes()))
+                feature.attributes = list(filter(lambda a: a.name != 'abstract', 
+                                                 feature.get_attributes()))
