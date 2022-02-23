@@ -246,6 +246,21 @@ class Constraint:
                     strictcomplex = True
         return not strictcomplex
 
+    def get_features(self) -> list['Feature']:
+        """List of features involved in the constraint."""
+        features = set()
+        stack = [self.ast.root]
+        while stack:
+            node = stack.pop()
+            if node.is_unique_feature():
+                features.add(node.data)
+            elif node.is_unary_op():
+                stack.append(node.left)
+            elif node.is_binary_op():
+                stack.append(node.right)
+                stack.append(node.left)
+        return list(features)
+
     def __str__(self) -> str:
         return f'({self.name}) {str(self.ast)}'
 
@@ -331,8 +346,9 @@ class FeatureModel(VariabilityModel):
 
     def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
         root.parent = parent
-        self.ctcs += ctcs
-        self.ctcs = list(dict.fromkeys(self.ctcs))
+        for ctc in ctcs:
+            if ctc not in self.ctcs:
+                self.ctcs.append(ctc)
 
     def __str__(self) -> str:
         res = 'root: ' + ('None' if self.root is None else self.root.name) + '\r\n'
@@ -341,9 +357,12 @@ class FeatureModel(VariabilityModel):
             res += f'R{i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
             res += f'CTC{i}: {ctc}\r\n'
+        attributes_res = ''
         for feature in self.get_features():
             for attribute in feature.get_attributes():
-                res += f'{attribute}' + '\r\n'
+                attributes_res += f'{attribute}' + '\r\n'
+        if attributes_res != '':
+            res += 'Attributes:\r\n' + attributes_res
         return res
 
     def __hash__(self) -> int:
