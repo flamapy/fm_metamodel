@@ -1,7 +1,7 @@
 from typing import Any, Optional
+from functools import total_ordering
 
-from famapy.core.models import AST
-from famapy.core.models import VariabilityModel
+from famapy.core.models import AST, VariabilityModel
 
 
 class Relation:
@@ -38,11 +38,38 @@ class Relation:
     def is_alternative(self) -> bool:
         return self.card_min == 1 and self.card_max == 1 and len(self.children) > 1
 
+    def is_mutex(self) -> bool:
+        return self.card_min == 0 and self.card_max == 1 and len(self.children) > 1
+
+    def is_cardinal(self) -> bool:
+        return (
+            self.is_group() and 
+            not self.is_alternative() and 
+            not self.is_or() and 
+            not self.is_mutex()
+        )
+
+    def is_group(self) -> bool:
+        return len(self.children) > 1
+
     def __str__(self) -> str:
         parent_name = self.parent.name if self.parent else ''
         res = f'{parent_name}[{self.card_min},{self.card_max}]'
         for _child in self.children:
             res += _child.name + ' '
+        if self.is_alternative():
+            relation_type = 'alternative'
+        if self.is_or():
+            relation_type = 'or'
+        if self.is_mandatory():
+            relation_type = 'mandatory'
+        if self.is_optional():
+            relation_type = 'optional'
+        if self.is_mutex():
+            relation_type = 'mutex'
+        if self.is_cardinal():
+            relation_type = 'cardinality'
+        res = f'({relation_type}) ' + res
         return res
 
     def __hash__(self) -> int:
@@ -59,6 +86,7 @@ class Relation:
         return str(self) < str(other)
 
 
+@total_ordering
 class Feature:
 
     def __init__(
@@ -86,6 +114,9 @@ class Feature:
     def add_attribute(self, attribute: 'Attribute') -> None:
         self.attributes.append(attribute)
 
+    def get_attributes(self) -> list['Attribute']:
+        return self.attributes
+
     def set_attributes(self, attributes: list['Attribute']) -> None:
         self.attributes = attributes
 
@@ -98,16 +129,17 @@ class Feature:
     def _get_parent(self) -> Optional['Feature']:
         return next((r.parent for r in self.get_relations() if not r.children), None)
 
-    def get_attributes(self) -> list['Attribute']:
-        return self.attributes
+    def get_children(self) -> list['Feature']:
+        """Direct children of the feature regardless the relation type."""
+        return [f for r in self.get_relations() for f in r.children]
 
     def is_root(self) -> bool:
         return self.parent is None
 
     def is_mandatory(self) -> bool:
-        return (self.parent is None
-                or any(r.is_mandatory() and self in r.children
-                       for r in self.parent.get_relations()))
+        return (self.parent is not None
+                and any(r.is_mandatory() and self in r.children
+                        for r in self.parent.get_relations()))
 
     def is_optional(self) -> bool:
         return (self.parent is not None
@@ -120,8 +152,14 @@ class Feature:
     def is_alternative_group(self) -> bool:
         return any(r.is_alternative() for r in self.get_relations())
 
+    def is_mutex_group(self) -> bool:
+        return any(r.is_mutex() for r in self.get_relations())
+
+    def is_cardinality_group(self) -> bool:
+        return any(r.is_cardinal() for r in self.get_relations())
+
     def is_group(self) -> bool:
-        return self.is_or_group() or self.is_alternative_group()
+        return any(r.is_group() for r in self.get_relations())
 
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
@@ -140,21 +178,100 @@ class Feature:
 
 
 class Constraint:
+
     def __init__(self, name: str, ast: AST):
         self.name = name
-        self.ast = ast
+        self._ast = ast
+        self._clauses = self._ast.get_clauses()
+        if len(self._clauses) == 0:
+            raise ValueError(f'Error: wrong definition of constraint in AST: {ast}')
+        self._sorted_clauses = list(map(sorted, self._clauses))
+        self._sorted_clauses.sort(key=len)
+
+    @property
+    def ast(self) -> AST:
+        return self._ast
+
+    @ast.setter
+    def ast(self, ast: AST) -> None:
+        self._ast = ast
+        self._clauses = self._ast.get_clauses()
+        if len(self._clauses) == 0:
+            raise ValueError(f'Error: wrong definition of constraint in AST: {ast}')
+
+    def is_simple_constraint(self) -> bool:
+        return self.is_requires_constraint() or self.is_excludes_constraint()
+
+    def is_complex_constraint(self) -> bool:
+        return self.is_pseudocomplex_constraint() or self.is_strictcomplex_constraint()
+
+    def is_requires_constraint(self) -> bool:
+        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
+            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
+            return nof_negative_clauses == 1
+        return False
+
+    def is_excludes_constraint(self) -> bool:
+        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
+            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
+            return nof_negative_clauses == 2
+        return False
+
+    def is_strictcomplex_constraint(self) -> bool:
+        if len(self._clauses) == 1 and len(self._clauses[0]) == 2:
+            nof_negative_clauses = sum(var.startswith('-') for var in self._clauses[0])
+            return nof_negative_clauses == 0
+        strictcomplex = False
+        i = iter(self._clauses)
+        while not strictcomplex and (cls := next(i, None)) is not None:
+            if len(cls) != 2:
+                strictcomplex = True
+            else:
+                nof_negative_clauses = sum(var.startswith('-') for var in cls)
+                if nof_negative_clauses not in [1, 2]:
+                    strictcomplex = True
+        return strictcomplex
+
+    def is_pseudocomplex_constraint(self) -> bool:
+        if len(self._clauses) == 1:
+            return False
+        strictcomplex = False
+        i = iter(self._clauses)
+        while not strictcomplex and (cls := next(i, None)) is not None:
+            if len(cls) != 2:
+                strictcomplex = True
+            else:
+                nof_negative_clauses = sum(var.startswith('-') for var in cls)
+                if nof_negative_clauses not in [1, 2]:
+                    strictcomplex = True
+        return not strictcomplex
+
+    def get_features(self) -> list['Feature']:
+        """List of features involved in the constraint."""
+        features = set()
+        stack = [self.ast.root]
+        while stack:
+            node = stack.pop()
+            if node.is_unique_feature():
+                features.add(node.data)
+            elif node.is_unary_op():
+                stack.append(node.left)
+            elif node.is_binary_op():
+                stack.append(node.right)
+                stack.append(node.left)
+        return list(features)
 
     def __str__(self) -> str:
-        return str(self.ast)
+        return f'({self.name}) {str(self.ast)}'
 
     def __hash__(self) -> int:
-        return hash(self.name)
+        return hash(str(self.ast).lower())
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Constraint) and str(self.ast).lower() == str(other.ast).lower()
 
     def __lt__(self, other: Any) -> bool:
-        return str(self) < str(other)
+        return str(self.ast).lower() < str(other.ast).lower()
 
 
 class FeatureModel(VariabilityModel):
@@ -172,7 +289,7 @@ class FeatureModel(VariabilityModel):
         self.ctcs = [] if constraints is None else constraints
 
     def get_relations(self, feature: Optional['Feature'] = None) -> list['Relation']:
-        if self.root.is_empty():
+        if self.root is None or self.root.is_empty():
             return []
         if feature is None:
             feature = self.root
@@ -185,37 +302,67 @@ class FeatureModel(VariabilityModel):
 
     def get_features(self) -> list['Feature']:
         features: list['Feature'] = []
-        features.append(self.root)
-        for relation in self.get_relations():
-            features.extend(relation.children)
+        if self.root is not None:
+            features.append(self.root)
+            for relation in self.get_relations():
+                features.extend(relation.children)
         return features
 
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
+    def get_simple_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_simple_constraint()]
+
+    def get_complex_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_complex_constraint()]
+
+    def get_requires_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_requires_constraint()]
+
+    def get_excludes_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_excludes_constraint()]
+
+    def get_pseudocomplex_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_pseudocomplex_constraint()]
+
+    def get_strictcomplex_constraints(self) -> list['Constraint']:
+        return [ctc for ctc in self.ctcs if ctc.is_strictcomplex_constraint()]
+
+    def get_mandatory_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_mandatory()]
+
+    def get_optional_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_optional()]
+
+    def get_alternative_group_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_alternative_group()]
+
+    def get_or_group_features(self) -> list['Feature']:
+        return [f for f in self.get_features() if f.is_or_group()]
+
     def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
-        result = None
-        features = self.get_features()
-        for feature in features:
-            if feature.name == feature_name:
-                result = feature
-                break
-        return result
+        return next((f for f in self.get_features() if f.name == feature_name), None)
 
     def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
         root.parent = parent
-        self.ctcs += ctcs
-        self.ctcs = list(dict.fromkeys(self.ctcs))
+        for ctc in ctcs:
+            if ctc not in self.ctcs:
+                self.ctcs.append(ctc)
 
     def __str__(self) -> str:
-        res = 'root: ' + self.root.name + '\r\n'
+        res = 'root: ' + ('None' if self.root is None else self.root.name) + '\r\n'
+        res += 'Relations:\r\n'
         for i, relation in enumerate(self.get_relations()):
-            res += f'relation {i}: {relation}\r\n'
+            res += f'R{i}: {relation}\r\n'
         for i, ctc in enumerate(self.ctcs):
-            res += f'{ctc.ast}' + '\r\n'
+            res += f'CTC{i}: {ctc}\r\n'
+        attributes_res = ''
         for feature in self.get_features():
             for attribute in feature.get_attributes():
-                res += f'{attribute}' + '\r\n'
+                attributes_res += f'{attribute}' + '\r\n'
+        if attributes_res != '':
+            res += 'Attributes:\r\n' + attributes_res
         return res
 
     def __hash__(self) -> int:

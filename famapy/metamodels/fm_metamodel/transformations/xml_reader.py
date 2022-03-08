@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, ASTOperation
 from famapy.core.exceptions import DuplicatedFeature
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,
@@ -33,7 +33,7 @@ class XMLReader(TextToModel):
         for child in xml_root:
             if child.tag.casefold() == 'feature':
                 rootcounter += 1
-                root = self.parse_feature(child)
+                root = self.parse_feature(child, None)
                 feature_model = FeatureModel(root, [])
             elif child.tag.casefold() == 'excludes' or child.tag.casefold() == 'requires':
                 ctc = self.parse_ctc(child)
@@ -72,10 +72,10 @@ class XMLReader(TextToModel):
             AST.create_simple_binary_operation(operator_type, origin.name, destination.name)
         )
 
-    def parse_feature(self, element: ElementTree.Element) -> Feature:
+    def parse_feature(self, element: ElementTree.Element, parent: Feature) -> Feature:
         name = str(element.attrib.get('name'))
 
-        feature = Feature(name, [])
+        feature = Feature(name, [], parent=parent)
 
         if name in self.name_feature:
             print("This XML contains duplicated feature names", file=sys.stderr)
@@ -85,13 +85,13 @@ class XMLReader(TextToModel):
 
         for child in element:
             if child.tag.casefold() == 'setrelation' or child.tag.casefold() == 'binaryrelation':
-                relation = self.parse_relation(child)
+                relation = self.parse_relation(child, feature)
                 relation.parent = feature
                 feature.relations.append(relation)
         return feature
 
-    def parse_relation(self, element: ElementTree.Element) -> Relation:
-        relation = Relation(parent=None, children=[], card_min=0, card_max=0)
+    def parse_relation(self, element: ElementTree.Element, parent: Feature) -> Relation:
+        relation = Relation(parent=parent, children=[], card_min=0, card_max=0)
 
         if element.tag.casefold() == 'binaryrelation':
             num_solitary_features = 0
@@ -99,7 +99,7 @@ class XMLReader(TextToModel):
             for child in element:
                 if child.tag.casefold() == 'solitaryfeature':
                     num_solitary_features += 1
-                    feature = self.parse_feature(child)
+                    feature = self.parse_feature(child, parent)
                     relation.children.append(feature)
                 elif child.tag.casefold() == 'cardinality':
                     relation.card_min = int(str(child.attrib.get('min')))
@@ -110,7 +110,7 @@ class XMLReader(TextToModel):
         elif element.tag.casefold() == 'setrelation':
             for child in element:
                 if child.tag.casefold() == 'groupedfeature':
-                    feature = self.parse_feature(child)
+                    feature = self.parse_feature(child, parent)
                     relation.children.append(feature)
                 elif child.tag.casefold() == 'cardinality':
                     relation.card_min = int(str(child.attrib.get('min')))

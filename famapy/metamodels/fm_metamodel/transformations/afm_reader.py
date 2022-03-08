@@ -7,7 +7,7 @@ from afmparser import get_tree
 
 from famapy.core.transformations import TextToModel
 from famapy.core.models.ast import AST, Node, ASTOperation
-from famapy.metamodels.fm_metamodel.models.feature_model import (
+from famapy.metamodels.fm_metamodel.models import (
     Constraint,
     Domain,
     Feature,
@@ -18,7 +18,7 @@ from famapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
-class AFMTransformation(TextToModel):
+class AFMReader(TextToModel):
 
     @staticmethod
     def get_source_extension() -> str:
@@ -33,7 +33,7 @@ class AFMTransformation(TextToModel):
         absolute_path = os.path.abspath(self.path)
         self.parse_tree = get_tree(absolute_path)
 
-    def transform(self) -> None:
+    def transform(self) -> FeatureModel:
         self.set_parse_tree()
         self.set_relations()
         self.set_attributes()
@@ -164,38 +164,43 @@ class AFMTransformation(TextToModel):
         self.model.ctcs.append(cst)
 
     def build_ast_node(self, expression: AFMParser.ExpressionContext, prefix: str) -> Node:
-
-        result = None
-
         if isinstance(expression, AFMParser.AtomContext):
             if expression.variable() is not None:
                 var_name = prefix + expression.variable().getText()
             if expression.number() is not None:
                 var_name = expression.number().getText()
-
             result = Node(var_name)
 
-        binary_operation_types = []
-        binary_operation_types.append(AFMParser.LogicalExpContext)
-        binary_operation_types.append(AFMParser.OrExpContext)
-        binary_operation_types.append(AFMParser.AndExpContext)
-        binary_operation_types.append(AFMParser.RelationalExpContext)
-        binary_operation_types.append(AFMParser.ArithmeticExpContext)
+        binary_operation_types = [AFMParser.LogicalExpContext,
+                                  AFMParser.OrExpContext,
+                                  AFMParser.AndExpContext,
+                                  AFMParser.RelationalExpContext,
+                                  AFMParser.ArithmeticExpContext]
+        binary_operations_map = {'REQUIRES': ASTOperation.REQUIRES,
+                                 'EXCLUDES': ASTOperation.EXCLUDES,
+                                 'OR': ASTOperation.OR,
+                                 'AND': ASTOperation.AND,
+                                 'IFF': ASTOperation.EQUIVALENCE}
 
         if expression.__class__ in binary_operation_types:
-            # TODO: change str binary operation types for enumerations in ASTOperation 
-            result = result = Node(expression.getChild(1).getText())
-            result.left = self.build_ast_node(
-                expression.expression()[0], prefix)
-            result.right = self.build_ast_node(
-                expression.expression()[1], prefix)
+            binary_operation = expression.getChild(1).getText()
+            ast_operation = binary_operations_map.get(binary_operation)
+
+            # TODO: provide support for arithmetic and relational operations.
+            if ast_operation is None:
+                raise Exception(f'Constraints not supported in AFM Reader: {binary_operation}.')
+            result = Node(ast_operation)
+            result.left = self.build_ast_node(expression.expression()[0], prefix)
+            result.right = self.build_ast_node(expression.expression()[1], prefix)
 
         if isinstance(expression, AFMParser.NotExpContext):
             result = Node(ASTOperation.NOT)
-            result.right = self.build_ast_node(
-                expression.expression(), prefix)
+            result.right = self.build_ast_node(expression.expression(), prefix)
 
         if isinstance(expression, AFMParser.ParenthesisExpContext):
             result = self.build_ast_node(expression.expression(), prefix)
+
+        if result is None:
+            raise Exception(f'Constraint not support in AFM Reader: {expression}, {prefix}')
 
         return result

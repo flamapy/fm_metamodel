@@ -4,11 +4,12 @@ doc-warnings: false
 
 ignore-paths:
   - tests
+  - env
   - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLLexer.py
   - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLListener.py
   - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLParser.py
 
-pep8:
+pycodestyle:
   options:
     max-line-length: 100
 
