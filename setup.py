@@ -37,6 +37,6 @@ setuptools.setup(
         ]
     },
     dependency_links=[
-        'famapy>=0.6.1'
+        'famapy>=0.7.0'
     ],
 )
