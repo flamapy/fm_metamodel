@@ -6,7 +6,7 @@ from famapy.metamodels.fm_metamodel.transformations import (
     AFMReader,
     AFMWriter,
     UVLReader,
-    UVLWriter
+    UVLWriter,
 )
 
 

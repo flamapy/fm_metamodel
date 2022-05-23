@@ -22,9 +22,9 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'famapy>=0.7.0',
-        'uvlparser>=0.8.7',
-        'afmparser>=0.1.5',
+        'famapy>=0.9.0',
+        'uvlparser==0.9.0.dev0',
+        'afmparser>=0.2.0.dev1',
     ],
     extras_require={
         'dev': [
@@ -36,6 +36,6 @@ setuptools.setup(
         ]
     },
     dependency_links=[
-        'famapy>=0.7.0'
+        'famapy>=0.9.0'
     ],
 )
