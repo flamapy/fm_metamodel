@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from functools import total_ordering
 
-from famapy.core.models import AST, VariabilityModel
+from famapy.core.models import AST, VariabilityModel, VariabilityElement
 
 
 class Relation:
@@ -87,7 +87,7 @@ class Relation:
 
 
 @total_ordering
-class Feature:
+class Feature(VariabilityElement):
 
     def __init__(
         self,

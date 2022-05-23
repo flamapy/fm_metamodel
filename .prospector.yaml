@@ -4,6 +4,7 @@ doc-warnings: false
 
 ignore-paths:
   - tests
+  - build
   - env
   - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLLexer.py
   - famapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLListener.py
