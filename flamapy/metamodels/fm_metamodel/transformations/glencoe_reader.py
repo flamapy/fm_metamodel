@@ -27,7 +27,7 @@ class GlencoeReader(TextToModel):
             constraints = self._parse_constraints(constraints_info, features_info)
             return FeatureModel(root_feature, constraints)
 
-    def _parse_tree(self, parent: Feature, feature_node: dict[str, Any], 
+    def _parse_tree(self, parent: Feature, feature_node: dict[str, Any],
                     features_info: dict[str, Any]) -> Feature:
         """Parse the tree structure and returns the root feature."""
         feature_id = feature_node['id']
@@ -38,15 +38,19 @@ class GlencoeReader(TextToModel):
             children = []
             for child in feature_node['children']:
                 child_feature = self._parse_tree(feature, child, features_info)
-                if feature_type == 'FEATURE':
-                    optional = features_info[child['id']]['optional']
+                optional = features_info[child['id']]['optional']
+                if feature_type == 'FEATURE':  # simple feature (not group)
                     card_min = 0 if optional else 1
                     relation = Relation(feature, [child_feature], card_min, 1)
                     feature.add_relation(relation)
+                elif not optional:
+                    # Additional relation because Glencoe supports mandatory features in groups
+                    relation = Relation(feature, [child_feature], 1, 1)
+                    feature.add_relation(relation)
+                    children.append(child_feature)
                 else:
                     children.append(child_feature)
-                    relation = None
-            if relation is None:
+            if relation != 'FEATURE':  # group
                 if feature_type == 'XOR':
                     relation = Relation(feature, children, 1, 1)
                 elif feature_type == 'OR':
@@ -56,18 +60,13 @@ class GlencoeReader(TextToModel):
                     card_max = features_info[feature_id]['max']
                     relation = Relation(feature, children, card_min, card_max)
                 feature.add_relation(relation)
-        # Additional relation because Glencoe supports mandatory features in groups
-        if parent is not None and parent.is_group():
-            optional = features_info[feature_id]['optional']
-            if not optional:
-                parent.add_relation(Relation(parent, [feature], 1, 1))
         # Create an attribute for the 'note' parameter
         # note = features_info[feature_id]['note']
         # if note:
         #     pass
         return feature
 
-    def _parse_constraints(self, ctcs_info: dict[str, Any], 
+    def _parse_constraints(self, ctcs_info: dict[str, Any],
                            features_info: dict[str, Any]) -> list[Constraint]:
         constraints = []
         print(ctcs_info)
@@ -77,7 +76,7 @@ class GlencoeReader(TextToModel):
             constraints.append(ctc)
         return constraints
 
-    def _parse_ast_constraint(self, ctc_info: dict[str, Any], 
+    def _parse_ast_constraint(self, ctc_info: dict[str, Any],
                               features_info: dict[str, Any]) -> Node:
         ctc_type = ctc_info['type']
         ctc_operands = ctc_info['operands']

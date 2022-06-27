@@ -50,10 +50,11 @@ class FeatureIDEReader(TextToModel):
     def _read_feature_model(self, filepath: str) -> FeatureModel:
         tree = ElementTree.parse(filepath)
         root = tree.getroot()
+        model = FeatureModel(root=None, constraints=[])
         for child in root:
             if child.tag == FeatureIDEReader.TAG_STRUCT:
                 (root_feature, _) = self._read_features(child, None)
-                model = FeatureModel(root_feature, [])
+                model.root = root_feature
             elif child.tag == FeatureIDEReader.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
                 model.ctcs.extend(constraints)
