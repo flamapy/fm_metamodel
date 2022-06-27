@@ -6,6 +6,8 @@ from .splot_writer import SPLOTWriter
 from .uvl_reader import UVLReader
 from .uvl_writer import UVLWriter
 from .xml_reader import XMLReader
+from .glencoe_reader import GlencoeReader
+from .glencoe_writer import GlencoeWriter
 
 __all__ = ['AFMReader', 
            'AFMWriter', 
@@ -14,4 +16,6 @@ __all__ = ['AFMReader',
            'SPLOTWriter',
            'UVLReader',
            'UVLWriter',
-           'XMLReader']
+           'XMLReader',
+           'GlencoeReader',
+           'GlencoeWriter']
