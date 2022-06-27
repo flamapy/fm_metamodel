@@ -68,7 +68,7 @@ class AFMReader(TextToModel):
 
         parent_feature = self.model.get_feature_by_name(
             feature_spec.init_spec().WORD().getText())
-
+        print(f'Parent: {parent_feature}')
         for non_cardinal_spec in feature_spec.non_cardinal_spec():
             child_node = non_cardinal_spec.getChild(0)
 
