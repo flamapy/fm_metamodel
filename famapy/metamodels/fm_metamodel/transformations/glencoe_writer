@@ -1,0 +1,97 @@
+import json
+from typing import Any 
+
+from famapy.core.models.ast import Node, ASTOperation
+from famapy.core.transformations import ModelToText
+
+from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
+
+
+class GlencoeWriter(ModelToText):
+
+    CTC_TYPES = {ASTOperation.NOT: 'NotTerm',
+                 ASTOperation.AND: 'AndTerm',
+                 ASTOperation.OR: 'OrTerm',
+                 ASTOperation.XOR: 'XorTerm',
+                 ASTOperation.IMPLIES: 'ImpliesTerm',
+                 ASTOperation.REQUIRES: 'ImpliesTerm',
+                 ASTOperation.EXCLUDES: 'ExcludesTerm',
+                 ASTOperation.EQUIVALENCE: 'EquivalentTerm'
+    }
+
+    @staticmethod
+    def get_destination_extension() -> str:
+        return 'gfm.json'
+
+    def __init__(self, path: str, source_model: FeatureModel) -> None:
+        self.path = path
+        self.source_model = source_model
+
+    def transform(self) -> str:
+        json_object = self._to_json(self.source_model)
+        with open(self.path, 'w', encoding='utf8') as file:
+            json.dump(json_object, file, indent=4)
+
+    def _to_json(self, fm: FeatureModel) -> dict[str, Any]:
+        result = {}
+        result['id'] = f'FM_{fm.root.name}'
+        result['name'] = f'FM_{fm.root.name}'
+        result['features'] = self._get_features_info(fm.get_features())
+        result['tree'] = self._get_tree_info(fm.root)
+        result['constraints'] = self._get_constraints_info(fm.get_constraints())
+        return result
+
+    def _get_features_info(self, features: list[Feature]) -> dict[str, Any]:
+        features_info = {}
+        for feature in features:
+            feature_type = 'FEATURE'
+            if feature.is_alternative_group():
+                feature_type = 'XOR'
+            elif feature.is_or_group():
+                feature_type = 'OR'
+            elif feature.is_cardinality_group():
+                feature_type = 'GENOR'
+
+            features_info[feature.name] = {
+                'name': feature.name,
+                'optional': not feature.is_mandatory(),
+                'type': feature_type,
+                'note': ''  # ToDo: add 'note' attribute information
+            }
+
+            if feature_type == 'GENOR':
+                relation = next(r.is_cardinal() for r in feature.get_relations())
+                features_info[feature.name]['min'] = relation.card_min
+                features_info[feature.name]['max'] = relation.card_max
+        return features_info
+
+    def _get_tree_info(self, feature: Feature) -> dict[str, Any]:
+        feature_info = {}
+        feature_info['id'] = feature.name
+        children = [self._get_tree_info(child) for child in feature.get_children()]
+        if children:
+            feature_info['children'] = children
+        return feature_info
+
+    def _get_constraints_info(self, constraints: list[Constraint]) -> dict[str, Any]:
+        constraints_info = {}
+        for ctc in constraints:
+            constraints_info[ctc.name] = self._get_ctc_info(ctc.ast.root)
+        return constraints_info
+    
+    def _get_ctc_info(self, ast_node: Node) -> dict[str, Any]:
+        ctc_info = {}
+        if ast_node.is_feature():
+            ctc_info['type'] = 'FeatureTerm'
+            ctc_info['operands'] = [ast_node.data]
+        else:
+            ctc_info['type'] = GlencoeWriter.CTC_TYPES[ast_node.data]
+            operands = []
+            left = self._get_ctc_info(ast_node.left)
+            operands.append(left)
+            if ast_node.right is not None:
+                right = self._get_ctc_info(ast_node.right)
+                operands.append(right)
+            ctc_info['operands'] = operands
+        return ctc_info
+    

@@ -1,12 +1,7 @@
 import csv
 
 from famapy.core.transformations import TextToModel
-from famapy.metamodels.fm_metamodel.models import (
-    Constraint,
-    Feature,
-    FeatureModel,
-    Relation,
-)
+from famapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class AttributesCSVReader(TextToModel):
@@ -29,7 +24,7 @@ class AttributesCSVReader(TextToModel):
         self.model = model
 
     def transform(self) -> FeatureModel:
-        with open(self.path, newline='') as csvfile:
+        with open(self.path, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace=True)
             for row in reader:
                 print(row)
