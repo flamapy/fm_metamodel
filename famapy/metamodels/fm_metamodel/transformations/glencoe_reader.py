@@ -50,7 +50,7 @@ class GlencoeReader(TextToModel):
                 if feature_type == 'XOR':
                     relation = Relation(feature, children, 1, 1)
                 elif feature_type == 'OR':
-                    relation = Relation(feature, children, 0, len(children))
+                    relation = Relation(feature, children, 1, len(children))
                 elif feature_type == 'GENOR':  # Group Cardinality
                     card_min = features_info[feature_id]['min']
                     card_max = features_info[feature_id]['max']
