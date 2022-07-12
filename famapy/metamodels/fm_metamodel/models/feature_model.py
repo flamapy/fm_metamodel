@@ -256,24 +256,6 @@ class FeatureModel(VariabilityModel):
     def get_constraints(self) -> list['Constraint']:
         return self.ctcs
 
-    def get_simple_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_simple_constraint()]
-
-    def get_complex_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_complex_constraint()]
-
-    def get_requires_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_requires_constraint()]
-
-    def get_excludes_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_excludes_constraint()]
-
-    def get_pseudocomplex_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_pseudocomplex_constraint()]
-
-    def get_strictcomplex_constraints(self) -> list['Constraint']:
-        return [ctc for ctc in self.ctcs if ctc.is_strictcomplex_constraint()]
-
     def get_mandatory_features(self) -> list['Feature']:
         return [f for f in self.get_features() if f.is_mandatory()]
 
