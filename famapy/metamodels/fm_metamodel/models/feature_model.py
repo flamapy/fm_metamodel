@@ -161,6 +161,9 @@ class Feature(VariabilityElement):
     def is_group(self) -> bool:
         return any(r.is_group() for r in self.get_relations())
 
+    def is_multiple_group_decomposition(self) -> bool:
+        return sum(r.is_group() for r in self.get_relations()) > 1
+
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
 
