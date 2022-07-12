@@ -86,7 +86,7 @@ def _get_constraints_info(constraints: list[Constraint]) -> dict[str, Any]:
 
 def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
     ctc_info: dict[str, Any] = {}
-    if ast_node.is_feature():
+    if ast_node.is_term():
         ctc_info['type'] = 'FeatureTerm'
         ctc_info['operands'] = [ast_node.data]
     else:
