@@ -5,7 +5,7 @@ from famapy.core.operations import ProductsNumber
 from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
-class FMEstimatedProductsNumber(ProductsNumber):
+class FMEstimatedProductsNumber(EstimatedProductsNumber):
     """It computes an estimation of the number of products of the feature model.
 
     It only uses the structure of the feature model,
