@@ -77,9 +77,9 @@ class UVLWriter(ModelToText):
             min_value = rel.card_min
             max_value = rel.card_max
             if min_value == max_value:
-                result = "[" + str(min) + "]"
+                result = "[" + str(min_value) + "]"
             else:
-                result = "[" + str(min) + ".." + str(max) + "]"
+                result = "[" + str(min_value) + ".." + str(max_value) + "]"
 
         return result
 
