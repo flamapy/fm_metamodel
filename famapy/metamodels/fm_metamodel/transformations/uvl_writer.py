@@ -84,12 +84,13 @@ class UVLWriter(ModelToText):
         return result
 
     def read_constraints(self) -> str:
-        result = "constraints"
+        result = ""
         constraints = self.model.ctcs
-        for constraint in constraints:
-            constraint_text = self.serialize_constraint(constraint)
-            result = result + "\n\t" + constraint_text
-
+        if constraints:
+            result = "constraints"
+            for constraint in constraints:
+                constraint_text = self.serialize_constraint(constraint)
+                result = result + "\n\t" + constraint_text
         return result
 
     @staticmethod
