@@ -1,6 +1,6 @@
 import math
 
-from famapy.core.operations import ProductsNumber
+from famapy.core.operations import EstimatedProductsNumber
 
 from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
