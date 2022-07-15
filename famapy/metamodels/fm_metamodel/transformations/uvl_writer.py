@@ -77,19 +77,20 @@ class UVLWriter(ModelToText):
             min_value = rel.card_min
             max_value = rel.card_max
             if min_value == max_value:
-                result = "[" + str(min) + "]"
+                result = "[" + str(min_value) + "]"
             else:
-                result = "[" + str(min) + ".." + str(max) + "]"
+                result = "[" + str(min_value) + ".." + str(max_value) + "]"
 
         return result
 
     def read_constraints(self) -> str:
-        result = "constraints"
+        result = ""
         constraints = self.model.ctcs
-        for constraint in constraints:
-            constraint_text = self.serialize_constraint(constraint)
-            result = result + "\n\t" + constraint_text
-
+        if constraints:
+            result = "constraints"
+            for constraint in constraints:
+                constraint_text = self.serialize_constraint(constraint)
+                result = result + "\n\t" + constraint_text
         return result
 
     @staticmethod
