@@ -220,37 +220,37 @@ class UVLReader(TextToModel):
             attribute = Attribute(name, None, value, None)
             attribute.set_parent(feature)
             feature.add_attribute(attribute)
-    '''
-    @classmethod
-    def __add_relation_min_max(cls,
-                               parent: Feature,
-                               children: Feature,
-                               relation_text: str) -> None:
-        relation_text = relation_text.replace('[', '').replace(']', '')
-        words = relation_text.split('..')
-        if len(words) == 1:
-            _min = int(words[0])
-            _max = int(words[0])
-        else:
-            _min = int(words[0])
-            _max = int(words[1])
-        assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
-        assert _max <= len(children), (
-            'maximum cardinality must be lower or equal than the amount of children'
-        )
 
-        if _min == _max == len(children):
-            for child in children:
-                relation = Relation(parent, [child], 1, 1)
-                parent.add_relation(relation)
-        elif _min == 0 and _max == len(children):
-            for child in children:
-                relation = Relation(parent, [child], 0, 1)
-                parent.add_relation(relation)
-        else:
-            relation = Relation(parent, children, _min, _max)
-            parent.add_relation(relation)
-    '''
+    #@classmethod
+    #def __add_relation_min_max(cls,
+    #                           parent: Feature,
+    #                           children: Feature,
+    #                           relation_text: str) -> None:
+    #    relation_text = relation_text.replace('[', '').replace(']', '')
+    #    words = relation_text.split('..')
+    #    if len(words) == 1:
+    #        _min = int(words[0])
+    #        _max = int(words[0])
+    #    else:
+    #        _min = int(words[0])
+    #        _max = int(words[1])
+    #    assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
+    #    assert _max <= len(children), (
+    #        'maximum cardinality must be lower or equal than the amount of children'
+    #    )
+
+    #    if _min == _max == len(children):
+    #        for child in children:
+    #            relation = Relation(parent, [child], 1, 1)
+    #            parent.add_relation(relation)
+    #    elif _min == 0 and _max == len(children):
+    #        for child in children:
+    #            relation = Relation(parent, [child], 0, 1)
+    #            parent.add_relation(relation)
+    #    else:
+    #        relation = Relation(parent, children, _min, _max)
+    #        parent.add_relation(relation)
+
     def read_constraints(self) -> None:
         assert self.model is not None
         constraints_node = self.parse_tree.constraints().constraint()
