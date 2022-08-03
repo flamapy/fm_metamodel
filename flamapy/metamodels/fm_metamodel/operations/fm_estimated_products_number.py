@@ -1,8 +1,8 @@
 import math
 
-from famapy.core.operations import EstimatedProductsNumber
+from flamapy.core.operations import EstimatedProductsNumber
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
 class FMEstimatedProductsNumber(EstimatedProductsNumber):

@@ -1,9 +1,9 @@
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-from famapy.core.models.ast import AST, Node, ASTOperation
-from famapy.core.transformations import TextToModel
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.models.ast import AST, Node, ASTOperation
+from flamapy.core.transformations import TextToModel
+from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

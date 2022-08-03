@@ -6,15 +6,15 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-    name="famapy-fm",
-    version="1.0.0",
-    author="Víctor Ramírez de la Corte",
-    author_email="me@virako.es",
-    description="famapy-fm is a plugin to FaMaPy module",
+    name="flamapy-fm",
+    version="1.0.0.dev0",
+    author="Flamapy",
+    author_email="flamapy@us.es",
+    description="flamapy-fm is a plugin to Flamapy module",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/FaMaPy/fm_metamodel",
-    packages=setuptools.find_namespace_packages(include=['famapy.*']),
+    url="https://github.com/flamapy/fm_metamodel",
+    packages=setuptools.find_namespace_packages(include=['flamapy.*']),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -22,9 +22,9 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'famapy~=1.0.0',
-        'uvlparser~=1.0.0',
-        'afmparser~=1.0.0',
+        'flamapy~=1.0.0.dev0',
+        'uvlparser~=1.0.0.dev0',
+        'afmparser~=1.0.0.dev0',
     ],
     extras_require={
         'dev': [
@@ -36,6 +36,6 @@ setuptools.setup(
         ]
     },
     dependency_links=[
-        'famapy~=1.0.0'
+        'flamapy~=1.0.0.dev0'
     ],
 )

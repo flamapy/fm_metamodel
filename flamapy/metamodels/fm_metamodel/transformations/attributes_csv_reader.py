@@ -1,7 +1,7 @@
 import csv
 
-from famapy.core.transformations import TextToModel
-from famapy.metamodels.fm_metamodel.models import FeatureModel
+from flamapy.core.transformations import TextToModel
+from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class AttributesCSVReader(TextToModel):

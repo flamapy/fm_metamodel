@@ -1,6 +1,6 @@
-from famapy.core.operations import Operation
+from flamapy.core.operations import Operation
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
 class FMFeatureAncestors(Operation):

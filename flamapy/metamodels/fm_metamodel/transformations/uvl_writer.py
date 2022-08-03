@@ -1,8 +1,8 @@
 import re
 
-from famapy.core.models.ast import ASTOperation
-from famapy.core.transformations import ModelToText
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.models.ast import ASTOperation
+from flamapy.core.transformations import ModelToText
+from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

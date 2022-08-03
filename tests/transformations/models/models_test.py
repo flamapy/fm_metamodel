@@ -1,7 +1,7 @@
 from pathlib import Path
-from famapy.core.models.ast import AST, Node, ASTOperation
-from famapy.metamodels.fm_metamodel.models.feature_model import Constraint, Feature, FeatureModel, Relation
-from famapy.metamodels.fm_metamodel.transformations import (
+from flamapy.core.models.ast import AST, Node, ASTOperation
+from flamapy.metamodels.fm_metamodel.models.feature_model import Constraint, Feature, FeatureModel, Relation
+from flamapy.metamodels.fm_metamodel.transformations import (
     XMLReader,
     AFMReader,
     AFMWriter,

@@ -1,6 +1,6 @@
-from famapy.core.operations.atomic_sets import AtomicSets
+from flamapy.core.operations.atomic_sets import AtomicSets
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
 class FMAtomicSets(AtomicSets):

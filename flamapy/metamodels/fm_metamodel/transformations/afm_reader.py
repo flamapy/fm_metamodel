@@ -5,9 +5,9 @@ from typing import Optional
 from afmparser import AFMParser
 from afmparser import get_tree
 
-from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST, Node, ASTOperation
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.transformations import TextToModel
+from flamapy.core.models.ast import AST, Node, ASTOperation
+from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Domain,
     Feature,

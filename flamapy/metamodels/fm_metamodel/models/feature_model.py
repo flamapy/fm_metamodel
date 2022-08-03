@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from functools import total_ordering
 
-from famapy.core.models import AST, VariabilityModel, VariabilityElement
+from flamapy.core.models import AST, VariabilityModel, VariabilityElement
 
 
 class Relation:

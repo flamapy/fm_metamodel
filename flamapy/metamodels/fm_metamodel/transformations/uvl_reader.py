@@ -4,9 +4,9 @@ from typing import Any
 from uvlparser import get_tree
 from uvlparser.UVLParser import UVLParser
 
-from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST, ASTOperation, Node
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.transformations import TextToModel
+from flamapy.core.models.ast import AST, ASTOperation, Node
+from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

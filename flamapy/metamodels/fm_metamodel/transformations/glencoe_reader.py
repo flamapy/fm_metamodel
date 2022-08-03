@@ -2,10 +2,10 @@ import functools
 import json
 from typing import Any
 
-from famapy.core.models.ast import AST, Node, ASTOperation
-from famapy.core.transformations import TextToModel
+from flamapy.core.models.ast import AST, Node, ASTOperation
+from flamapy.core.transformations import TextToModel
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relation, Constraint
+from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relation, Constraint
 
 
 class GlencoeReader(TextToModel):

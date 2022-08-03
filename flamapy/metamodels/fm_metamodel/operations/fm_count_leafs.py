@@ -1,6 +1,6 @@
-from famapy.core.operations import CountLeafs
+from flamapy.core.operations import CountLeafs
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel
+from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class FMCountLeafs(CountLeafs):

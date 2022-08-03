@@ -1,10 +1,10 @@
 import json
 from typing import Any 
 
-from famapy.core.models.ast import Node, ASTOperation
-from famapy.core.transformations import ModelToText
+from flamapy.core.models.ast import Node, ASTOperation
+from flamapy.core.transformations import ModelToText
 
-from famapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
+from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
 
 
 class GlencoeWriter(ModelToText):

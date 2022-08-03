@@ -2,10 +2,10 @@ import sys
 from typing import Optional
 from xml.etree import ElementTree
 
-from famapy.core.transformations import TextToModel
-from famapy.core.models.ast import AST, ASTOperation
-from famapy.core.exceptions import DuplicatedFeature
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.transformations import TextToModel
+from flamapy.core.models.ast import AST, ASTOperation
+from flamapy.core.exceptions import DuplicatedFeature
+from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,

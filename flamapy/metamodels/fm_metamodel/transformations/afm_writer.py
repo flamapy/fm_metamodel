@@ -1,7 +1,7 @@
-from famapy.core.transformations import ModelToText
+from flamapy.core.transformations import ModelToText
 
-from famapy.core.models.ast import Node
-from famapy.metamodels.fm_metamodel.models import (
+from flamapy.core.models.ast import Node
+from flamapy.metamodels.fm_metamodel.models import (
     Feature,
     FeatureModel,
     Relation,
