@@ -1,9 +1,8 @@
 import json
-from typing import Any 
+from typing import Any
 
 from flamapy.core.models.ast import Node, ASTOperation
 from flamapy.core.transformations import ModelToText
-
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
 
 
