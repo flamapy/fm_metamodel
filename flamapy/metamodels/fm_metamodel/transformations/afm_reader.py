@@ -99,7 +99,7 @@ class AFMReader(TextToModel):
 
     def set_attributes(self) -> None:
         attributes_block = self.parse_tree.attributes_block()
-        if not attributes_block is None:
+        if attributes_block is not None:
             for attribute_spec in attributes_block.attribute_spec():
                 self.read_attribute(attribute_spec)
 
@@ -139,7 +139,7 @@ class AFMReader(TextToModel):
 
     def set_constraints(self) -> None:
         constraints_block = self.parse_tree.constraints_block()
-        if not constraints_block is None:
+        if constraints_block is not None:
             for constraint_spec in constraints_block.constraint_spec():
 
                 simple_spec = constraint_spec.simple_spec()
