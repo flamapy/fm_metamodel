@@ -99,8 +99,9 @@ class AFMReader(TextToModel):
 
     def set_attributes(self) -> None:
         attributes_block = self.parse_tree.attributes_block()
-        for attribute_spec in attributes_block.attribute_spec():
-            self.read_attribute(attribute_spec)
+        if not attributes_block is None:
+            for attribute_spec in attributes_block.attribute_spec():
+                self.read_attribute(attribute_spec)
 
     def read_attribute(self, attribute_spec: AFMParser.Attribute_specContext) -> None:
         attribute_name_node = attribute_spec.attribute_name()
@@ -138,19 +139,19 @@ class AFMReader(TextToModel):
 
     def set_constraints(self) -> None:
         constraints_block = self.parse_tree.constraints_block()
+        if not constraints_block is None:
+            for constraint_spec in constraints_block.constraint_spec():
 
-        for constraint_spec in constraints_block.constraint_spec():
+                simple_spec = constraint_spec.simple_spec()
+                if simple_spec is not None:
+                    prefix = ""
+                    self.read_expression(simple_spec.expression(), prefix)
 
-            simple_spec = constraint_spec.simple_spec()
-            if simple_spec is not None:
-                prefix = ""
-                self.read_expression(simple_spec.expression(), prefix)
-
-            brackets_spec = constraint_spec.brackets_spec()
-            if brackets_spec is not None:
-                prefix = brackets_spec.WORD().getText() + "."
-                for spec in brackets_spec.simple_spec():
-                    self.read_expression(spec.expression(), prefix)
+                brackets_spec = constraint_spec.brackets_spec()
+                if brackets_spec is not None:
+                    prefix = brackets_spec.WORD().getText() + "."
+                    for spec in brackets_spec.simple_spec():
+                        self.read_expression(spec.expression(), prefix)
 
     def read_expression(self, expression: AFMParser.ExpressionContext, prefix: str) -> None:
 
