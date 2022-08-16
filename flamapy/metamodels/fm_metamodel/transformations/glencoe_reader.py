@@ -27,7 +27,7 @@ class GlencoeReader(TextToModel):
             constraints = self._parse_constraints(constraints_info, features_info)
             return FeatureModel(root_feature, constraints)
 
-    def _parse_tree(self, parent: Feature, feature_node: dict[str, Any],
+    def _parse_tree(self, parent: Feature, feature_node: dict[str, Any], 
                     features_info: dict[str, Any]) -> Feature:
         """Parse the tree structure and returns the root feature."""
         feature_id = feature_node['id']
@@ -50,7 +50,7 @@ class GlencoeReader(TextToModel):
                     children.append(child_feature)
                 else:
                     children.append(child_feature)
-            if relation != 'FEATURE':  # group
+            if feature_type != 'FEATURE':  # group
                 if feature_type == 'XOR':
                     relation = Relation(feature, children, 1, 1)
                 elif feature_type == 'OR':
@@ -66,7 +66,7 @@ class GlencoeReader(TextToModel):
         #     pass
         return feature
 
-    def _parse_constraints(self, ctcs_info: dict[str, Any],
+    def _parse_constraints(self, ctcs_info: dict[str, Any], 
                            features_info: dict[str, Any]) -> list[Constraint]:
         constraints = []
         print(ctcs_info)
@@ -76,7 +76,7 @@ class GlencoeReader(TextToModel):
             constraints.append(ctc)
         return constraints
 
-    def _parse_ast_constraint(self, ctc_info: dict[str, Any],
+    def _parse_ast_constraint(self, ctc_info: dict[str, Any], 
                               features_info: dict[str, Any]) -> Node:
         ctc_type = ctc_info['type']
         ctc_operands = ctc_info['operands']
