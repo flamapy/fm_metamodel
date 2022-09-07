@@ -194,8 +194,8 @@ class Constraint:
     def ast(self, ast: AST) -> None:
         self._ast = ast
 
-    def get_features(self) -> list['Feature']:
-        """List of features involved in the constraint."""
+    def get_features(self) -> list[str]:
+        """List of features' names involved in the constraint."""
         features = set()
         stack = [self.ast.root]
         while stack:
