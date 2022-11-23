@@ -20,7 +20,7 @@ class UVLWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> str:
         model = self.model
         root = model.root
 
@@ -29,6 +29,7 @@ class UVLWriter(ModelToText):
 
         with open(self.path, 'w', encoding='utf8') as file:
             file.write(serialized_model)
+        return serialized_model
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
