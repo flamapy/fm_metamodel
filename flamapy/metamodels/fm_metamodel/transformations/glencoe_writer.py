@@ -27,8 +27,9 @@ class GlencoeWriter(ModelToText):
 
     def transform(self) -> str:
         json_object = _to_json(self.source_model)
-        with open(self.path, 'w', encoding='utf8') as file:
-            json.dump(json_object, file, indent=4)
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as file:
+                json.dump(json_object, file, indent=4)
         return json.dumps(json_object, indent=4)
 
 
@@ -61,7 +62,7 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
         }
 
         if feature_type == 'GENOR':
-            relation = next(r.is_cardinal() for r in feature.get_relations())
+            relation = next(r for r in feature.get_relations() if r.is_cardinal())
             features_info[feature.name]['min'] = relation.card_min
             features_info[feature.name]['max'] = relation.card_max
     return features_info
