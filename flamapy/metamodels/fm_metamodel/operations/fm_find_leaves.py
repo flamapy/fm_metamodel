@@ -19,7 +19,7 @@ class FMFindLeaves(FindLeaves):
         return self.get_result()
 
 
-def find_leaf_features(feature_model: FeatureModel) -> int:
+def find_leaf_features(feature_model: FeatureModel) -> list[Any]:
     leaves = []
     for f in feature_model.get_features():
         if f.is_leaf():
