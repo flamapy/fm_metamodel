@@ -23,5 +23,5 @@ def find_leaf_features(feature_model: FeatureModel) -> int:
     leaves = []
     for f in feature_model.get_features():
         if f.is_leaf():
-            leaves.append(f)
+            leaves.append(f.name)
     return leaves
