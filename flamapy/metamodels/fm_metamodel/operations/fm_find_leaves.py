@@ -1,7 +1,8 @@
+from typing import Any
 from flamapy.core.operations import FindLeaves
 
 from flamapy.metamodels.fm_metamodel.models import FeatureModel
-from typing import Any
+
 
 class FMFindLeaves(FindLeaves):
 
@@ -21,7 +22,7 @@ class FMFindLeaves(FindLeaves):
 
 def find_leaf_features(feature_model: FeatureModel) -> list[Any]:
     leaves = []
-    for f in feature_model.get_features():
-        if f.is_leaf():
-            leaves.append(f.name)
+    for feature in feature_model.get_features():
+        if feature.is_leaf():
+            leaves.append(feature.name)
     return leaves
