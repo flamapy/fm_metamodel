@@ -1,7 +1,7 @@
 from flamapy.core.operations import Operation
 
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
-
+from typing import Any, Optional
 
 class FMFeatureAncestors(Operation):
     """
@@ -9,10 +9,12 @@ class FMFeatureAncestors(Operation):
     (i.e., all parents recursively up to the root feature).
     """
 
-    def __init__(self, feature: Feature):
+    def __init__(self):
         self.result = []  # type: list[Feature]
-        self.feature = feature
 
+    def set_feature(self, feature: Feature) -> None:
+        self.feature = feature  
+        
     def get_result(self) -> list[Feature]:
         return self.result
 
