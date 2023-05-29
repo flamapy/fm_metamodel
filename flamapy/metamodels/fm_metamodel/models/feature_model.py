@@ -59,16 +59,18 @@ class Relation:
             res += _child.name + ' '
         if self.is_alternative():
             relation_type = 'alternative'
-        if self.is_or():
+        elif self.is_or():
             relation_type = 'or'
-        if self.is_mandatory():
+        elif self.is_mandatory():
             relation_type = 'mandatory'
-        if self.is_optional():
+        elif self.is_optional():
             relation_type = 'optional'
-        if self.is_mutex():
+        elif self.is_mutex():
             relation_type = 'mutex'
-        if self.is_cardinal():
+        elif self.is_cardinal():
             relation_type = 'cardinality'
+        else: 
+            relation_type = 'Other'
         res = f'({relation_type}) ' + res
         return res
 
