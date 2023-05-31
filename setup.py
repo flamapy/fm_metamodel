@@ -36,6 +36,6 @@ setuptools.setup(
         ]
     },
     dependency_links=[
-        'flamapy~=1.0.1'
+        'flamapy~=1.1.3'
     ],
 )
