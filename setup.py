@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flamapy-fm",
-    version="1.0.1",
+    version="1.1.1",
     author="Flamapy",
     author_email="flamapy@us.es",
     description="flamapy-fm is a plugin to Flamapy module",
