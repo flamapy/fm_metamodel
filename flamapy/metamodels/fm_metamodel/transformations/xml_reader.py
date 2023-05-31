@@ -4,7 +4,7 @@ from xml.etree import ElementTree
 
 from flamapy.core.transformations import TextToModel
 from flamapy.core.models.ast import AST, ASTOperation
-from flamapy.core.exceptions import DuplicatedFeature
+from flamapy.core.exceptions import DuplicatedFeature, FlamaException
 from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
@@ -65,7 +65,7 @@ class XMLReader(TextToModel):
             operator_type = ASTOperation.REQUIRES
 
         if origin is None or destination is None:
-            raise Exception('origin or destination not found')
+            raise FlamaException('origin or destination not found')
 
         return Constraint(
             name,

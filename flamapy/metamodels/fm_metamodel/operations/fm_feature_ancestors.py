@@ -11,6 +11,7 @@ class FMFeatureAncestors(Operation):
 
     def __init__(self):
         self.result = []  # type: list[Feature]
+        self.feature = None  # type: Feature
 
     def set_feature(self, feature: Feature) -> None:
         self.feature = feature  

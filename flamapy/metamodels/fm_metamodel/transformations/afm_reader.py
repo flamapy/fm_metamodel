@@ -5,6 +5,7 @@ from typing import Optional
 from afmparser import AFMParser
 from afmparser import get_tree
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
 from flamapy.core.models.ast import AST, Node, ASTOperation
 from flamapy.metamodels.fm_metamodel.models import (
@@ -189,7 +190,8 @@ class AFMReader(TextToModel):
 
             # TODO: provide support for arithmetic and relational operations.
             if ast_operation is None:
-                raise Exception(f'Constraints not supported in AFM Reader: {binary_operation}.')
+                raise FlamaException(
+                    f'Constraints not supported in AFM Reader: {binary_operation}.')
             result = Node(ast_operation)
             result.left = self.build_ast_node(expression.expression()[0], prefix)
             result.right = self.build_ast_node(expression.expression()[1], prefix)
@@ -202,6 +204,7 @@ class AFMReader(TextToModel):
             result = self.build_ast_node(expression.expression(), prefix)
 
         if result is None:
-            raise Exception(f'Constraint not support in AFM Reader: {expression}, {prefix}')
+            raise FlamaException(
+                f'Constraint not support in AFM Reader: {expression}, {prefix}')
 
         return result

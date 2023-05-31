@@ -1,6 +1,7 @@
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.ast import AST, Node, ASTOperation
 from flamapy.core.transformations import TextToModel
 from flamapy.metamodels.fm_metamodel.models import (
@@ -117,7 +118,7 @@ class FeatureIDEReader(TextToModel):
                 ctc = Constraint(str(number), ast)
                 constraints.append(ctc)
             else:
-                raise Exception()
+                raise FlamaException()
             number += 1
         return constraints
 

@@ -2,6 +2,7 @@ import functools
 import json
 from typing import Any
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.ast import AST, Node, ASTOperation
 from flamapy.core.transformations import TextToModel
 
@@ -102,13 +103,13 @@ class GlencoeReader(TextToModel):
             node = Node(ASTOperation.EQUIVALENCE, left, right)
         elif ctc_type == 'AndTerm':
             op_list = [self._parse_ast_constraint(op, features_info) for op in ctc_operands]
-            node = functools.reduce(lambda l, r: Node(ASTOperation.AND, l, r), op_list)
+            node = functools.reduce(lambda lamb, r: Node(ASTOperation.AND, lamb, r), op_list)
         elif ctc_type == 'OrTerm':
             op_list = [self._parse_ast_constraint(op, features_info) for op in ctc_operands]
-            node = functools.reduce(lambda l, r: Node(ASTOperation.OR, l, r), op_list)
+            node = functools.reduce(lambda lamb, r: Node(ASTOperation.OR, lamb, r), op_list)
         elif ctc_type == 'XorTerm':
             op_list = [self._parse_ast_constraint(op, features_info) for op in ctc_operands]
-            node = functools.reduce(lambda l, r: Node(ASTOperation.XOR, l, r), op_list)
+            node = functools.reduce(lambda lamb, r: Node(ASTOperation.XOR, lamb, r), op_list)
         else:
-            raise Exception(f'Invalid constraint: {ctc_info}')
+            raise FlamaException(f'Invalid constraint: {ctc_info}')
         return node
