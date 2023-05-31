@@ -4,6 +4,7 @@ from typing import Any
 from uvlparser import get_tree
 from uvlparser.UVLParser import UVLParser
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
 from flamapy.core.models.ast import AST, ASTOperation, Node
 from flamapy.metamodels.fm_metamodel.models import (
@@ -285,11 +286,11 @@ class UVLReader(TextToModel):
                              UVLParser.ExcludesExpContext: ASTOperation.EXCLUDES}
             logic_op = logic_op_type.get(type(expression.logical_operator()))
             if logic_op is None:
-                raise Exception(f'Constraint expression not supported by UVL reader: '
-                                f'{expression.logical_operator().getText()}')
+                raise FlamaException(f'Constraint expression not supported by UVL reader: '
+                                     f'{expression.logical_operator().getText()}')
             return Node(logic_op, left, right)
-        raise Exception(f'Constraint expression not supported by UVL reader: '
-                        f'{expression.getText()}')
+        raise FlamaException(f'Constraint expression not supported by UVL reader: '
+                             f'{expression.getText()}')
 
     def _clear_invalid_constraints(self) -> None:
         """Remove duplicate constraints and constraints that involve features not present 
