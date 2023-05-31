@@ -18,7 +18,7 @@ jobs:
           pip install .
       - name: Analysing the code with prospector
         run: |
-          prospector
+          prospector -X
   mypy:
     runs-on: ubuntu-latest
     steps:
