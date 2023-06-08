@@ -1,3 +1,4 @@
+from typing import Optional
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
@@ -50,21 +51,27 @@ class FeatureIDEReader(TextToModel):
 
     def _read_feature_model(self, filepath: str) -> FeatureModel:
         tree = ElementTree.parse(filepath)
-        root = tree.getroot()
-        model = FeatureModel(root=None, constraints=[])
-        for child in root:
+        root = None
+        constraints = []
+        for child in tree.getroot():
             if child.tag == FeatureIDEReader.TAG_STRUCT:
+                # TODO: _read_features tiene como segundo parámetro None, si lo
+                # permitimos, que hacemos luego en _read_features ??
                 (root_feature, _) = self._read_features(child, None)
-                model.root = root_feature
+                root = root_feature
             elif child.tag == FeatureIDEReader.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
-                model.ctcs.extend(constraints)
-        return model
+                constraints.extend(constraints)
+
+        if root is None:
+            raise FlamaException('No root feature found')
+
+        return FeatureModel(root=root, constraints=constraints)
 
     def _read_features(
         self,
         root_tree: Element,
-        parent: Feature
+        parent: Optional[Feature],
     ) -> tuple[Feature, list[Feature]]:
         children = []
         feature = None
@@ -83,6 +90,9 @@ class FeatureIDEReader(TextToModel):
                 )
 
                 children.append(feature)
+                if parent is None:
+                    continue
+
                 if root_tree.tag == FeatureIDEReader.TAG_AND:
                     if FeatureIDEReader.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
                         rel = Relation(parent=parent, children=[feature], card_min=1, card_max=1)
@@ -103,6 +113,10 @@ class FeatureIDEReader(TextToModel):
                     feature.add_relation(rel)
                 elif child.tag == FeatureIDEReader.TAG_AND:
                     (_, direct_children) = self._read_features(child, feature)
+
+        if feature is None:
+            raise FlamaException('No feature found')
+
         return (feature, children)
 
     def _read_constraints(self, ctcs_root: Element) -> list[Constraint]:
@@ -114,11 +128,9 @@ class FeatureIDEReader(TextToModel):
                 index += 1
             rule = ctc[index]
             ast = self._parse_rule(rule)
-            if ast:
-                ctc = Constraint(str(number), ast)
-                constraints.append(ctc)
-            else:
+            if not ast:
                 raise FlamaException()
+            constraints.append(Constraint(str(number), ast))
             number += 1
         return constraints
 

@@ -1,6 +1,7 @@
 from typing import Any, Optional
 from functools import total_ordering
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.models import AST, VariabilityModel, VariabilityElement
 
 
@@ -43,10 +44,10 @@ class Relation:
 
     def is_cardinal(self) -> bool:
         return (
-            self.is_group() and 
-            not self.is_alternative() and 
-            not self.is_or() and 
-            not self.is_mutex()
+            self.is_group()
+            and not self.is_alternative()
+            and not self.is_or()
+            and not self.is_mutex()
         )
 
     def is_group(self) -> bool:
@@ -69,7 +70,7 @@ class Relation:
             relation_type = 'mutex'
         elif self.is_cardinal():
             relation_type = 'cardinality'
-        else: 
+        else:
             relation_type = 'Other'
         res = f'({relation_type}) ' + res
         return res
@@ -365,10 +366,10 @@ class Domain:
 
 
 class Attribute:
-    def __init__(self, name: str, domain: Domain, default_value: Any, null_value: Any):
+    def __init__(self, name: str, domain: Optional[Domain], default_value: Any, null_value: Any):
         self.name: 'str' = name
         self.parent: Optional['Feature'] = None
-        self.domain: 'Domain' = domain
+        self.domain: Optional[Domain] = domain
         self.default_value: 'Any' = default_value
         self.null_value: 'Any' = null_value
 
@@ -379,6 +380,8 @@ class Attribute:
         return self.parent
 
     def get_domain(self) -> Domain:
+        if self.domain is None:
+            raise FlamaException('Attribute domain is not defined')
         return self.domain
 
     def get_default_value(self) -> Any:

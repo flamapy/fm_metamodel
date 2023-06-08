@@ -1,7 +1,8 @@
 import math
+from typing import Optional
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.operations import EstimatedProductsNumber
-
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
@@ -15,7 +16,7 @@ class FMEstimatedProductsNumber(EstimatedProductsNumber):
 
     def __init__(self) -> None:
         self.result = 0
-        self.feature_model = None
+        self.feature_model: Optional[FeatureModel] = None
 
     def execute(self, model: FeatureModel) -> 'FMEstimatedProductsNumber':
         self.feature_model = model
@@ -26,6 +27,9 @@ class FMEstimatedProductsNumber(EstimatedProductsNumber):
         return self.result
 
     def get_products_number(self) -> int:
+        if self.feature_model is None:
+            raise FlamaException("Feature is not defined")
+
         return count_configurations(self.feature_model)
 
 

@@ -1,5 +1,7 @@
-from flamapy.core.operations import Operation
+from typing import Optional
 
+from flamapy.core.exceptions import FlamaException
+from flamapy.core.operations import Operation
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
@@ -9,17 +11,20 @@ class FMFeatureAncestors(Operation):
     (i.e., all parents recursively up to the root feature).
     """
 
-    def __init__(self):
-        self.result = []  # type: list[Feature]
-        self.feature = None  # type: Feature
+    def __init__(self) -> None:
+        self.result: list[Feature] = []
+        self.feature: Optional[Feature] = None
 
     def set_feature(self, feature: Feature) -> None:
-        self.feature = feature  
+        self.feature = feature
 
     def get_result(self) -> list[Feature]:
         return self.result
 
     def execute(self, model: FeatureModel) -> 'FMFeatureAncestors':
+        if self.feature is None:
+            raise FlamaException("Feature is not defined")
+
         self.result = get_feature_ancestors(self.feature)
         return self
 

@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import Any
+from typing import Any, Optional
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.ast import AST, Node, ASTOperation
@@ -28,7 +28,7 @@ class GlencoeReader(TextToModel):
             constraints = self._parse_constraints(constraints_info, features_info)
             return FeatureModel(root_feature, constraints)
 
-    def _parse_tree(self, parent: Feature, feature_node: dict[str, Any], 
+    def _parse_tree(self, parent: Optional[Feature], feature_node: dict[str, Any],
                     features_info: dict[str, Any]) -> Feature:
         """Parse the tree structure and returns the root feature."""
         feature_id = feature_node['id']
@@ -67,17 +67,16 @@ class GlencoeReader(TextToModel):
         #     pass
         return feature
 
-    def _parse_constraints(self, ctcs_info: dict[str, Any], 
+    def _parse_constraints(self, ctcs_info: dict[str, Any],
                            features_info: dict[str, Any]) -> list[Constraint]:
         constraints = []
         print(ctcs_info)
         for i, ctc_info in enumerate(ctcs_info.values(), 1):
             ctc_node = self._parse_ast_constraint(ctc_info, features_info)
-            ctc = Constraint(f'CTC{i}', AST(ctc_node))
-            constraints.append(ctc)
+            constraints.append(Constraint(f'CTC{i}', AST(ctc_node)))
         return constraints
 
-    def _parse_ast_constraint(self, ctc_info: dict[str, Any], 
+    def _parse_ast_constraint(self, ctc_info: dict[str, Any],
                               features_info: dict[str, Any]) -> Node:
         ctc_type = ctc_info['type']
         ctc_operands = ctc_info['operands']

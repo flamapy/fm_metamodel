@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Optional
 
 from uvlparser import get_tree
 from uvlparser.UVLParser import UVLParser
@@ -27,7 +27,7 @@ class UVLReader(TextToModel):
         self.file: str = path.split(os.sep)[-1]
         self.namespace: str = ''
         self.parse_tree: Any = None
-        self.model: FeatureModel = None
+        self.model: Optional[FeatureModel] = None
         self.imports: dict[str, FeatureModel] = {}
         self.import_root: dict[str, str] = {}
 
@@ -107,11 +107,14 @@ class UVLReader(TextToModel):
         else:
             key = feature_chain[-1]
 
-        uvl_transformation = UVLReader(os.path.join(self.path, 
+        uvl_transformation = UVLReader(os.path.join(self.path,
                                                     f'{model_name}.'
                                                     f'{UVLReader.get_source_extension()}'))
         uvl_transformation.transform()
         model = uvl_transformation.model
+
+        if model is None:
+            raise FlamaException('Model not found')
 
         assert self.is_feature_chain_valid(feature_chain, model)
 
@@ -128,6 +131,8 @@ class UVLReader(TextToModel):
             while i < len(feature_chain_c) - 1:
                 current_feature = model.get_feature_by_name(feature_chain_c[i])
                 parent_feature = model.get_feature_by_name(feature_chain_c[i + 1])
+                if current_feature is None:
+                    raise FlamaException('current_feature not found')
                 is_not_parent = current_feature.parent != parent_feature
                 if (current_feature or parent_feature) is None or is_not_parent:
                     result = False
@@ -144,26 +149,37 @@ class UVLReader(TextToModel):
         relations = parse_tree_node.relation()
         for relation_node in relations:
             relation_text = self.get_relation_text(relation_node)
-            features = relation_node.child()
             children = []
-            for feature_node in features:
+            for feature_node in relation_node.child():
                 feature_text = self.get_feature_text(feature_node)
                 feature_chain = self.get_feature_chain(feature_node)
                 feature = Feature(feature_text, [])
                 self.add_attributes(feature_node, feature)
                 # self.model.features.append(feature)
                 if feature_text in self.imports:
+                    if self.model is None:
+                        raise FlamaException('self.model not defined')
+
+                    model_to_import: Optional[FeatureModel] = self.imports.get(feature_text)
+                    if model_to_import is None:
+                        raise FlamaException('model_to_import not found')
+
                     if len(feature_chain) > 1 and feature_chain[0] in self.imports:
-                        model_to_import: FeatureModel = self.imports.get(feature_text)
                         root = model_to_import.get_feature_by_name(feature_chain[-1])
+                        if root is None:
+                            raise FlamaException('root not found')
+
                         assert self.is_feature_chain_valid(feature_chain, model_to_import)
                         ctcs = model_to_import.get_constraints()
                         self.model.import_model(root, feature, ctcs)
                         children.append(root)
                     else:
-                        model_to_import = self.imports.get(feature_text)
-                        root = model_to_import.get_feature_by_name(
-                            self.import_root.get(feature_text))
+                        name = self.import_root.get(feature_text)
+                        if name is None:
+                            raise FlamaException('name not found')
+                        root = model_to_import.get_feature_by_name(name)
+                        if root is None:
+                            raise FlamaException('root not found')
                         ctcs = model_to_import.get_constraints()
                         self.model.import_model(root, feature, ctcs)
                         children.append(root)
@@ -173,7 +189,7 @@ class UVLReader(TextToModel):
             self.add_relation(node_feature, children, relation_text)
 
     @classmethod
-    def add_relation(cls, parent: Feature, children: Feature, relation_text: str) -> None:
+    def add_relation(cls, parent: Feature, children: list[Feature], relation_text: str) -> None:
         if relation_text == 'mandatory':
             for child in children:
                 relation = Relation(parent, [child], 1, 1)
@@ -203,8 +219,8 @@ class UVLReader(TextToModel):
             )
             relation = Relation(parent, children, _min, _max)
             parent.add_relation(relation)
-            #This is a refactoring for 0..3 -> 3 optional && 3..3 ->  3 mandatory
-            #cls.__add_relation_min_max(parent, children, relation_text)
+            # This is a refactoring for 0..3 -> 3 optional && 3..3 ->  3 mandatory
+            # cls.__add_relation_min_max(parent, children, relation_text)
 
     @classmethod
     def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
@@ -222,35 +238,35 @@ class UVLReader(TextToModel):
             attribute.set_parent(feature)
             feature.add_attribute(attribute)
 
-    #@classmethod
-    #def __add_relation_min_max(cls,
-    #                           parent: Feature,
-    #                           children: Feature,
-    #                           relation_text: str) -> None:
-    #    relation_text = relation_text.replace('[', '').replace(']', '')
-    #    words = relation_text.split('..')
-    #    if len(words) == 1:
-    #        _min = int(words[0])
-    #        _max = int(words[0])
-    #    else:
-    #        _min = int(words[0])
-    #        _max = int(words[1])
-    #    assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
-    #    assert _max <= len(children), (
-    #        'maximum cardinality must be lower or equal than the amount of children'
-    #    )
+    # @classmethod
+    # def __add_relation_min_max(cls,
+    #                            parent: Feature,
+    #                            children: Feature,
+    #                            relation_text: str) -> None:
+    #     relation_text = relation_text.replace('[', '').replace(']', '')
+    #     words = relation_text.split('..')
+    #     if len(words) == 1:
+    #         _min = int(words[0])
+    #         _max = int(words[0])
+    #     else:
+    #         _min = int(words[0])
+    #         _max = int(words[1])
+    #     assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
+    #     assert _max <= len(children), (
+    #         'maximum cardinality must be lower or equal than the amount of children'
+    #     )
 
-    #    if _min == _max == len(children):
-    #        for child in children:
-    #            relation = Relation(parent, [child], 1, 1)
-    #            parent.add_relation(relation)
-    #    elif _min == 0 and _max == len(children):
-    #        for child in children:
-    #            relation = Relation(parent, [child], 0, 1)
-    #            parent.add_relation(relation)
-    #    else:
-    #        relation = Relation(parent, children, _min, _max)
-    #        parent.add_relation(relation)
+    #     if _min == _max == len(children):
+    #         for child in children:
+    #             relation = Relation(parent, [child], 1, 1)
+    #             parent.add_relation(relation)
+    #     elif _min == 0 and _max == len(children):
+    #         for child in children:
+    #             relation = Relation(parent, [child], 0, 1)
+    #             parent.add_relation(relation)
+    #     else:
+    #         relation = Relation(parent, children, _min, _max)
+    #         parent.add_relation(relation)
 
     def read_constraints(self) -> None:
         assert self.model is not None
@@ -293,21 +309,27 @@ class UVLReader(TextToModel):
                              f'{expression.getText()}')
 
     def _clear_invalid_constraints(self) -> None:
-        """Remove duplicate constraints and constraints that involve features not present 
+        """Remove duplicate constraints and constraints that involve features not present
         in the feature model.
 
         This can occur due to the 'imports' statement that allows importing partial sub-trees
         in the feature model, and therefore only constraints involving existing features should
         be considered.
         """
+        if self.model is None:
+            raise FlamaException('self.model not defined')
+
         for ctc in self.model.get_constraints().copy():
             ctc_features = ctc.get_features()
             if any(self.model.get_feature_by_name(f) is None for f in ctc_features):
                 self.model.ctcs.remove(ctc)
 
     def _convert_abstract_features(self) -> None:
+        if self.model is None:
+            raise FlamaException('self.model not defined')
+
         for feature in self.model.get_features():
             if any(attribute.name == 'abstract' for attribute in feature.get_attributes()):
-                feature.is_abstract = True 
-                feature.attributes = list(filter(lambda a: a.name != 'abstract', 
+                feature.is_abstract = True
+                feature.attributes = list(filter(lambda a: a.name != 'abstract',
                                                  feature.get_attributes()))

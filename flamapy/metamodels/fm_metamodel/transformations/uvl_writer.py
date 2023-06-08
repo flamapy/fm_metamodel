@@ -11,7 +11,6 @@ from flamapy.metamodels.fm_metamodel.models import (
 
 
 class UVLWriter(ModelToText):
-
     @staticmethod
     def get_destination_extension() -> str:
         return 'uvl'
@@ -90,12 +89,34 @@ class UVLWriter(ModelToText):
 
     @staticmethod
     def serialize_constraint(ctc: Constraint) -> str:
-        ctc = ctc.ast.pretty_str()
-        ctc = re.sub(fr'\b{ASTOperation.NOT.value}\ \b', '!', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.AND.value}\b', '&', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.OR.value}\b', '|', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.IMPLIES.value}\b', '=>', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.EQUIVALENCE.value}\b', '<=>', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.REQUIRES.value}\b', 'requires', ctc)
-        ctc = re.sub(fr'\b{ASTOperation.EXCLUDES.value}\b', 'excludes', ctc)
-        return ctc
+        return str(
+            re.sub(
+                rf"\b{ASTOperation.EXCLUDES.value}\b",
+                "excludes",
+                re.sub(
+                    rf"\b{ASTOperation.REQUIRES.value}\b",
+                    "requires",
+                    re.sub(
+                        rf"\b{ASTOperation.EQUIVALENCE.value}\b",
+                        "<=>",
+                        re.sub(
+                            rf"\b{ASTOperation.IMPLIES.value}\b",
+                            "=>",
+                            re.sub(
+                                rf"\b{ASTOperation.OR.value}\b",
+                                "|",
+                                re.sub(
+                                    rf"\b{ASTOperation.AND.value}\b",
+                                    "&",
+                                    re.sub(
+                                        rf"\b{ASTOperation.NOT.value}\ \b",
+                                        "!",
+                                        ctc.ast.pretty_str(),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        )

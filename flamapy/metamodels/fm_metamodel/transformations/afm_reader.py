@@ -34,7 +34,7 @@ class AFMReader(TextToModel):
         absolute_path = os.path.abspath(self.path)
         self.parse_tree = get_tree(absolute_path)
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> None:
         self.set_parse_tree()
         self.set_relations()
         self.set_attributes()
@@ -69,7 +69,10 @@ class AFMReader(TextToModel):
 
         parent_feature = self.model.get_feature_by_name(
             feature_spec.init_spec().WORD().getText())
-        print(f'Parent: {parent_feature}')
+
+        if parent_feature is None:
+            raise FlamaException('parent_feature is not defined')
+
         for non_cardinal_spec in feature_spec.non_cardinal_spec():
             child_node = non_cardinal_spec.getChild(0)
 
@@ -113,6 +116,9 @@ class AFMReader(TextToModel):
 
         attribute_feature = self.model.get_feature_by_name(
             attribute_name_node.WORD().getText())
+
+        if attribute_feature is None:
+            raise FlamaException('attribute_feature is not defined')
 
         discrete_domain_node = attribute_spec.attribute_domain(
         ).discrete_domain_spec()

@@ -8,9 +8,9 @@ from .feature_model import (
     Attribute
 )
 
-__all__ = ['Constraint', 
-           'FeatureModel', 
-           'Feature', 
+__all__ = ['Constraint',
+           'FeatureModel',
+           'Feature',
            'Relation',
            'Domain',
            'Range',

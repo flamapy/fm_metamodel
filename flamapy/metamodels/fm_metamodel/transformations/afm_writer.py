@@ -92,7 +92,7 @@ class AFMWriter(ModelToText):
     def read_attribute(cls, attribute: Attribute) -> str:
         result = attribute.name + ": "
 
-        domain = attribute.domain
+        domain = attribute.get_domain()
 
         if len(domain.get_range_list()) > 0:
             result += "Integer "

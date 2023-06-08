@@ -3,7 +3,6 @@ from typing import Any
 
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import (
-    Constraint,
     Feature,
     FeatureModel,
     Relation,
@@ -20,7 +19,7 @@ class JsonWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> str:
         data: dict[str, Any] = {}
         root = self.model.root
 
@@ -50,7 +49,7 @@ class JsonWriter(ModelToText):
 
         return _dict
 
-    def process_constraints(self) -> list[Constraint]:
+    def process_constraints(self) -> list[dict[str, str]]:
         constraints = []
         for constraint in self.model.ctcs:
             _ctc = {}

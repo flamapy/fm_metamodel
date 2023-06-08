@@ -6,9 +6,9 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 class FMAtomicSets(AtomicSets):
 
     def __init__(self) -> None:
-        self.result: list[Feature] = []
+        self.result: list[set[Feature]] = []
 
-    def get_result(self) -> list[Feature]:
+    def get_result(self) -> list[set[Feature]]:
         return self.result
 
     def execute(self, model: FeatureModel) -> 'FMAtomicSets':
@@ -20,8 +20,8 @@ class FMAtomicSets(AtomicSets):
 
 
 def get_atomic_sets(feature_model: FeatureModel) -> list[set[Feature]]:
-    if feature_model.root is None:
-        return []
+    # if feature_model.root is None:
+    #     return []
 
     atomic_sets = []
     root = feature_model.root
@@ -31,8 +31,8 @@ def get_atomic_sets(feature_model: FeatureModel) -> list[set[Feature]]:
     return atomic_sets
 
 
-def compute_atomic_sets(atomic_sets: list[set[Feature]], 
-                        feature: Feature, 
+def compute_atomic_sets(atomic_sets: list[set[Feature]],
+                        feature: Feature,
                         current_set: set[Feature]) -> None:
     for child in feature.get_children():
         if child.is_mandatory():

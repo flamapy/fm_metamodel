@@ -31,8 +31,8 @@ class FMCoreFeatures(CoreFeatures):
 
 
 def get_core_features(feature_model: FeatureModel) -> list[Feature]:
-    if feature_model.root is None:
-        return []
+    # if feature_model.root is None:
+    #     return []
 
     # Get core features from the tree structure
     core_features = [feature_model.root]
@@ -56,7 +56,7 @@ def get_core_features(feature_model: FeatureModel) -> list[Feature]:
     #         left_node = ctc_cnf.root.left
     #         right_node = ctc_cnf.root.right
     #         if left_node.is_op():
-    #             left = left_node.left.data 
+    #             left = left_node.left.data
     #             right = right_node.data
     #         elif right_node.is_op():
     #             left = right_node.left.data

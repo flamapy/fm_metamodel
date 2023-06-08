@@ -9,9 +9,9 @@ from .xml_reader import XMLReader
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
 
-__all__ = ['AFMReader', 
-           'AFMWriter', 
-           'FeatureIDEReader', 
+__all__ = ['AFMReader',
+           'AFMWriter',
+           'FeatureIDEReader',
            'JsonWriter',
            'SPLOTWriter',
            'UVLReader',

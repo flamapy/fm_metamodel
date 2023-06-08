@@ -69,7 +69,7 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
 
 
 def _get_tree_info(feature: Feature) -> dict[str, Any]:
-    feature_info = {}
+    feature_info: dict[str, Any] = {}
     feature_info['id'] = feature.name
     children = [_get_tree_info(child) for child in feature.get_children()]
     if children:

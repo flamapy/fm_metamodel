@@ -48,6 +48,9 @@ class XMLReader(TextToModel):
         destination: Optional[Feature] = None
 
         name = element.attrib.get('name')
+        if name is None:
+            raise FlamaException('name is not defined')
+
         ctc_type = element.tag.casefold()
 
         el_feature = element.attrib.get('feature')
@@ -72,7 +75,7 @@ class XMLReader(TextToModel):
             AST.create_simple_binary_operation(operator_type, origin.name, destination.name)
         )
 
-    def parse_feature(self, element: ElementTree.Element, parent: Feature) -> Feature:
+    def parse_feature(self, element: ElementTree.Element, parent: Optional[Feature]) -> Feature:
         name = str(element.attrib.get('name'))
 
         feature = Feature(name, [], parent=parent)
@@ -84,7 +87,10 @@ class XMLReader(TextToModel):
         self.name_feature[name] = feature
 
         for child in element:
-            if child.tag.casefold() == 'setrelation' or child.tag.casefold() == 'binaryrelation':
+            if feature is not None and (
+                child.tag.casefold() == "setrelation"
+                or child.tag.casefold() == "binaryrelation"
+            ):
                 relation = self.parse_relation(child, feature)
                 relation.parent = feature
                 feature.relations.append(relation)
