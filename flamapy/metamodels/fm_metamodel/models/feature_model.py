@@ -2,9 +2,8 @@ from typing import Any, Optional
 from functools import total_ordering
 
 from flamapy.core.exceptions import FlamaException
-from flamapy.core.models import AST, VariabilityModel, VariabilityElement
-
-
+from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
+from flamapy.core.models.ast import simplify_formula, propagate_negation, to_cnf
 class Relation:
 
     def __init__(
@@ -212,6 +211,58 @@ class Constraint:
                 stack.append(node.left)
         return list(features)
 
+    def is_simple_constraint(self) -> bool:
+        """Return true if the constraint is a simple constraint (requires or excludes)."""
+        return self.is_requires_constraint() or self.is_excludes_constraint()
+
+
+    def is_complex_constraint(self) -> bool:
+        """Return true if the constraint is a complex constraint 
+        (i.e., it is not a simple constraint)."""
+        return not self.is_simple_constraint()
+
+
+    def is_requires_constraint(self) -> bool:
+        """Return true if the constraint is a requires constraint."""
+        root_op = self._ast.root
+        if root_op.is_binary_op():
+            if root_op.data in [ASTOperation.REQUIRES, ASTOperation.IMPLIES]:
+                return root_op.left.is_term() and root_op.right.is_term()
+            elif root_op.data == ASTOperation.OR:
+                neg_left = root_op.left.data == ASTOperation.NOT and root_op.left.left.is_term()
+                neg_right = root_op.right.data == ASTOperation.NOT and root_op.right.left.is_term()
+                return neg_left and root_op.right.is_term() or neg_right and root_op.left.is_term()
+        return False
+
+
+    def is_excludes_constraint(self) -> bool:
+        """Return true if the constraint is an excludes constraint."""
+        root_op = self._ast.root
+        if root_op.is_binary_op():
+            if root_op.data in [ASTOperation.EXCLUDES, ASTOperation.XOR]:
+                return root_op.left.is_term() and root_op.right.is_term()
+            elif root_op.data in [ASTOperation.REQUIRES, ASTOperation.IMPLIES]:
+                neg_right = root_op.right.data == ASTOperation.NOT and root_op.right.left.is_term()
+                return root_op.left.is_term() and neg_right
+            elif root_op.data == ASTOperation.OR:
+                neg_left = root_op.left.data == ASTOperation.NOT and root_op.left.left.is_term()
+                neg_right = root_op.right.data == ASTOperation.NOT and root_op.right.left.is_term()
+                return neg_left and neg_right
+        return False
+
+    def is_pseudo_complex_constraint(self) -> bool:
+        """Return true if the constraint is a pseudo-complex constraint 
+        (i.e., it can be transformed to a set of simple constraints)."""
+        split_ctcs = split_constraint(self)
+        return len(split_ctcs) > 1 and all(self.is_simple_constraint() for ctc in split_ctcs)
+
+
+    def is_strict_complex_constraint(self) -> bool:
+        """Return true if the constraint is a strict-complex constraint 
+        (i.e., it cannot be transformed to a set of simple constraints)."""
+        split_ctcs = split_constraint(self)
+        return any(self.is_complex_constraint(ctc) for ctc in split_ctcs)
+    
     def __str__(self) -> str:
         return f'({self.name}) {str(self.ast)}'
 
@@ -277,6 +328,21 @@ class FeatureModel(VariabilityModel):
     def get_feature_by_name(self, feature_name: str) -> Optional['Feature']:
         return next((f for f in self.get_features() if f.name == feature_name), None)
 
+    def get_complex_constraints(self):
+        return [c for c in self.get_constraints() if c.is_complex_constraint()]
+    
+    def get_simple_constraints(self):
+        return [c for c in self.get_constraints() if c.is_simple_constraint()]
+    
+    def get_pseudocomplex_constraints(self):
+        return [c for c in self.get_constraints() if c.is_pseudo_complex_constraint()]
+    
+    def get_excludes_constraints(self):
+        return [c for c in self.get_constraints() if c.is_excludes_constraint()]
+    
+    def get_requires_constraints(self):
+        return [c for c in self.get_constraints() if c.is_requires_constraint()]
+    
     def import_model(self, root: Feature, parent: Feature, ctcs: list[Constraint]) -> None:
         root.parent = parent
         for ctc in ctcs:
@@ -418,3 +484,82 @@ class Attribute:
             result = result + "Null value: " + str(self.null_value)
 
         return result
+
+#This is a list of ultils to work with constraints
+def get_new_ctc_name(ctcs_names: list[str], prefix_name: str) -> str:
+    """Return a new name for a constraint (based on the provided prefix) that is not already 
+    in the given list of constraints' names."""
+    count = 1
+    new_name = f'{prefix_name}'
+    while new_name in ctcs_names:
+        new_name = f'{prefix_name}{count}'
+        count += 1
+    return new_name
+
+
+def left_right_features_from_simple_constraint(simple_ctc: Constraint) -> tuple[str, str]:
+    """Return the names of the features involved in a simple constraint.
+    
+    A simple constraint can be a requires constraint or an excludes constraint.
+    A requires constraint can be represented in the AST of the constraint with one of the 
+    following structures:
+        A requires B
+        A => B
+        !A v B
+    An excludes constraint can be represented in the AST of the constraint with one of the 
+    following structures:
+        A excludes B
+        A => !B
+        !A v !B
+    """
+    root_op = simple_ctc.ast.root
+    if root_op.data in [ASTOperation.REQUIRES, ASTOperation.IMPLIES, ASTOperation.EXCLUDES]:
+        left = root_op.left.data
+        right = root_op.right.data
+        if right == ASTOperation.NOT:
+            right = root_op.right.left.data
+    elif root_op.data == ASTOperation.OR:
+        left = root_op.left.data
+        right = root_op.right.data
+        if left == ASTOperation.NOT and right == ASTOperation.NOT:  # excludes
+            left = root_op.left.left.data
+            right = root_op.right.left.data
+        elif left == ASTOperation.NOT:  # implies: A -> B
+            left = root_op.left.left.data
+            right = root_op.right.data
+        elif right == ASTOperation.NOT:  # implies: B -> A
+            left = root_op.right.left.data
+            right = root_op.left.data
+    return (left, right)
+
+
+def split_constraint(constraint: Constraint) -> list[Constraint]:
+    """Given a constraint, split it in multiple constraints separated by the AND operator."""
+    asts = split_formula(constraint.ast)
+    asts_simplified = [simplify_formula(ast) for ast in asts]
+    asts = []
+    for ctc in asts_simplified:
+        asts.extend(split_formula(ctc))
+        
+    asts_negation_propagated = [propagate_negation(ast.root) for ast in asts]
+    asts = []
+    for ctc in asts_negation_propagated:
+        asts.extend(split_formula(ctc))
+
+    asts_cnf = [to_cnf(ast) for ast in asts]
+    asts = []
+    for ctc in asts_cnf:
+        asts.extend(split_formula(ctc))
+    return [Constraint(f'{constraint.name}{i}', ast) for i, ast in enumerate(asts)]
+
+
+def split_formula(formula: AST) -> list[AST]:
+    """Given a formula, returns a list of formulas separated by the AND operator."""
+    res = []
+    node = formula.root
+    if node.data == ASTOperation.AND:
+        res.extend(split_formula(AST(node.left)))
+        res.extend(split_formula(AST(node.right)))
+    else:
+        res.append(formula)
+    return res
