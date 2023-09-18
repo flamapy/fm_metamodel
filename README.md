@@ -8,3 +8,6 @@ This repo host the feature model concrete classes
 ```
 pip install -e .
 ```
+Rahul Baranwal
+Barauli , Gopalganj , Bihar , India 
+Meta FrontEnd Developer
