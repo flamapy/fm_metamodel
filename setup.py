@@ -23,8 +23,8 @@ setuptools.setup(
     python_requires='>=3.9',
     install_requires=[
         'flamapy~=1.1.3',
-        'uvlparser~=1.0.2',
-        'afmparser~=1.0.0',
+        'uvlparser~=2.0.0',
+        'afmparser~=1.0.3',
     ],
     extras_require={
         'dev': [
@@ -32,7 +32,8 @@ setuptools.setup(
             'pytest-mock',
             'prospector',
             'mypy',
-            'coverage',
+            'coverage',            
+            'antlr4-tools',
         ]
     },
     dependency_links=[

@@ -1,8 +1,7 @@
 import os
 from typing import Any, Optional
 
-from uvlparser import get_tree
-from uvlparser.UVLParser import UVLParser
+from uvl.UVLPythonParser import UVLPythonParser
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
@@ -85,7 +84,7 @@ class UVLReader(TextToModel):
         return node.feature_spec().ref().WORD()[0].getText()
 
     @classmethod
-    def get_feature_chain(cls, node: UVLParser.ChildContext) -> list[str]:
+    def get_feature_chain(cls, node: UVLPythonParser.ChildContext) -> list[str]:
         return list(map(lambda x: x.getText(), node.feature_spec().ref().WORD()))
 
     @classmethod
@@ -97,7 +96,7 @@ class UVLReader(TextToModel):
         for import_node in imports_node.imp():
             self.parse_import(import_node)
 
-    def parse_import(self, import_node: UVLParser.ImpContext) -> None:
+    def parse_import(self, import_node: UVLPythonParser.ImpContext) -> None:
         spec_node = import_node.imp_spec()
         model_name = spec_node.WORD()[0].getText()
         feature_chain = list(map(lambda x: x.getText(), spec_node.WORD()[1:]))
@@ -223,7 +222,7 @@ class UVLReader(TextToModel):
             # cls.__add_relation_min_max(parent, children, relation_text)
 
     @classmethod
-    def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
+    def add_attributes(cls, feature_node: UVLPythonParser.FeaturesContext, feature: Feature) -> None:
         attributes_node = feature_node.feature_spec().attributes()
         attribute_node = []
         if attributes_node is not None:
@@ -282,24 +281,24 @@ class UVLReader(TextToModel):
         return constraints
 
     def _parse_expression(self, expression: Any) -> Node:
-        if isinstance(expression, UVLParser.TermContext):
+        if isinstance(expression, UVLPythonParser.TermContext):
             return Node(expression.WORD().getText())
-        if isinstance(expression, UVLParser.ParenthesisExpContext):
+        if isinstance(expression, UVLPythonParser.ParenthesisExpContext):
             return self._parse_expression(expression.getChild(1))
-        if isinstance(expression, UVLParser.NotExpContext):
+        if isinstance(expression, UVLPythonParser.NotExpContext):
             return Node(ASTOperation.NOT, self._parse_expression(expression.getChild(1)))
         # Binary operation type:
         left = self._parse_expression(expression.getChild(0))
         right = self._parse_expression(expression.getChild(2))
-        if isinstance(expression, UVLParser.AndExpContext):
+        if isinstance(expression, UVLPythonParser.AndExpContext):
             return Node(ASTOperation.AND, left, right)
-        if isinstance(expression, UVLParser.OrExpContext):
+        if isinstance(expression, UVLPythonParser.OrExpContext):
             return Node(ASTOperation.OR, left, right)
-        if isinstance(expression, UVLParser.LogicalExpContext):
-            logic_op_type = {UVLParser.EquivExpContext: ASTOperation.EQUIVALENCE,
-                             UVLParser.ImpliesExpContext: ASTOperation.IMPLIES,
-                             UVLParser.RequiresExpContext: ASTOperation.REQUIRES,
-                             UVLParser.ExcludesExpContext: ASTOperation.EXCLUDES}
+        if isinstance(expression, UVLPythonParser.LogicalExpContext):
+            logic_op_type = {UVLPythonParser.EquivExpContext: ASTOperation.EQUIVALENCE,
+                             UVLPythonParser.ImpliesExpContext: ASTOperation.IMPLIES,
+                             UVLPythonParser.RequiresExpContext: ASTOperation.REQUIRES,
+                             UVLPythonParser.ExcludesExpContext: ASTOperation.EXCLUDES}
             logic_op = logic_op_type.get(type(expression.logical_operator()))
             if logic_op is None:
                 raise FlamaException(f'Constraint expression not supported by UVL reader: '
