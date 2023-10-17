@@ -32,7 +32,7 @@ class PysatToFM(ModelToModel):
         root_feature = self._identify_root()
         children_features = [Feature(v) 
                              for v in self.source_model.variables.keys()
-                             if v != root_feature]
+                             if v != root_feature.name]
         for child in children_features:
             child.parent = root_feature
             optional_relation = Relation(root_feature, [child], 0, 1)
