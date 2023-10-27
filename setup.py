@@ -23,7 +23,7 @@ setuptools.setup(
     python_requires='>=3.9',
     install_requires=[
         'flamapy~=1.1.3',
-        'uvlparser~=2.0.0',
+        'uvlparser~=2.0.1',
         'afmparser~=1.0.3',
     ],
     extras_require={

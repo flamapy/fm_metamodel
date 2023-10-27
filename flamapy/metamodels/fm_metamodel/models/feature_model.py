@@ -114,6 +114,7 @@ class Feature(VariabilityElement):
             child.parent = self
 
     def add_attribute(self, attribute: 'Attribute') -> None:
+        attribute.parent=self
         self.attributes.append(attribute)
 
     def get_attributes(self) -> list['Attribute']:
@@ -432,12 +433,12 @@ class Domain:
 
 
 class Attribute:
-    def __init__(self, name: str, domain: Optional[Domain], default_value: Any, null_value: Any):
+    def __init__(self, name: str, domain: Optional[Domain] = None, default_value: Any = None, null_value: Optional['Any']=None):
         self.name: 'str' = name
         self.parent: Optional['Feature'] = None
-        self.domain: Optional[Domain] = domain
+        self.domain: Optional['Domain'] = domain
         self.default_value: 'Any' = default_value
-        self.null_value: 'Any' = null_value
+        self.null_value: Optional[Any] = null_value
 
     def get_name(self) -> str:
         return self.name
