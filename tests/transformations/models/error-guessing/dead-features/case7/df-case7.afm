@@ -1,8 +1,0 @@
-%Relationships
-A :  B;
-B :  C;
-
-%Attributes
-
-%Constraints
-B EXCLUDES C;

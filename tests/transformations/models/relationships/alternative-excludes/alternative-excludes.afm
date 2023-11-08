@@ -1,7 +1,0 @@
-%Relationships
-A :  [1,1]{B C};
-
-%Attributes
-
-%Constraints
-B EXCLUDES C;

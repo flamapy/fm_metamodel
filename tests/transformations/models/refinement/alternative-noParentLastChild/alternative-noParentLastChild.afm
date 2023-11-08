@@ -1,9 +1,0 @@
-%Relationships
-A :  [B] E;
-B :  [1,1]{C D};
-
-%Attributes
-
-%Constraints
-E EXCLUDES B;
-E REQUIRES D;

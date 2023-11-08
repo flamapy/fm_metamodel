@@ -1,7 +1,0 @@
-features
-	A
-		or
-			B
-			C
-constraints
-	B excludes C

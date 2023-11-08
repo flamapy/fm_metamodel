@@ -1,8 +1,0 @@
-%Relationships
-A :  [B] C D;
-
-%Attributes
-
-%Constraints
-C REQUIRES B;
-D REQUIRES B;

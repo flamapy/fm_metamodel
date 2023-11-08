@@ -1,9 +1,0 @@
-%Relationships
-A :  B H;
-B :  [1,1]{C D E F G};
-
-%Attributes
-
-%Constraints
-H REQUIRES G;
-H REQUIRES E;
