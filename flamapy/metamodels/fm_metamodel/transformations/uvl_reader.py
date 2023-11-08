@@ -59,7 +59,9 @@ class UVLReader(TextToModel):
         self.parse_tree = parser.featureModel()
 
         if error_listener.errors:
-            raise FlamaException("Parsing failed due to syntax errors."+error_listener.errors)
+            for error in error_listener.errors:
+                logging.error(error)
+            raise FlamaException("Parsing failed due to syntax errors.")
         
     def process_attributes(self, attributes_node):
         attributes_list = attributes_node.attribute()
@@ -126,15 +128,16 @@ class UVLReader(TextToModel):
         # Get the relationship type
         for relationship in feature_node.group():
             childs=self.process_group(relationship.groupSpec())
-
             if isinstance(relationship, UVLPythonParser.AlternativeGroupContext):
                 feature.add_relation(Relation(feature, childs, 1, 1))
             elif isinstance(relationship, UVLPythonParser.OptionalGroupContext):
-                feature.add_relation(Relation(feature, childs, 0, 1))
+                for child in childs:
+                    feature.add_relation(Relation(feature, [child], 0, 1))
             elif isinstance(relationship, UVLPythonParser.OrGroupContext):
                 feature.add_relation(Relation(feature, childs, 1, len(childs)))
             elif isinstance(relationship, UVLPythonParser.MandatoryGroupContext):
-                feature.add_relation(Relation(feature, childs, 1, 1))
+                for child in childs:
+                    feature.add_relation(Relation(feature, [child], 1, 1))
             elif isinstance(relationship, UVLPythonParser.CardinalityGroupContext):
                 # Access the CARDINALITY token text.
                 cardinality_text = relationship.CARDINALITY().getText()
@@ -183,8 +186,6 @@ class UVLReader(TextToModel):
             n = self.process_equation_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.LiteralConstraintContext) :
             n = self.process_literal_constraint(constraint_node)
-        elif isinstance(constraint_node,str):
-            n = Node(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.ParenthesisConstraintContext):
             n = self.process_parenthesis_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.NotConstraintContext):
@@ -206,48 +207,48 @@ class UVLReader(TextToModel):
 
     def process_equation_constraint(self, equation_context: UVLPythonParser.EquationConstraintContext) -> Node:
         """Process an equation constraint."""
-        left_expr = equation_context.expression(0).getText()  # Gets the left expression text
-        right_expr = equation_context.expression(1).getText() # Gets the right expression text
+        left_expr = equation_context.expression(0)  # Gets the left expression text
+        right_expr = equation_context.expression(1) # Gets the right expression text
         operator = equation_context.getChild(1).getText()     # Gets the operator
         return Node(operator, self.process_constraints(left_expr), self.process_constraints(right_expr))
 
     def process_literal_constraint(self, literal_context: UVLPythonParser.LiteralConstraintContext)-> Node:
         """Process a literal constraint."""
-        literal = literal_context.reference().getText()
-        return Node(literal)
+        literal = literal_context.reference()
+        return Node(literal.getText())
 
     def process_parenthesis_constraint(self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext)-> Node:
         """Process a parenthesis constraint."""
-        inner_constraint = parenthesis_context.constraint().getText()
+        inner_constraint = parenthesis_context.constraint()
         return self.process_constraints(inner_constraint)
 
     def process_not_constraint(self, not_context: UVLPythonParser.NotConstraintContext)-> Node:
         """Process a not constraint."""
-        inner_constraint = not_context.constraint().getText()
+        inner_constraint = not_context.constraint()
         return Node(ASTOperation.NOT, self.process_constraints(inner_constraint))
 
     def process_and_constraint(self, and_context: UVLPythonParser.AndConstraintContext)-> Node:
         """Process an and constraint."""
-        left_constraint = and_context.constraint(0).getText()
-        right_constraint = and_context.constraint(1).getText()
+        left_constraint = and_context.constraint(0)
+        right_constraint = and_context.constraint(1)
         return Node(ASTOperation.AND, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
 
     def process_or_constraint(self, or_context: UVLPythonParser.OrConstraintContext)-> Node:
         """Process an or constraint."""
-        left_constraint = or_context.constraint(0).getText()
-        right_constraint = or_context.constraint(1).getText()
+        left_constraint = or_context.constraint(0)
+        right_constraint = or_context.constraint(1)
         return Node(ASTOperation.OR, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
 
     def process_implication_constraint(self, implication_context: UVLPythonParser.ImplicationConstraintContext)-> Node:
         """Process an implication constraint."""
-        left_constraint = implication_context.constraint(0).getText()
-        right_constraint = implication_context.constraint(1).getText()
+        left_constraint = implication_context.constraint(0)
+        right_constraint = implication_context.constraint(1)
         return Node(ASTOperation.IMPLIES, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
 
     def process_equivalence_constraint(self, equivalence_context: UVLPythonParser.EquivalenceConstraintContext)-> Node:
         """Process an equivalence constraint."""
-        left_constraint = equivalence_context.constraint(0).getText()
-        right_constraint = equivalence_context.constraint(1).getText()
+        left_constraint = equivalence_context.constraint(0)
+        right_constraint = equivalence_context.constraint(1)
         return Node(ASTOperation.EQUIVALENCE, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
     
     def process_includes(self, includes_node):
