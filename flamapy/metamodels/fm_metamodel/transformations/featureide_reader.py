@@ -75,6 +75,7 @@ class FeatureIDEReader(TextToModel):
     ) -> tuple[Feature, list[Feature]]:
         children = []
         feature = None
+
         for child in root_tree:
             if not child.tag == FeatureIDEReader.TAG_GRAPHICS:
                 is_abstract = (
@@ -90,8 +91,6 @@ class FeatureIDEReader(TextToModel):
                 )
 
                 children.append(feature)
-                if parent is None:
-                    continue
 
                 if root_tree.tag == FeatureIDEReader.TAG_AND:
                     if FeatureIDEReader.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
@@ -104,16 +103,16 @@ class FeatureIDEReader(TextToModel):
                 if child.tag == FeatureIDEReader.TAG_ALT:
                     (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children,
-                                   card_min=1, card_max=1)
+                                    card_min=1, card_max=1)
                     feature.add_relation(rel)
                 elif child.tag == FeatureIDEReader.TAG_OR:
                     (_, direct_children) = self._read_features(child, feature)
                     rel = Relation(parent=feature, children=direct_children, card_min=1,
-                                   card_max=len(direct_children))
+                                    card_max=len(direct_children))
                     feature.add_relation(rel)
                 elif child.tag == FeatureIDEReader.TAG_AND:
                     (_, direct_children) = self._read_features(child, feature)
-
+                    
         if feature is None:
             raise FlamaException('No feature found')
 

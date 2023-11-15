@@ -34,7 +34,7 @@ class UVLWriter(ModelToText):
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
         result = result + "\n" + tab_count * "\t" + \
-            feature.name + " " + self.read_attributes(feature)
+             feature.name + " " + self.read_attributes(feature)
         tab_count = tab_count + 1
         for relation in feature.relations:
             relation_name = self.serialize_relation(relation)
@@ -92,10 +92,10 @@ class UVLWriter(ModelToText):
         return str(
             re.sub(
                 rf"\b{ASTOperation.EXCLUDES.value}\b",
-                "excludes",
+                "=> !",
                 re.sub(
                     rf"\b{ASTOperation.REQUIRES.value}\b",
-                    "requires",
+                    "=>",
                     re.sub(
                         rf"\b{ASTOperation.EQUIVALENCE.value}\b",
                         "<=>",
@@ -109,7 +109,7 @@ class UVLWriter(ModelToText):
                                     rf"\b{ASTOperation.AND.value}\b",
                                     "&",
                                     re.sub(
-                                        rf"\b{ASTOperation.NOT.value}\ \b",
+                                        rf"\b{ASTOperation.NOT.value}\b",
                                         "!",
                                         ctc.ast.pretty_str(),
                                     ),

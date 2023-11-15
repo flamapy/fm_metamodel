@@ -1,0 +1,16 @@
+==================== STATISTICS OF THE FEATURE MODEL GENERATED ============================
+== TREE STATISTICS ==
+Number of features: 10000
+Mandatory features: 2839 (28.0%)
+Optinal features: 2841 (28.0%)
+Or-relationships: 903 (9.0%)
+Alternative relationships: 902 (9.0%)
+Subfeatures in or-relationships: 2160 (21.0%)
+Subfeatures in alternative relationships: 2159 (21.0%)
+Maximum branching factor: 10
+Maximum number of children in a set relationship: 5
+== CTC ==
+Cross-tree constraints: 5000 (50.0%)
+CTC Ratio: 0.6315%
+Requires constraints: 2518 (25.0%)
+Excludes constraints: 2482 (24.0%)
