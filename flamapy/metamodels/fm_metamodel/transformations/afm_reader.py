@@ -34,12 +34,12 @@ class AFMReader(TextToModel):
         absolute_path = os.path.abspath(self.path)
         self.parse_tree = get_tree(absolute_path)
 
-    def transform(self) -> None:
+    def transform(self) -> FeatureModel:
         self.set_parse_tree()
         self.set_relations()
         self.set_attributes()
         self.set_constraints()
-
+        return self.model
     def set_relations(self) -> None:
         root_feature_node = self.parse_tree
         relationships_block = root_feature_node.relationships_block()

@@ -70,14 +70,14 @@ class GlencoeReader(TextToModel):
     def _parse_constraints(self, ctcs_info: dict[str, Any],
                            features_info: dict[str, Any]) -> list[Constraint]:
         constraints = []
-        print(ctcs_info)
-        for i, ctc_info in enumerate(ctcs_info.values(), 1):
+        for ctc_name, ctc_info in ctcs_info.items():
             ctc_node = self._parse_ast_constraint(ctc_info, features_info)
-            constraints.append(Constraint(f'CTC{i}', AST(ctc_node)))
+            constraints.append(Constraint(ctc_name, AST(ctc_node)))
         return constraints
 
     def _parse_ast_constraint(self, ctc_info: dict[str, Any],
                               features_info: dict[str, Any]) -> Node:
+        
         ctc_type = ctc_info['type']
         ctc_operands = ctc_info['operands']
         node = None

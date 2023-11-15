@@ -45,7 +45,7 @@ def _to_json(feature_model: FeatureModel) -> dict[str, Any]:
 
 def _get_features_info(features: list[Feature]) -> dict[str, Any]:
     features_info = {}
-    for feature in features:
+    for feature in sorted(features,key=lambda f:f.name):
         feature_type = 'FEATURE'
         if feature.is_alternative_group():
             feature_type = 'XOR'
@@ -71,7 +71,7 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
 def _get_tree_info(feature: Feature) -> dict[str, Any]:
     feature_info: dict[str, Any] = {}
     feature_info['id'] = feature.name
-    children = [_get_tree_info(child) for child in feature.get_children()]
+    children = [_get_tree_info(child) for child in sorted(feature.get_children(),key=lambda f: f.name)]
     if children:
         feature_info['children'] = children
     return feature_info
