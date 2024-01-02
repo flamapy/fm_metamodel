@@ -45,7 +45,7 @@ def _to_json(feature_model: FeatureModel) -> dict[str, Any]:
 
 def _get_features_info(features: list[Feature]) -> dict[str, Any]:
     features_info = {}
-    for feature in sorted(features,key=lambda f:f.name):
+    for feature in sorted(features, key=lambda f:f.name):
         feature_type = 'FEATURE'
         if feature.is_alternative_group():
             feature_type = 'XOR'
@@ -56,7 +56,7 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
 
         features_info[feature.name] = {
             'name': feature.name,
-            'optional': not feature.is_mandatory(),
+            'optional': not feature.is_mandatory(), 
             'type': feature_type,
             'note': ''  # ToDo: add 'note' attribute information
         }

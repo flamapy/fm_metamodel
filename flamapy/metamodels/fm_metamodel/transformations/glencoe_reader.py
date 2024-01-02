@@ -33,13 +33,14 @@ class GlencoeReader(TextToModel):
         """Parse the tree structure and returns the root feature."""
         feature_id = feature_node['id']
         feature_type = features_info[feature_id]['type']
+        #optional = features_info[feature_id]['optional']
         feature = Feature(name=features_info[feature_id]['name'], parent=parent)
 
         if 'children' in feature_node:
             children = []
             for child in feature_node['children']:
                 child_feature = self._parse_tree(feature, child, features_info)
-                optional = features_info[child['id']]['optional']
+                optional = features_info[child['id']]['optional'] 
                 if feature_type == 'FEATURE':  # simple feature (not group)
                     card_min = 0 if optional else 1
                     relation = Relation(feature, [child_feature], card_min, 1)
@@ -48,7 +49,7 @@ class GlencoeReader(TextToModel):
                     # Additional relation because Glencoe supports mandatory features in groups
                     relation = Relation(feature, [child_feature], 1, 1)
                     feature.add_relation(relation)
-                    children.append(child_feature)
+                    #children.append(child_feature)  # NOTE: may be needed for mandatory in groups
                 else:
                     children.append(child_feature)
             if feature_type != 'FEATURE':  # group
