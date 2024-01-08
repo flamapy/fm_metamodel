@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flamapy-fm",
-    version="1.5.0",
+    version="1.6.0.dev0",
     author="Flamapy",
     author_email="flamapy@us.es",
     description="flamapy-fm is a plugin to Flamapy module",
@@ -22,7 +22,7 @@ setuptools.setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        'flamapy~=1.5.0',
+        'flamapy~=1.6.0.dev0',
         'uvlparser~=2.0.1',
         'afmparser~=1.0.3',
     ],
@@ -37,6 +37,6 @@ setuptools.setup(
         ]
     },
     dependency_links=[
-        'flamapy~=1.1.3'
+        'flamapy~=1.6.0.dev0',
     ],
 )
