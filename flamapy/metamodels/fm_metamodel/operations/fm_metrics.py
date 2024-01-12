@@ -27,7 +27,7 @@ def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str
 class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
     def __init__(self) -> None:
         self.model: Optional[FeatureModel] = None
-        self.result: list[dict[str, Any]] = {}
+        self.result: list[dict[str, Any]] = []
         self.model_type_extension = "fm"
         self._features: list[Feature] = []
         self._features_by_name: dict[str, Feature] = {}

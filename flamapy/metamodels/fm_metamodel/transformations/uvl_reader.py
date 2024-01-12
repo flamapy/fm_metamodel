@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from antlr4 import CommonTokenStream, FileStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -71,7 +71,9 @@ class UVLReader(TextToModel):
                 logging.error(error)
             raise FlamaException("Parsing failed due to syntax errors.")
 
-    def process_attributes(self, attributes_node) -> dict[str, Any]:
+    def process_attributes(
+        self, attributes_node: UVLPythonParser.AttributeContext
+    ) -> dict[str, Any]:
         attributes_list = attributes_node.attribute()
         attributes_dict = {}
 
@@ -100,7 +102,7 @@ class UVLReader(TextToModel):
             attributes_dict[key] = value
         return attributes_dict
 
-    def process_value(self, value_context) -> Union[str, float, int, bool, list, None]:
+    def process_value(self, value_context: UVLPythonParser.ValueContext) -> Any:
         value = None
         if value_context.BOOLEAN():
             value = value_context.BOOLEAN().getText() == "true"
@@ -173,8 +175,8 @@ class UVLReader(TextToModel):
     def parse_cardinality(self, cardinality_text: str) -> tuple[int, int]:
         # Extract the minimum and maximum values.
         # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
-        min_value = None
-        max_value = None
+        min_value: str = ""
+        max_value: str = ""
 
         # Remove brackets.
         cardinality_text = cardinality_text[1:-1]
@@ -187,36 +189,14 @@ class UVLReader(TextToModel):
             min_value = cardinality_text
             max_value = min_value  # Assuming max is the same as min if not specified.
 
-        min_value = int(min_value)
-        max_value = int(max_value)
-        return min_value, max_value
+        try:
+            return int(min_value), int(max_value)
+        except Exception as exc:
+            raise exc
 
-    def parse_cardinality2(self, cardinality_text: str) -> tuple[int, int]:
-        # Extract the minimum and maximum values.
-        # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
-        min_value = None
-        max_value = None
-
-        # Remove brackets.
-        cardinality_text = cardinality_text[1:-1]
-
-        if ".." in cardinality_text:
-            parts = cardinality_text.split("..")
-            min_value = parts[0]
-            max_value = parts[1]
-        else:
-            min_value = cardinality_text
-            max_value = min_value  # Assuming max is the same as min if not specified.
-
-        min_value = int(min_value)
-        if max_value == "*":
-            max_value = float('inf')  # Use infinity to represent "*"
-        else:
-            max_value = int(max_value)
-
-        return min_value, max_value
-
-    def process_group(self, group_spec_node) -> list[Feature]:
+    def process_group(
+        self, group_spec_node: UVLPythonParser.GroupSpecContext
+    ) -> list[Feature]:
         list_features = []
         for feature_context in group_spec_node.feature():
             feature_name = feature_context.reference().getText()
@@ -336,7 +316,9 @@ class UVLReader(TextToModel):
             self.process_constraints(right_constraint),
         )
 
-    def process_includes(self, includes_node):
+    def process_includes(
+        self, includes_node: UVLPythonParser.IncludesContext
+    ) -> list[str]:
         include_lines = includes_node.includeLine()
 
         # This will hold the processed includes
@@ -348,7 +330,9 @@ class UVLReader(TextToModel):
 
         return includes_list
 
-    def process_language_level(self, language_level_node):
+    def process_language_level(
+        self, language_level_node: UVLPythonParser.LanguageLevelContext
+    ) -> str:
         major_level = language_level_node.majorLevel().getText()
 
         # Check if there's a minor level or a wildcard
@@ -364,10 +348,14 @@ class UVLReader(TextToModel):
 
         return major_level
 
-    def process_namespace(self, namespace_node):
+    def process_namespace(
+        self, namespace_node: UVLPythonParser.NamespaceContext
+    ) -> str:
         return namespace_node.reference().getText()
 
-    def process_imports(self, imports_node):
+    def process_imports(
+        self, imports_node: UVLPythonParser.ImportsContext
+    ) -> list[tuple[str, Optional[str]]]:
         import_lines = imports_node.importLine()
 
         # This will hold the processed imports
