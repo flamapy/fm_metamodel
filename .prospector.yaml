@@ -6,9 +6,11 @@ ignore-paths:
   - tests
   - build
   - env
+  - resources
   - flamapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLLexer.py
   - flamapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLListener.py
   - flamapy/metamodels/fm_metamodel/transformations/uvl_parser/UVLParser.py
+  - .mypy_cache
 
 pycodestyle:
   options:
