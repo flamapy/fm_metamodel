@@ -126,7 +126,7 @@ class UVLReader(TextToModel):
             feature.card_min = min_val
             feature.card_max = max_val
 
-    def _check_attributtes(
+    def _check_attributes(
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
     ) -> None:
         if feature_node.attributes():
