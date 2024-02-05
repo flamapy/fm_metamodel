@@ -13,7 +13,7 @@ from flamapy.metamodels.fm_metamodel.models import (
 class UVLWriter(ModelToText):
     @staticmethod
     def get_destination_extension() -> str:
-        return 'uvl'
+        return "uvl"
 
     def __init__(self, source_model: FeatureModel, path: str):
         self.path = path
@@ -23,18 +23,25 @@ class UVLWriter(ModelToText):
         model = self.model
         root = model.root
 
-        serialized_model = self.read_features(
-            root, "features", 0) + "\n" + self.read_constraints()
+        serialized_model = (
+            self.read_features(root, "features", 0) + "\n" + self.read_constraints()
+        )
 
         if self.path is not None:
-            with open(self.path, 'w', encoding='utf8') as file:
+            with open(self.path, "w", encoding="utf8") as file:
                 file.write(serialized_model)
         return serialized_model
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
-        result = result + "\n" + tab_count * "\t" + \
-            feature.name + " " + self.read_attributes(feature)
+        result = (
+            result
+            + "\n"
+            + tab_count * "\t"
+            + feature.name
+            + " "
+            + self.read_attributes(feature)
+        )
         tab_count = tab_count + 1
         for relation in feature.relations:
             relation_name = self.serialize_relation(relation)
@@ -47,13 +54,13 @@ class UVLWriter(ModelToText):
     def read_attributes(cls, feature: Feature) -> str:
         attributes = []
         if feature.is_abstract:
-            attributes.append('abstract')
+            attributes.append("abstract")
         for attribute in feature.get_attributes():
             attribute_str = attribute.name
             if attribute.default_value is not None:
                 attribute_str += f' "{attribute.default_value}"'
             attributes.append(attribute_str)
-        return f'{{{", ".join(attributes)}}}' if attributes else ''
+        return f'{{{", ".join(attributes)}}}' if attributes else ""
 
     @staticmethod
     def serialize_relation(rel: Relation) -> str:
@@ -92,10 +99,10 @@ class UVLWriter(ModelToText):
         return str(
             re.sub(
                 rf"\b{ASTOperation.EXCLUDES.value}\b",
-                "excludes",
+                "=> !",
                 re.sub(
                     rf"\b{ASTOperation.REQUIRES.value}\b",
-                    "requires",
+                    "=>",
                     re.sub(
                         rf"\b{ASTOperation.EQUIVALENCE.value}\b",
                         "<=>",
@@ -109,7 +116,7 @@ class UVLWriter(ModelToText):
                                     rf"\b{ASTOperation.AND.value}\b",
                                     "&",
                                     re.sub(
-                                        rf"\b{ASTOperation.NOT.value}\ \b",
+                                        rf"\b{ASTOperation.NOT.value}\b",
                                         "!",
                                         ctc.ast.pretty_str(),
                                     ),

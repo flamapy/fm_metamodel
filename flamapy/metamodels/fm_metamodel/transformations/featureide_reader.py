@@ -17,31 +17,31 @@ class FeatureIDEReader(TextToModel):
     """Reader for FeatureIDE models (.xml)."""
 
     # Main tags
-    TAG_STRUCT = 'struct'
-    TAG_CONSTRAINTS = 'constraints'
-    TAG_GRAPHICS = 'graphics'
+    TAG_STRUCT = "struct"
+    TAG_CONSTRAINTS = "constraints"
+    TAG_GRAPHICS = "graphics"
 
     # Feature tags
-    TAG_AND = 'and'
-    TAG_OR = 'or'
-    TAG_ALT = 'alt'
+    TAG_AND = "and"
+    TAG_OR = "or"
+    TAG_ALT = "alt"
 
     # Constraints tags
-    TAG_VAR = 'var'
-    TAG_NOT = 'not'
-    TAG_IMP = 'imp'
-    TAG_DISJ = 'disj'
-    TAG_CONJ = 'conj'
-    TAG_EQ = 'eq'
+    TAG_VAR = "var"
+    TAG_NOT = "not"
+    TAG_IMP = "imp"
+    TAG_DISJ = "disj"
+    TAG_CONJ = "conj"
+    TAG_EQ = "eq"
 
     # Feature attributes
-    ATTRIB_NAME = 'name'
-    ATTRIB_ABSTRACT = 'abstract'
-    ATTRIB_MANDATORY = 'mandatory'
+    ATTRIB_NAME = "name"
+    ATTRIB_ABSTRACT = "abstract"
+    ATTRIB_MANDATORY = "mandatory"
 
     @staticmethod
     def get_source_extension() -> str:
-        return 'fide'
+        return "fide"
 
     def __init__(self, path: str) -> None:
         self._path = path
@@ -64,7 +64,7 @@ class FeatureIDEReader(TextToModel):
                 constraints.extend(constraints)
 
         if root is None:
-            raise FlamaException('No root feature found')
+            raise FlamaException("No root feature found")
 
         return FeatureModel(root=root, constraints=constraints)
 
@@ -75,47 +75,57 @@ class FeatureIDEReader(TextToModel):
     ) -> tuple[Feature, list[Feature]]:
         children = []
         feature = None
+
         for child in root_tree:
             if not child.tag == FeatureIDEReader.TAG_GRAPHICS:
                 is_abstract = (
-                    FeatureIDEReader.ATTRIB_ABSTRACT in child.attrib and
-                    child.attrib[FeatureIDEReader.ATTRIB_ABSTRACT] == "true"
+                    FeatureIDEReader.ATTRIB_ABSTRACT in child.attrib
+                    and child.attrib[FeatureIDEReader.ATTRIB_ABSTRACT] == "true"
                 )
 
                 feature = Feature(
                     name=child.attrib[FeatureIDEReader.ATTRIB_NAME],
                     relations=[],
                     parent=parent,
-                    is_abstract=is_abstract
+                    is_abstract=is_abstract,
                 )
 
                 children.append(feature)
-                if parent is None:
-                    continue
 
-                if root_tree.tag == FeatureIDEReader.TAG_AND:
-                    if FeatureIDEReader.ATTRIB_MANDATORY in child.attrib:  # Mandatory feature
-                        rel = Relation(parent=parent, children=[feature], card_min=1, card_max=1)
+                if root_tree.tag == FeatureIDEReader.TAG_AND and parent is not None:
+                    if (
+                        FeatureIDEReader.ATTRIB_MANDATORY in child.attrib
+                    ):  # Mandatory feature
+                        rel = Relation(
+                            parent=parent, children=[feature], card_min=1, card_max=1
+                        )
                         parent.add_relation(rel)
                     else:  # Optional feature
-                        rel = Relation(parent=parent, children=[feature], card_min=0, card_max=1)
+                        rel = Relation(
+                            parent=parent, children=[feature], card_min=0, card_max=1
+                        )
                         parent.add_relation(rel)
 
                 if child.tag == FeatureIDEReader.TAG_ALT:
                     (_, direct_children) = self._read_features(child, feature)
-                    rel = Relation(parent=feature, children=direct_children,
-                                   card_min=1, card_max=1)
+                    rel = Relation(
+                        parent=feature, children=direct_children, card_min=1, card_max=1
+                    )
                     feature.add_relation(rel)
                 elif child.tag == FeatureIDEReader.TAG_OR:
                     (_, direct_children) = self._read_features(child, feature)
-                    rel = Relation(parent=feature, children=direct_children, card_min=1,
-                                   card_max=len(direct_children))
+                    rel = Relation(
+                        parent=feature,
+                        children=direct_children,
+                        card_min=1,
+                        card_max=len(direct_children),
+                    )
                     feature.add_relation(rel)
                 elif child.tag == FeatureIDEReader.TAG_AND:
                     (_, direct_children) = self._read_features(child, feature)
 
         if feature is None:
-            raise FlamaException('No feature found')
+            raise FlamaException("No feature found")
 
         return (feature, children)
 

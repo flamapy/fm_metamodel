@@ -1,7 +1,0 @@
-imports
-    Hardware.Hardware.Components
-features
-    System
-        mandatory
-            Components.RAM
-            Components.CPU

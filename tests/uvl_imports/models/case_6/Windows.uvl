@@ -1,7 +1,0 @@
-features
-    Windows
-        mandatory
-            Version
-                alternative
-                    V10
-                    V11

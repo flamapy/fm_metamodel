@@ -1,8 +1,11 @@
 import os
+import logging
 from typing import Any, Optional
 
-from uvlparser import get_tree
-from uvlparser.UVLParser import UVLParser
+from antlr4 import CommonTokenStream, FileStream
+from antlr4.error.ErrorListener import ErrorListener
+from uvl.UVLCustomLexer import UVLCustomLexer
+from uvl.UVLPythonParser import UVLPythonParser
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
@@ -16,16 +19,33 @@ from flamapy.metamodels.fm_metamodel.models import (
 )
 
 
-class UVLReader(TextToModel):
+class CustomErrorListener(ErrorListener):
+    def __init__(self) -> None:
+        super().__init__()
+        self.errors: list[str] = []
 
+    def syntaxError(  # noqa: N802
+        self,
+        recognizer: Any,
+        offendingSymbol: Any,  # noqa: N803
+        line: Any,
+        column: Any,
+        msg: Any,
+        e: Any,
+    ) -> None:
+        error_msg = f"Syntax error at line {line}, column {column}: {msg}"
+        self.errors.append(error_msg)
+
+
+class UVLReader(TextToModel):
     @staticmethod
     def get_source_extension() -> str:
-        return 'uvl'
+        return "uvl"
 
     def __init__(self, path: str) -> None:
         self.path: str = os.sep.join(path.split(os.sep)[:-1])
         self.file: str = path.split(os.sep)[-1]
-        self.namespace: str = ''
+        self.namespace: str = ""
         self.parse_tree: Any = None
         self.model: Optional[FeatureModel] = None
         self.imports: dict[str, FeatureModel] = {}
@@ -33,303 +53,374 @@ class UVLReader(TextToModel):
 
     def set_parse_tree(self) -> None:
         absolute_path = os.path.abspath(os.path.join(self.path, self.file))
-        self.parse_tree = get_tree(absolute_path)
+        input_stream = FileStream(absolute_path)
+        lexer = UVLCustomLexer(input_stream)
+
+        stream = CommonTokenStream(lexer)
+        parser = UVLPythonParser(stream)
+
+        # Attach custom error listener
+        error_listener = CustomErrorListener()
+        parser.removeErrorListeners()
+        parser.addErrorListener(error_listener)
+
+        self.parse_tree = parser.featureModel()
+
+        if error_listener.errors:
+            for error in error_listener.errors:
+                logging.error(error)
+            raise FlamaException("Parsing failed due to syntax errors.")
+
+    def process_attributes(
+        self, attributes_node: UVLPythonParser.AttributeContext
+    ) -> dict[str, Any]:
+        attributes_list = attributes_node.attribute()
+        attributes_dict = {}
+
+        for attribute_context in attributes_list:
+            # First, check which kind of attribute we're dealing with
+            value_attribute = attribute_context.valueAttribute()
+            constraint_attribute = attribute_context.constraintAttribute()
+
+            if value_attribute:
+                key = value_attribute.key().getText()
+                if value_attribute.value():
+                    value = self.process_value(value_attribute.value())
+                else:
+                    value = None  # or some default value
+
+            elif constraint_attribute:
+                # Here you can handle constraint attributes if you need them
+                # If they should be processed differently, provide methods similar to process_value
+                logging.warning("This attributes are not yet supported in flama.")
+            else:
+                # Handle unexpected case
+                raise ValueError(
+                    f"Unknown attribute type for: {attribute_context.getText()}"
+                )
+
+            attributes_dict[key] = value
+        return attributes_dict
+
+    def process_value(self, value_context: UVLPythonParser.ValueContext) -> Any:
+        value = None
+        if value_context.BOOLEAN():
+            value = value_context.BOOLEAN().getText() == "true"
+        elif value_context.FLOAT():
+            value = float(value_context.FLOAT().getText())
+        elif value_context.INTEGER():
+            value = int(value_context.INTEGER().getText())
+        elif value_context.STRING():
+            value = value_context.STRING().getText()[1:-1]  # Removing quotes
+        elif value_context.attributes():
+            value = self.process_attributes(value_context.attributes())
+        elif value_context.vector():
+            value = [self.process_value(val) for val in value_context.vector().value()]
+        return value
+
+    def _check_feature_cardinality(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> None:
+        # See if there is a feature cardinality and attributes (TODO)
+        if feature_node.featureCardinality():
+            cardinality_text = feature_node.featureCardinality().CARDINALITY().getText()
+            min_val, max_val = self.parse_cardinality(cardinality_text)
+            feature.card_min = min_val
+            feature.card_max = max_val
+
+    def _check_attributes(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> None:
+        if feature_node.attributes():
+            attributes = self.process_attributes(feature_node.attributes())
+            for key, value in attributes.items():
+                if key == "abstract":
+                    feature.abstract = True
+                else:
+                    feature.add_attribute(Attribute(name=key, default_value=value))
+
+    def process_feature(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> Feature:
+        self._check_feature_cardinality(feature, feature_node)
+        self._check_attributes(feature, feature_node)
+
+        # Get the relationship type
+        for relationship in feature_node.group():
+            childs = self.process_group(relationship.groupSpec())
+            if isinstance(relationship, UVLPythonParser.AlternativeGroupContext):
+                feature.add_relation(Relation(feature, childs, 1, 1))
+            elif isinstance(relationship, UVLPythonParser.OptionalGroupContext):
+                for child in childs:
+                    feature.add_relation(Relation(feature, [child], 0, 1))
+            elif isinstance(relationship, UVLPythonParser.OrGroupContext):
+                feature.add_relation(Relation(feature, childs, 1, len(childs)))
+            elif isinstance(relationship, UVLPythonParser.MandatoryGroupContext):
+                for child in childs:
+                    feature.add_relation(Relation(feature, [child], 1, 1))
+            elif isinstance(relationship, UVLPythonParser.CardinalityGroupContext):
+                # Access the CARDINALITY token text.
+                cardinality_text = relationship.CARDINALITY().getText()
+
+                min_value, max_value = self.parse_cardinality(cardinality_text)
+                feature.add_relation(Relation(feature, childs, min_value, max_value))
+
+                if max_value > len(childs):
+                    logging.warning(
+                        "Cardinality error: max value is greater than the number of childs"
+                    )
+
+        return feature
+
+    def parse_cardinality(self, cardinality_text: str) -> tuple[int, int]:
+        # Extract the minimum and maximum values.
+        # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
+        min_value: str = ""
+        max_value: str = ""
+
+        # Remove brackets.
+        cardinality_text = cardinality_text[1:-1]
+
+        if ".." in cardinality_text:
+            parts = cardinality_text.split("..")
+            min_value = parts[0]
+            max_value = parts[1]
+        else:
+            min_value = cardinality_text
+            max_value = min_value  # Assuming max is the same as min if not specified.
+
+        try:
+            return int(min_value), int(max_value)
+        except Exception as exc:
+            raise exc
+
+    def process_group(
+        self, group_spec_node: UVLPythonParser.GroupSpecContext
+    ) -> list[Feature]:
+        list_features = []
+        for feature_context in group_spec_node.feature():
+            feature_name = feature_context.reference().getText()
+            feature = Feature(feature_name, [])
+            self.process_feature(feature, feature_context)
+            list_features.append(feature)
+        return list_features
+
+    def process_constraints(
+        self, constraint_node: UVLPythonParser.ConstraintContext
+    ) -> Node:
+        process = None
+        if isinstance(constraint_node, UVLPythonParser.EquationConstraintContext):
+            process = self.process_equation_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.LiteralConstraintContext):
+            process = self.process_literal_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.ParenthesisConstraintContext):
+            process = self.process_parenthesis_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.NotConstraintContext):
+            process = self.process_not_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.AndConstraintContext):
+            process = self.process_and_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.OrConstraintContext):
+            process = self.process_or_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.ImplicationConstraintContext):
+            process = self.process_implication_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.EquivalenceConstraintContext):
+            process = self.process_equivalence_constraint(constraint_node)
+
+        else:
+            # Handle unexpected constraint types
+            raise NotImplementedError(
+                f"Constraint of type {type(constraint_node)} not handled"
+            )
+
+        return process
+
+    def process_equation_constraint(
+        self, equation_context: UVLPythonParser.EquationConstraintContext
+    ) -> Node:
+        """Process an equation constraint."""
+        left_expr = equation_context.expression(0)  # Gets the left expression text
+        right_expr = equation_context.expression(1)  # Gets the right expression text
+        operator = equation_context.getChild(1).getText()  # Gets the operator
+        return Node(
+            operator,
+            self.process_constraints(left_expr),
+            self.process_constraints(right_expr),
+        )
+
+    def process_literal_constraint(
+        self, literal_context: UVLPythonParser.LiteralConstraintContext
+    ) -> Node:
+        """Process a literal constraint."""
+        literal = literal_context.reference()
+        return Node(literal.getText())
+
+    def process_parenthesis_constraint(
+        self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext
+    ) -> Node:
+        """Process a parenthesis constraint."""
+        inner_constraint = parenthesis_context.constraint()
+        return self.process_constraints(inner_constraint)
+
+    def process_not_constraint(
+        self, not_context: UVLPythonParser.NotConstraintContext
+    ) -> Node:
+        """Process a not constraint."""
+        inner_constraint = not_context.constraint()
+        return Node(ASTOperation.NOT, self.process_constraints(inner_constraint))
+
+    def process_and_constraint(
+        self, and_context: UVLPythonParser.AndConstraintContext
+    ) -> Node:
+        """Process an and constraint."""
+        left_constraint = and_context.constraint(0)
+        right_constraint = and_context.constraint(1)
+        return Node(
+            ASTOperation.AND,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_or_constraint(
+        self, or_context: UVLPythonParser.OrConstraintContext
+    ) -> Node:
+        """Process an or constraint."""
+        left_constraint = or_context.constraint(0)
+        right_constraint = or_context.constraint(1)
+        return Node(
+            ASTOperation.OR,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_implication_constraint(
+        self, implication_context: UVLPythonParser.ImplicationConstraintContext
+    ) -> Node:
+        """Process an implication constraint."""
+        left_constraint = implication_context.constraint(0)
+        right_constraint = implication_context.constraint(1)
+        return Node(
+            ASTOperation.IMPLIES,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_equivalence_constraint(
+        self, equivalence_context: UVLPythonParser.EquivalenceConstraintContext
+    ) -> Node:
+        """Process an equivalence constraint."""
+        left_constraint = equivalence_context.constraint(0)
+        right_constraint = equivalence_context.constraint(1)
+        return Node(
+            ASTOperation.EQUIVALENCE,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_includes(
+        self, includes_node: UVLPythonParser.IncludesContext
+    ) -> list[str]:
+        include_lines = includes_node.includeLine()
+
+        # This will hold the processed includes
+        includes_list = []
+
+        for include_line in include_lines:
+            language_level_node = include_line.languageLevel()
+            includes_list.append(self.process_language_level(language_level_node))
+
+        return includes_list
+
+    def process_language_level(
+        self, language_level_node: UVLPythonParser.LanguageLevelContext
+    ) -> str:
+        major_level = language_level_node.majorLevel().getText()
+
+        # Check if there's a minor level or a wildcard
+        if language_level_node.minorLevel():
+            minor_level = language_level_node.minorLevel().getText()
+            return f"{major_level}.{minor_level}"
+
+        if (
+            language_level_node.getChildCount() > 1
+            and language_level_node.getChild(1).getText() == "*"
+        ):
+            return f"{major_level}.*"
+
+        return major_level
+
+    def process_namespace(
+        self, namespace_node: UVLPythonParser.NamespaceContext
+    ) -> str:
+        return namespace_node.reference().getText()
+
+    def process_imports(
+        self, imports_node: UVLPythonParser.ImportsContext
+    ) -> list[tuple[str, Optional[str]]]:
+        import_lines = imports_node.importLine()
+
+        # This will hold the processed imports
+        imports_list = []
+
+        for import_line in import_lines:
+            namespace = import_line.ns.getText()
+
+            # Check if there's an alias
+            alias = import_line.alias.getText() if import_line.alias else None
+
+            imports_list.append((namespace, alias))
+
+        return imports_list
 
     def transform(self) -> FeatureModel:
         self.set_parse_tree()
 
-        # Find ParseTree node of root feature
-        parse_tree_root_feature = self.find_root_feature()
-        root_feature_text = self.get_feature_text(parse_tree_root_feature)
-        root_feature = Feature(root_feature_text, [])
-        self.add_attributes(parse_tree_root_feature, root_feature)
-
-        # Feature model created with root feature
-        self.model = FeatureModel(root_feature, [])
-
-        # Set model namespace
-        self.namespace = root_feature.name
-        try:
-            if self.parse_tree.namespace() is not None:
-                self.namespace = self.parse_tree.namespace().WORD().getText()
-        except AttributeError as exception:
-            print(f'Warning: Feature model has not a "namespace" declared. {exception}')
-
-        # Recursively read ParseTree root feature subnode to find all features and relations
-        try:
-            exist_imports = False
-            if self.parse_tree.imports():
-                self.read_imports()
-                exist_imports = True
-        except AttributeError as exception:
-            print(f'Warning: Feature model has not a "imports" declared. {exception}')
-
-        self.read_children(parse_tree_root_feature, root_feature)
-        if self.parse_tree.constraints():
-            self.read_constraints()
-
-        # Remove invalid constraints due to the imported models
-        if exist_imports:  # this variable exist due to performance reasons with large-scale FMs
-            self._clear_invalid_constraints()
-
-        # Convert abstract attributes in features to abstract features in the Feature Model
-        self._convert_abstract_features()
-
-        return self.model
-
-    def find_root_feature(self) -> Feature:
-        return self.parse_tree.features().child()
-
-    @classmethod
-    def get_feature_text(cls, node: Feature) -> str:
-        return node.feature_spec().ref().WORD()[0].getText()
-
-    @classmethod
-    def get_feature_chain(cls, node: UVLParser.ChildContext) -> list[str]:
-        return list(map(lambda x: x.getText(), node.feature_spec().ref().WORD()))
-
-    @classmethod
-    def get_relation_text(cls, node: Feature) -> str:
-        return node.relation_spec().RELATION_WORD().getText()
-
-    def read_imports(self) -> None:
-        imports_node = self.parse_tree.imports()
-        for import_node in imports_node.imp():
-            self.parse_import(import_node)
-
-    def parse_import(self, import_node: UVLParser.ImpContext) -> None:
-        spec_node = import_node.imp_spec()
-        model_name = spec_node.WORD()[0].getText()
-        feature_chain = list(map(lambda x: x.getText(), spec_node.WORD()[1:]))
-
-        if import_node.WORD():
-            key = import_node.WORD().getText()
-        else:
-            key = feature_chain[-1]
-
-        uvl_transformation = UVLReader(os.path.join(self.path,
-                                                    f'{model_name}.'
-                                                    f'{UVLReader.get_source_extension()}'))
-        uvl_transformation.transform()
-        model = uvl_transformation.model
-
-        if model is None:
-            raise FlamaException('Model not found')
-
-        assert self.is_feature_chain_valid(feature_chain, model)
-
-        self.imports[key] = model
-        self.import_root[key] = feature_chain[-1]
-
-    @classmethod
-    def is_feature_chain_valid(cls, feature_chain: list[str], model: FeatureModel) -> bool:
-        feature_chain_c = feature_chain.copy()
-        feature_chain_c.reverse()
-        result = True
-        i = 0
-        if len(feature_chain_c) > 1:
-            while i < len(feature_chain_c) - 1:
-                current_feature = model.get_feature_by_name(feature_chain_c[i])
-                parent_feature = model.get_feature_by_name(feature_chain_c[i + 1])
-                if current_feature is None:
-                    raise FlamaException('current_feature not found')
-                is_not_parent = current_feature.parent != parent_feature
-                if (current_feature or parent_feature) is None or is_not_parent:
-                    result = False
-                    break
-                i += 1
-        else:
-            feature = model.get_feature_by_name(feature_chain_c[0])
-            if feature is None or model.root != feature:
-                result = False
-
-        return result
-
-    def read_children(self, parse_tree_node: Feature, node_feature: Feature) -> None:
-        relations = parse_tree_node.relation()
-        for relation_node in relations:
-            relation_text = self.get_relation_text(relation_node)
-            children = []
-            for feature_node in relation_node.child():
-                feature_text = self.get_feature_text(feature_node)
-                feature_chain = self.get_feature_chain(feature_node)
-                feature = Feature(feature_text, [])
-                self.add_attributes(feature_node, feature)
-                # self.model.features.append(feature)
-                if feature_text in self.imports:
-                    if self.model is None:
-                        raise FlamaException('self.model not defined')
-
-                    model_to_import: Optional[FeatureModel] = self.imports.get(feature_text)
-                    if model_to_import is None:
-                        raise FlamaException('model_to_import not found')
-
-                    if len(feature_chain) > 1 and feature_chain[0] in self.imports:
-                        root = model_to_import.get_feature_by_name(feature_chain[-1])
-                        if root is None:
-                            raise FlamaException('root not found')
-
-                        assert self.is_feature_chain_valid(feature_chain, model_to_import)
-                        ctcs = model_to_import.get_constraints()
-                        self.model.import_model(root, feature, ctcs)
-                        children.append(root)
-                    else:
-                        name = self.import_root.get(feature_text)
-                        if name is None:
-                            raise FlamaException('name not found')
-                        root = model_to_import.get_feature_by_name(name)
-                        if root is None:
-                            raise FlamaException('root not found')
-                        ctcs = model_to_import.get_constraints()
-                        self.model.import_model(root, feature, ctcs)
-                        children.append(root)
-                else:
-                    children.append(feature)
-                    self.read_children(feature_node, feature)
-            self.add_relation(node_feature, children, relation_text)
-
-    @classmethod
-    def add_relation(cls, parent: Feature, children: list[Feature], relation_text: str) -> None:
-        if relation_text == 'mandatory':
-            for child in children:
-                relation = Relation(parent, [child], 1, 1)
-                parent.add_relation(relation)
-        elif relation_text == 'optional':
-            for child in children:
-                relation = Relation(parent, [child], 0, 1)
-                parent.add_relation(relation)
-        elif relation_text == 'or':
-            relation = Relation(parent, children, 1, len(children))
-            parent.add_relation(relation)
-        elif relation_text == 'alternative':
-            relation = Relation(parent, children, 1, 1)
-            parent.add_relation(relation)
-        else:
-            relation_text = relation_text.replace('[', '').replace(']', '')
-            words = relation_text.split('..')
-            if len(words) == 1:
-                _min = int(words[0])
-                _max = int(words[0])
-            else:
-                _min = int(words[0])
-                _max = int(words[1])
-            assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
-            assert _max <= len(children), (
-                'maximum cardinality must be lower or equal than the amount of children'
+        # Processing the namespace
+        namespace_node = self.parse_tree.namespace()
+        if namespace_node:
+            namespace_value = self.process_namespace(namespace_node)
+            logging.warning(
+                "Namespaces are not meningful for Flama."
+                "This model has the following namespaces: %s ",
+                namespace_value,
             )
-            relation = Relation(parent, children, _min, _max)
-            parent.add_relation(relation)
-            # This is a refactoring for 0..3 -> 3 optional && 3..3 ->  3 mandatory
-            # cls.__add_relation_min_max(parent, children, relation_text)
 
-    @classmethod
-    def add_attributes(cls, feature_node: UVLParser.FeaturesContext, feature: Feature) -> None:
-        attributes_node = feature_node.feature_spec().attributes()
-        attribute_node = []
-        if attributes_node is not None:
-            attribute_node = attributes_node.attribute()
+        # Processing the imports
+        imports_node = self.parse_tree.imports()
+        if imports_node:
+            imports_list = self.process_imports(imports_node)
+            logging.warning(
+                "Imports are not yet supported in flama."
+                "This model has the following imports: %s",
+                imports_list,
+            )
 
-        for att_node in attribute_node:
-            name = att_node.key().getText()
-            value = None
-            if att_node.value() is not None:
-                value = att_node.value().getText()
-            attribute = Attribute(name, None, value, None)
-            attribute.set_parent(feature)
-            feature.add_attribute(attribute)
+        includes_node = self.parse_tree.includes()
+        if includes_node:
+            includes_list = self.process_includes(includes_node)
+            logging.warning(
+                "Includes are not yet supported in flama."
+                "This model has the following imports: %s",
+                includes_list,
+            )
 
-    # @classmethod
-    # def __add_relation_min_max(cls,
-    #                            parent: Feature,
-    #                            children: Feature,
-    #                            relation_text: str) -> None:
-    #     relation_text = relation_text.replace('[', '').replace(']', '')
-    #     words = relation_text.split('..')
-    #     if len(words) == 1:
-    #         _min = int(words[0])
-    #         _max = int(words[0])
-    #     else:
-    #         _min = int(words[0])
-    #         _max = int(words[1])
-    #     assert _min <= _max, 'minimum cardinality must be lower or equal than maximum'
-    #     assert _max <= len(children), (
-    #         'maximum cardinality must be lower or equal than the amount of children'
-    #     )
+        # Find ParseTree node of root feature
+        root_feature_ast = self.parse_tree.features().feature()
+        # Get the root and process it
+        feature_text = root_feature_ast.reference().getText()
+        feature = Feature(feature_text, [])
+        root = self.process_feature(feature, root_feature_ast)
 
-    #     if _min == _max == len(children):
-    #         for child in children:
-    #             relation = Relation(parent, [child], 1, 1)
-    #             parent.add_relation(relation)
-    #     elif _min == 0 and _max == len(children):
-    #         for child in children:
-    #             relation = Relation(parent, [child], 0, 1)
-    #             parent.add_relation(relation)
-    #     else:
-    #         relation = Relation(parent, children, _min, _max)
-    #         parent.add_relation(relation)
+        feature_model = FeatureModel(root, [])
 
-    def read_constraints(self) -> None:
-        assert self.model is not None
-        constraints_node = self.parse_tree.constraints().constraint()
-        constraints = self._parse_constraints(constraints_node)
-        self.model.ctcs = constraints
-
-    def _parse_constraints(self, constraints_node: list[Any]) -> list[Constraint]:
-        constraints: list[Constraint] = []
-        for i, constraint_node in enumerate(constraints_node, 1):
-            ast_root_node = self._parse_expression(constraint_node)
-            constraints.append(Constraint(f'CTC{i}', AST(ast_root_node)))
-        return constraints
-
-    def _parse_expression(self, expression: Any) -> Node:
-        if isinstance(expression, UVLParser.TermContext):
-            return Node(expression.WORD().getText())
-        if isinstance(expression, UVLParser.ParenthesisExpContext):
-            return self._parse_expression(expression.getChild(1))
-        if isinstance(expression, UVLParser.NotExpContext):
-            return Node(ASTOperation.NOT, self._parse_expression(expression.getChild(1)))
-        # Binary operation type:
-        left = self._parse_expression(expression.getChild(0))
-        right = self._parse_expression(expression.getChild(2))
-        if isinstance(expression, UVLParser.AndExpContext):
-            return Node(ASTOperation.AND, left, right)
-        if isinstance(expression, UVLParser.OrExpContext):
-            return Node(ASTOperation.OR, left, right)
-        if isinstance(expression, UVLParser.LogicalExpContext):
-            logic_op_type = {UVLParser.EquivExpContext: ASTOperation.EQUIVALENCE,
-                             UVLParser.ImpliesExpContext: ASTOperation.IMPLIES,
-                             UVLParser.RequiresExpContext: ASTOperation.REQUIRES,
-                             UVLParser.ExcludesExpContext: ASTOperation.EXCLUDES}
-            logic_op = logic_op_type.get(type(expression.logical_operator()))
-            if logic_op is None:
-                raise FlamaException(f'Constraint expression not supported by UVL reader: '
-                                     f'{expression.logical_operator().getText()}')
-            return Node(logic_op, left, right)
-        raise FlamaException(f'Constraint expression not supported by UVL reader: '
-                             f'{expression.getText()}')
-
-    def _clear_invalid_constraints(self) -> None:
-        """Remove duplicate constraints and constraints that involve features not present
-        in the feature model.
-
-        This can occur due to the 'imports' statement that allows importing partial sub-trees
-        in the feature model, and therefore only constraints involving existing features should
-        be considered.
-        """
-        if self.model is None:
-            raise FlamaException('self.model not defined')
-
-        for ctc in self.model.get_constraints().copy():
-            ctc_features = ctc.get_features()
-            if any(self.model.get_feature_by_name(f) is None for f in ctc_features):
-                self.model.ctcs.remove(ctc)
-
-    def _convert_abstract_features(self) -> None:
-        if self.model is None:
-            raise FlamaException('self.model not defined')
-
-        for feature in self.model.get_features():
-            if any(attribute.name == 'abstract' for attribute in feature.get_attributes()):
-                feature.is_abstract = True
-                feature.attributes = list(filter(lambda a: a.name != 'abstract',
-                                                 feature.get_attributes()))
+        if self.parse_tree.constraints():  # Check if constraints exist
+            contraint_counter = 0
+            for constraint_line in self.parse_tree.constraints().constraintLine():
+                node = self.process_constraints(constraint_line.constraint())
+                feature_model.ctcs.append(
+                    Constraint(
+                        name="Constraint " + str(contraint_counter), ast=AST(node)
+                    )
+                )
+                contraint_counter = contraint_counter + 1
+        self.model = feature_model
+        return self.model
