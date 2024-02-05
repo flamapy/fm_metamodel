@@ -7,6 +7,7 @@ from .fm_max_depth_tree import FMMaxDepthTree, max_depth_tree
 from .fm_estimated_products_number import FMEstimatedProductsNumber, count_configurations
 from .fm_atomic_sets import FMAtomicSets, get_atomic_sets
 from .fm_metrics import FMMetrics
+from .fm_generate_random_attribute import GenerateRandomAttribute
 
 __all__ = ['FMCoreFeatures', 'get_core_features',
            'FMCountLeafs', 'count_leaf_features',
@@ -15,4 +16,5 @@ __all__ = ['FMCoreFeatures', 'get_core_features',
            'FMFeatureAncestors', 'get_feature_ancestors',
            'FMMaxDepthTree', 'max_depth_tree',
            'FMEstimatedProductsNumber', 'count_configurations',
-           'FMAtomicSets', 'get_atomic_sets', 'FMMetrics']
+           'FMAtomicSets', 'get_atomic_sets', 'FMMetrics',
+           'GenerateRandomAttribute']
