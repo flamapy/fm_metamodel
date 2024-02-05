@@ -8,6 +8,8 @@ from .uvl_writer import UVLWriter
 from .xml_reader import XMLReader
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
+from .pysat_to_fm import PysatToFM
+
 
 __all__ = ['AFMReader',
            'AFMWriter',
@@ -18,4 +20,5 @@ __all__ = ['AFMReader',
            'UVLWriter',
            'XMLReader',
            'GlencoeReader',
-           'GlencoeWriter']
+           'GlencoeWriter',
+           'PysatToFM']
