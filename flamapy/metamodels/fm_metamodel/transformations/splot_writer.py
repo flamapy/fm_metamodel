@@ -15,7 +15,7 @@ class SPLOTWriter(ModelToText):
         return 'sxfm'
 
     def __init__(self, path: str, source_model: FeatureModel) -> None:
-        self.path = path + '.' + SPLOTWriter.get_destination_extension()
+        self.path = path
         self.source_model = source_model
 
     def transform(self) -> str:
