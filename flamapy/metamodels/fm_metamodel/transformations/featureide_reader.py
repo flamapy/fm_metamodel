@@ -17,7 +17,9 @@ class FeatureIDEReader(TextToModel):
     """Reader for FeatureIDE models (.xml)."""
 
     # Main tags
+    TAG_FEATUREMODEL = "featureModel"
     TAG_STRUCT = "struct"
+    TAG_FEATURE = "feature"
     TAG_CONSTRAINTS = "constraints"
     TAG_GRAPHICS = "graphics"
 
@@ -27,9 +29,11 @@ class FeatureIDEReader(TextToModel):
     TAG_ALT = "alt"
 
     # Constraints tags
+    TAG_RULE = "rule"
     TAG_VAR = "var"
     TAG_NOT = "not"
     TAG_IMP = "imp"
+    TAG_IMPN = "impn"
     TAG_DISJ = "disj"
     TAG_CONJ = "conj"
     TAG_EQ = "eq"
@@ -52,16 +56,14 @@ class FeatureIDEReader(TextToModel):
     def _read_feature_model(self, filepath: str) -> FeatureModel:
         tree = ElementTree.parse(filepath)
         root = None
-        constraints = []
+        constraints_list = []
         for child in tree.getroot():
             if child.tag == FeatureIDEReader.TAG_STRUCT:
-                # TODO: _read_features tiene como segundo parámetro None, si lo
-                # permitimos, que hacemos luego en _read_features ??
                 (root_feature, _) = self._read_features(child, None)
                 root = root_feature
             elif child.tag == FeatureIDEReader.TAG_CONSTRAINTS:
                 constraints = self._read_constraints(child)
-                constraints.extend(constraints)
+                constraints_list.extend(constraints)
 
         if root is None:
             raise FlamaException("No root feature found")
