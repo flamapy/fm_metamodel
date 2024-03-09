@@ -14,7 +14,7 @@ class SPLOTWriter(ModelToText):
     def get_destination_extension() -> str:
         return 'sxfm'
 
-    def __init__(self, path: str, source_model: FeatureModel) -> None:
+    def __init__(self, source_model: FeatureModel, path: str) -> None:
         self.path = path
         self.source_model = source_model
 
