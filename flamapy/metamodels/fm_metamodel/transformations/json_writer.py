@@ -26,9 +26,10 @@ class JsonWriter(ModelToText):
         data['hierachy'] = self.process_feature(root)
         data['ctc'] = self.process_constraints()
 
-        with open(self.path, 'w', encoding='utf8') as outfile:
-            json.dump(data, outfile)
-        return self.path
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as outfile:
+                json.dump(data, outfile)
+        return data
 
     def process_feature(self, feature: Feature) -> dict[str, Any]:
         _dict: dict[str, Any] = {}
