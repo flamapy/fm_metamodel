@@ -20,8 +20,9 @@ class SPLOTWriter(ModelToText):
 
     def transform(self) -> str:
         splot_str = fm_to_splot(self.source_model)
-        with open(self.path, 'w', encoding='utf8') as file:
-            file.write(splot_str)
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as file:
+                file.write(splot_str)
         return splot_str
 
 
