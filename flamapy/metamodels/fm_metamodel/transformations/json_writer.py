@@ -1,8 +1,10 @@
 import json
 from typing import Any
 
+from flamapy.core.models.ast import Node
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import (
+    Constraint,
     Feature,
     FeatureModel,
     Relation,
@@ -19,12 +21,12 @@ class JsonWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self) -> str:
+    def transform(self) -> FeatureModel:
         data: dict[str, Any] = {}
         root = self.model.root
 
         data['hierachy'] = self.process_feature(root)
-        data['ctc'] = self.process_constraints()
+        data['ctc'] = self.process_constraints(self.model.get_constraints())
 
         if self.path is not None:
             with open(self.path, 'w', encoding='utf8') as outfile:
@@ -50,17 +52,24 @@ class JsonWriter(ModelToText):
 
         return _dict
 
-    def process_constraints(self) -> list[dict[str, str]]:
-        constraints = []
-        for constraint in self.model.ctcs:
-            _ctc = {}
-            _ctc["name"] = constraint.name
-            _ctc["origin"] = constraint.ast.get_childs(
-                constraint.ast.get_root())[0].get_name()
-            _ctc["destination"] = constraint.ast.get_childs(
-                constraint.ast.get_root()
-            )[0].get_name()
-            _ctc["ctctype"] = constraint.ast.get_root().get_name()
-            constraints.append(_ctc)
+    def process_constraints(self, constraints: list[Constraint]) -> dict[str, Any]:
+        constraints_info = {}
+        for ctc in constraints:
+            constraints_info[ctc.name] = self._get_ctc_info(ctc.ast.root)
+        return constraints_info
 
-        return constraints
+    def _get_ctc_info(self, ast_node: Node) -> dict[str, Any]:
+        ctc_info: dict[str, Any] = {}
+        if ast_node.is_term():
+            ctc_info['type'] = 'FeatureTerm'
+            ctc_info['operands'] = [ast_node.data]
+        else:
+            ctc_info['type'] = ast_node.data
+            operands = []
+            left = self._get_ctc_info(ast_node.left)
+            operands.append(left)
+            if ast_node.right is not None:
+                right = self._get_ctc_info(ast_node.right)
+                operands.append(right)
+            ctc_info['operands'] = operands
+        return ctc_info
