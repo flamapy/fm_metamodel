@@ -268,7 +268,7 @@ class Constraint:
                 return neg_left and neg_right
         return False
 
-    def is_pseudo_complex_constraint(self) -> bool:
+    def is_pseudocomplex_constraint(self) -> bool:
         """Return true if the constraint is a pseudo-complex constraint
         (i.e., it can be transformed to a set of simple constraints)."""
         split_ctcs = split_constraint(self)
@@ -276,7 +276,7 @@ class Constraint:
             self.is_simple_constraint() for ctc in split_ctcs
         )
 
-    def is_strict_complex_constraint(self) -> bool:
+    def is_strictcomplex_constraint(self) -> bool:
         """Return true if the constraint is a strict-complex constraint
         (i.e., it cannot be transformed to a set of simple constraints)."""
         split_ctcs = split_constraint(self)
@@ -354,10 +354,10 @@ class FeatureModel(VariabilityModel):
         return [c for c in self.get_constraints() if c.is_simple_constraint()]
 
     def get_pseudocomplex_constraints(self) -> list["Constraint"]:
-        return [c for c in self.get_constraints() if c.is_pseudo_complex_constraint()]
+        return [c for c in self.get_constraints() if c.is_pseudocomplex_constraint()]
 
     def get_strictcomplex_constraints(self) -> list["Constraint"]:
-        return [c for c in self.get_constraints() if c.is_strict_complex_constraint()]
+        return [c for c in self.get_constraints() if c.is_strictcomplex_constraint()]
 
     def get_excludes_constraints(self) -> list["Constraint"]:
         return [c for c in self.get_constraints() if c.is_excludes_constraint()]
