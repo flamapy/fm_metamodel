@@ -356,6 +356,9 @@ class FeatureModel(VariabilityModel):
     def get_pseudocomplex_constraints(self) -> list["Constraint"]:
         return [c for c in self.get_constraints() if c.is_pseudo_complex_constraint()]
 
+    def get_strictcomplex_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_strict_complex_constraint()]
+
     def get_excludes_constraints(self) -> list["Constraint"]:
         return [c for c in self.get_constraints() if c.is_excludes_constraint()]
 
