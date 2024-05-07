@@ -133,8 +133,13 @@ class UVLReader(TextToModel):
     ) -> None:
         if feature_node.attributes():
             attributes = self.process_attributes(feature_node.attributes())
+            
             for key, value in attributes.items():
+<<<<<<< HEAD
                 if key == "abstract":
+=======
+                if key == "abstract" and (value is None or value):
+>>>>>>> 05a67720face8762b3858d00812d4fd4848fbb25
                     feature.is_abstract = True
                 else:
                     feature.add_attribute(Attribute(name=key, default_value=value))

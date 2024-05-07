@@ -25,8 +25,9 @@ class AFMWriter(ModelToText):
         serialized_model += self.serialize_attributes()
         serialized_model += self.serialize_constraints()
 
-        with open(self.path, 'w', encoding='utf8') as file:
-            file.write(serialized_model)
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as file:
+                file.write(serialized_model)
 
         return serialized_model
 

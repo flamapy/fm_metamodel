@@ -14,14 +14,15 @@ class SPLOTWriter(ModelToText):
     def get_destination_extension() -> str:
         return 'sxfm'
 
-    def __init__(self, path: str, source_model: FeatureModel) -> None:
-        self.path = path + '.' + SPLOTWriter.get_destination_extension()
+    def __init__(self, source_model: FeatureModel, path: str) -> None:
+        self.path = path
         self.source_model = source_model
 
     def transform(self) -> str:
         splot_str = fm_to_splot(self.source_model)
-        with open(self.path, 'w', encoding='utf8') as file:
-            file.write(splot_str)
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as file:
+                file.write(splot_str)
         return splot_str
 
 
