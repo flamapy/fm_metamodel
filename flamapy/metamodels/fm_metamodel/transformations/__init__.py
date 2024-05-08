@@ -9,6 +9,8 @@ from .uvl_writer import UVLWriter
 from .xml_reader import XMLReader
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
+from .clafer_writer import ClaferWriter
+
 
 __all__ = ['AFMReader',
            'AFMWriter',
@@ -20,4 +22,5 @@ __all__ = ['AFMReader',
            'UVLWriter',
            'XMLReader',
            'GlencoeReader',
-           'GlencoeWriter']
+           'GlencoeWriter',
+           'ClaferWriter']
