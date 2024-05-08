@@ -60,6 +60,8 @@ class UVLWriter(ModelToText):
             if attribute.default_value is not None:
                 if isinstance(attribute.default_value, str):
                     attribute_str += f" '{attribute.default_value}'"
+                elif isinstance(attribute.default_value, bool):
+                    attribute_str += f" {str(attribute.default_value).lower()}"
                 else:
                     attribute_str += f" {attribute.default_value}"
             attributes.append(attribute_str)
