@@ -1,5 +1,7 @@
-from flamapy.core.operations import CountLeafs
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations import CountLeafs
 from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 
@@ -11,8 +13,9 @@ class FMCountLeafs(CountLeafs):
     def get_result(self) -> int:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMCountLeafs':
-        self.result = count_leaf_features(model)
+    def execute(self, model: VariabilityModel) -> 'FMCountLeafs':
+        fm_model = cast(FeatureModel, model)
+        self.result = count_leaf_features(fm_model)
         return self
 
     def get_number_of_leafs(self) -> int:

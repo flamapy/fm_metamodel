@@ -1,5 +1,7 @@
-from flamapy.core.operations import AverageBranchingFactor
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations import AverageBranchingFactor
 from flamapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
 
 
@@ -15,8 +17,9 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
     def get_result(self) -> float:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMAverageBranchingFactor':
-        self.result = average_branching_factor(model)
+    def execute(self, model: VariabilityModel) -> 'FMAverageBranchingFactor':
+        fm_model = cast(FeatureModel, model)
+        self.result = average_branching_factor(fm_model)
         return self
 
     def get_average_branching_factor(self) -> float:

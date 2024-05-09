@@ -1,4 +1,5 @@
 import re
+
 from flamapy.core.transformations import ModelToText
 from flamapy.core.models.ast import ASTOperation
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
@@ -26,39 +27,37 @@ class ClaferWriter(ModelToText):
 def fm_to_clafer(feature_model: FeatureModel) -> str:
     result = read_features(feature_model.root, 0)
     for ctc in feature_model.get_constraints():
-       result += read_constraints(ctc)
+        result += read_constraints(ctc)
     return result
 
 
 def read_features(feature: Feature, tab_count: int) -> str:
-    result = ''
-    group_type = ''
+    tabs = '\t' * tab_count  # Indentation
+    result = tabs
 
-    # Parse group types
-    if feature.is_alternative_group():
-        group_type = 'xor'
-    elif feature.is_or_group():
-        group_type = 'or'
-    elif feature.is_cardinality_group():
-        rel = next((r for r in feature.get_relations() if r.is_cardinal()), None)
-        group_type = str(rel.card_min) + ".." + str(rel.card_max)
-    elif feature.is_mutex_group():
-        group_type = 'mux'
-
-    # Indentation
-    tabs = '\t' * tab_count
-    result += tabs
-
-    if group_type:
+    # Group type
+    group_type = parse_group_type(feature)
+    if group_type is not None:
         result += f'{group_type} '
 
+    # Feature
     result += feature.name
-
     if feature.is_optional():
         result += ' ?'
 
     # Feature's attributes
     tab_count += 1
+    result += read_feature_attributes(feature, tab_count)
+
+    # Children
+    result += '\n'
+    for child in feature.get_children():
+        result += read_features(child, tab_count)
+    return result
+
+
+def read_feature_attributes(feature: Feature, tab_count: int) -> str:
+    result = ''
     for attribute in feature.get_attributes():
         tabs = '\t' * tab_count
         attribute_value = ''
@@ -70,11 +69,22 @@ def read_features(feature: Feature, tab_count: int) -> str:
             else:
                 attribute_value = f"{attribute.default_value}"
         result += f'\n{tabs}[{attribute.get_name()} {attribute_value}]'
-
-    result += '\n'
-    for child in feature.get_children():
-        result += read_features(child, tab_count)
     return result
+
+
+def parse_group_type(feature: Feature) -> str | None:
+    group_type = None
+    if feature.is_alternative_group():
+        group_type = 'xor'
+    elif feature.is_or_group():
+        group_type = 'or'
+    elif feature.is_cardinality_group():
+        rel = next((r for r in feature.get_relations() if r.is_cardinal()), None)
+        if rel is not None:
+            group_type = str(rel.card_min) + ".." + str(rel.card_max)
+    elif feature.is_mutex_group():
+        group_type = 'mux'
+    return group_type
 
 
 def read_constraints(const: Constraint) -> str:
@@ -85,12 +95,12 @@ def read_constraints(const: Constraint) -> str:
 
 
 def serialize_constraint(ctc: Constraint) -> str:
-    ctc = ctc.ast.pretty_str()
-    ctc = re.sub(fr'\b{ASTOperation.NOT.value}\b', 'not', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.AND.value}\b', '&&', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.OR.value}\b', '||', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.IMPLIES.value}\b', '=>', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.EQUIVALENCE.value}\b', '<=>', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.REQUIRES.value}\b', '=>', ctc)
-    ctc = re.sub(fr'\b{ASTOperation.EXCLUDES.value}\b', '=> not', ctc)
-    return f'[{ctc}]'
+    ctc_str = ctc.ast.pretty_str()
+    ctc_str = re.sub(fr'\b{ASTOperation.NOT.value}\b', 'not', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.AND.value}\b', '&&', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.OR.value}\b', '||', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.IMPLIES.value}\b', '=>', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.EQUIVALENCE.value}\b', '<=>', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.REQUIRES.value}\b', '=>', ctc_str)
+    ctc_str = re.sub(fr'\b{ASTOperation.EXCLUDES.value}\b', '=> not', ctc_str)
+    return f'[{ctc_str}]'

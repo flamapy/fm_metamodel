@@ -1,9 +1,9 @@
 import random
-from typing import Any
+from typing import Any, cast
 
+from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import Operation
 from flamapy.core.exceptions import FlamaException
-
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel, 
     Range,
@@ -36,14 +36,15 @@ class GenerateRandomAttribute(Operation):
     def set_only_leaf_features(self, only_leaf_features: bool) -> None:
         self._only_leaf_features = only_leaf_features
 
-    def execute(self, model: FeatureModel) -> 'GenerateRandomAttribute':
+    def execute(self, model: VariabilityModel) -> 'GenerateRandomAttribute':
         if model is None:
             raise FlamaException("Invalid feature model.")
         if self._attribute_name is None:
             raise FlamaException("Attribute's name has not been provided.")
         if self._attribute_domain is None:
             raise FlamaException("Attribute's domain has not been provided.")
-        self.result = generate_random_attribute_values(model, 
+        fm_model = cast(FeatureModel, model)
+        self.result = generate_random_attribute_values(fm_model, 
                                                        self._attribute_name, 
                                                        self._attribute_domain,
                                                        self._only_leaf_features)

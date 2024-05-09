@@ -1,8 +1,9 @@
 from typing import Optional
 
+from flamapy.core.models import VariabilityModel
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.operations import Operation
-from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+from flamapy.metamodels.fm_metamodel.models import Feature
 
 
 class FMFeatureAncestors(Operation):
@@ -21,10 +22,9 @@ class FMFeatureAncestors(Operation):
     def get_result(self) -> list[Feature]:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMFeatureAncestors':
+    def execute(self, model: VariabilityModel) -> 'FMFeatureAncestors':
         if self.feature is None:
-            raise FlamaException("Feature is not defined")
-
+            raise FlamaException("The feature is not defined")
         self.result = get_feature_ancestors(self.feature)
         return self
 

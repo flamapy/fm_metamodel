@@ -1,5 +1,7 @@
-from flamapy.core.operations.atomic_sets import AtomicSets
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations.atomic_sets import AtomicSets
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
@@ -11,8 +13,9 @@ class FMAtomicSets(AtomicSets):
     def get_result(self) -> list[set[Feature]]:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMAtomicSets':
-        self.result = get_atomic_sets(model)
+    def execute(self, model: VariabilityModel) -> 'FMAtomicSets':
+        fm_model = cast(FeatureModel, model)
+        self.result = get_atomic_sets(fm_model)
         return self
 
     def atomic_sets(self) -> list[set[Feature]]:

@@ -90,6 +90,7 @@ class Relation:
 
 @total_ordering
 class Feature(VariabilityElement):
+
     def __init__(
         self,
         name: str,
@@ -97,6 +98,7 @@ class Feature(VariabilityElement):
         parent: Optional["Feature"] = None,
         is_abstract: bool = False,
     ):
+        super().__init__(name)
         self.name = name
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
