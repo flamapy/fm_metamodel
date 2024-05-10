@@ -1,5 +1,7 @@
-from flamapy.core.operations import CoreFeatures
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations import CoreFeatures
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
@@ -22,8 +24,9 @@ class FMCoreFeatures(CoreFeatures):
     def get_result(self) -> list[Feature]:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMCoreFeatures':
-        self.result = get_core_features(model)
+    def execute(self, model: VariabilityModel) -> 'FMCoreFeatures':
+        fm_model = cast(FeatureModel, model)
+        self.result = get_core_features(fm_model)
         return self
 
     def get_core_features(self) -> list[Feature]:

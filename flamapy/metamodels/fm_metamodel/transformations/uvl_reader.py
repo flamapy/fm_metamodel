@@ -133,7 +133,7 @@ class UVLReader(TextToModel):
     ) -> None:
         if feature_node.attributes():
             attributes = self.process_attributes(feature_node.attributes())
-            
+
             for key, value in attributes.items():
                 if key == "abstract" and (value is None or value):
                     feature.is_abstract = True

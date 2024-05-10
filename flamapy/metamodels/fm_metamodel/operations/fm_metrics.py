@@ -25,7 +25,9 @@ def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str
 
 
 class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
+
     def __init__(self) -> None:
+        super().__init__()
         self.model: Optional[FeatureModel] = None
         self.result: list[dict[str, Any]] = []
         self.model_type_extension = "fm"
@@ -54,7 +56,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             f.name for f in self._features if len(f.get_relations()) == 0
         ]
         self._constraints_per_features = self.constraints_per_features(
-            model, self._features
+            self.model, self._features
         )
         self._feature_ancestors = [
             len(self.get_feature_ancestors(self._features_by_name[f]))
@@ -698,7 +700,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
 
         name = "Strict-complex constraints"
         _strictcomplex_constraints = [
-            str(ctc) for ctc in self.fm.get_strictcomplex_constraints()
+            str(ctc) for ctc in self.model.get_strictcomplex_constraints()
         ]
         result = self.construct_result(
             name=name,

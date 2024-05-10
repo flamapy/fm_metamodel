@@ -58,7 +58,12 @@ class UVLWriter(ModelToText):
         for attribute in feature.get_attributes():
             attribute_str = attribute.name
             if attribute.default_value is not None:
-                attribute_str += f' "{attribute.default_value}"'
+                if isinstance(attribute.default_value, str):
+                    attribute_str += f" '{attribute.default_value}'"
+                elif isinstance(attribute.default_value, bool):
+                    attribute_str += f" {str(attribute.default_value).lower()}"
+                else:
+                    attribute_str += f" {attribute.default_value}"
             attributes.append(attribute_str)
         return f'{{{", ".join(attributes)}}}' if attributes else ""
 

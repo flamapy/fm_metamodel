@@ -21,7 +21,7 @@ class JsonWriter(ModelToText):
         self.path = path
         self.model = source_model
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> str:
         data: dict[str, Any] = {}
         root = self.model.root
 
@@ -31,7 +31,7 @@ class JsonWriter(ModelToText):
         if self.path is not None:
             with open(self.path, 'w', encoding='utf8') as outfile:
                 json.dump(data, outfile)
-        return data
+        return json.dumps(data)
 
     def process_feature(self, feature: Feature) -> dict[str, Any]:
         _dict: dict[str, Any] = {}

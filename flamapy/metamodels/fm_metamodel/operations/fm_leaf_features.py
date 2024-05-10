@@ -1,5 +1,7 @@
-from flamapy.core.operations import Operation
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations import Operation
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
@@ -15,8 +17,9 @@ class FMLeafFeatures(Operation):
     def get_result(self) -> list[Feature]:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMLeafFeatures':
-        self.result = get_leaf_features(model)
+    def execute(self, model: VariabilityModel) -> 'FMLeafFeatures':
+        fm_model = cast(FeatureModel, model)
+        self.result = get_leaf_features(fm_model)
         return self
 
 
