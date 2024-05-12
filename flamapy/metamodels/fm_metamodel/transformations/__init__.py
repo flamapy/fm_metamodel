@@ -10,7 +10,6 @@ from .xml_reader import XMLReader
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
 from .clafer_writer import ClaferWriter
-from .pysat_to_fm import PysatToFM
 
 
 __all__ = ['AFMReader',
@@ -24,5 +23,4 @@ __all__ = ['AFMReader',
            'XMLReader',
            'GlencoeReader',
            'GlencoeWriter',
-           'ClaferWriter',
-           'PysatToFM']
+           'ClaferWriter']
