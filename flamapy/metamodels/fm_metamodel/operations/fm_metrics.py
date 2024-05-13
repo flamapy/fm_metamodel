@@ -110,7 +110,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         )
         return result
 
-    # @metric_method
+    @metric_method
     def abstract_features(self) -> dict[str, Any]:
         """Features used to structure the feature model that, however, do not have any
         impact at implementation level."""
@@ -153,7 +153,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         )
         return result
 
-    # @metric_method
+    @metric_method
     def compound_features(self) -> dict[str, Any]:
         """Features that have subfeatures."""
         name = "Compound features"
@@ -396,7 +396,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         )
         return result
 
-    # @metric_method
+    @metric_method
     def alternative_groups(self) -> dict[str, Any]:
         """Feature groups that require the selection of just one child (i.e., [1..1]
         cardinality)."""
@@ -692,7 +692,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         )
         return result
 
-    # @metric_method
+    @metric_method
     def strict_complex_constraints(self) -> dict[str, Any]:
         """Constraints that cannot be converted to a set of simple constraints."""
         if self.model is None:
