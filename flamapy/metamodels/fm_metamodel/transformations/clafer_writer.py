@@ -8,6 +8,7 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constr
 
 
 ATTRIBUTED_FEATURE = 'AttributedFeature'
+INSTANCE = 'CP'
 
 
 class ClaferAttributeType(Enum):
@@ -44,6 +45,8 @@ def fm_to_clafer(feature_model: FeatureModel) -> str:
     result = attributes_definition(feature_model) + '\n' + result
     for ctc in feature_model.get_constraints():
         result += read_constraints(ctc)
+    # Create an instance
+    result += f'\n\n{INSTANCE} : {feature_model.root.name}\n'
     return result
 
 
