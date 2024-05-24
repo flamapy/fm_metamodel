@@ -2,7 +2,8 @@ from .afm_reader import AFMReader
 from .afm_writer import AFMWriter
 from .featureide_reader import FeatureIDEReader
 from .featureide_writer import FeatureIDEWriter
-from .json_writer import JsonWriter
+from .json_writer import JSONWriter
+from .json_reader import JSONReader
 from .splot_writer import SPLOTWriter
 from .uvl_reader import UVLReader
 from .uvl_writer import UVLWriter
@@ -16,7 +17,8 @@ __all__ = ['AFMReader',
            'AFMWriter',
            'FeatureIDEReader',
            'FeatureIDEWriter',
-           'JsonWriter',
+           'JSONWriter',
+           'JSONReader',
            'SPLOTWriter',
            'UVLReader',
            'UVLWriter',
