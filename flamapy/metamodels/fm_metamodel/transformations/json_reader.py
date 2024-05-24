@@ -3,6 +3,7 @@ import json
 from typing import Any 
 
 from flamapy.core.models.ast import Node, AST, ASTOperation
+from flamapy.core.exceptions import ParsingException
 from flamapy.core.transformations import TextToModel
 
 from flamapy.metamodels.fm_metamodel.models import (
@@ -49,7 +50,12 @@ def parse_tree(parent: Feature, feature_node: dict[str, Any]) -> Feature:
     is_abstract = feature_node['abstract']
     feature = Feature(name=feature_name, parent=parent, is_abstract=is_abstract)
 
-    # Attributes
+    parse_attributes(feature, feature_node)
+    parse_relations(feature, feature_node)  # recursive
+    return feature
+
+
+def parse_attributes(feature: Feature, feature_node: dict[str, Any]) -> None:
     if 'attributes' in feature_node:
         for attribute in feature_node['attributes']:
             attribute_name = attribute['name']
@@ -61,6 +67,8 @@ def parse_tree(parent: Feature, feature_node: dict[str, Any]) -> Feature:
             attr.set_parent(feature)
             feature.add_attribute(attr)
 
+
+def parse_relations(feature: Feature, feature_node: dict[str, Any]) -> None:
     if 'relations' in feature_node:
         for relation in feature_node['relations']:
             children = []
@@ -83,14 +91,13 @@ def parse_tree(parent: Feature, feature_node: dict[str, Any]) -> Feature:
                 card_max = relation['card_max']
                 new_relation = Relation(feature, children, card_min, card_max)
             feature.add_relation(new_relation)
-    return feature
 
 
 def parse_constraints(constraints_info: dict[str, Any]) -> list[Constraint]:
     constraints = []
     for ctc_info in constraints_info:
         name = ctc_info['name']
-        ctc_expr = ctc_info['expr']  # not used
+        # ctc_expr = ctc_info['expr']  # not used
         ast_tree = ctc_info['ast']
         ctc_node = parse_ast_constraint(ast_tree)
         ctc = Constraint(name, AST(ctc_node))
@@ -134,5 +141,5 @@ def parse_ast_constraint(ctc_info: dict[str, Any]) -> Node:
         op_list = [parse_ast_constraint(op) for op in ctc_operands]
         node = functools.reduce(lambda l, r: Node(ASTOperation.XOR, l, r), op_list)
     else:
-        raise Exception(f'Invalid constraint: {ctc_info}')
+        raise ParsingException(f'Invalid constraint in JSON: {ctc_info}')
     return node

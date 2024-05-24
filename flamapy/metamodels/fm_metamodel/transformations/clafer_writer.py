@@ -137,7 +137,7 @@ def attributes_definition(feature_model: FeatureModel) -> str:
         for name, type in attributes.items():
             result += f'\t{name} -> {type}\n'
     return result
-    
+
 
 def parse_type_value(value: Any) -> str:
     if isinstance(value, bool):
@@ -148,3 +148,4 @@ def parse_type_value(value: Any) -> str:
         return ClaferAttributeType.FLOAT.value
     if isinstance(value, str):
         return ClaferAttributeType.STRING.value
+    return ''
