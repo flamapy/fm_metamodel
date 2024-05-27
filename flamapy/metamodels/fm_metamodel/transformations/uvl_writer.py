@@ -15,7 +15,7 @@ class UVLWriter(ModelToText):
     def get_destination_extension() -> str:
         return "uvl"
 
-    def __init__(self, source_model: FeatureModel, path: str):
+    def __init__(self, path: str, source_model: FeatureModel):
         self.path = path
         self.model = source_model
 
