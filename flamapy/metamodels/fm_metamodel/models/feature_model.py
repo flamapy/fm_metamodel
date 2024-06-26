@@ -275,14 +275,14 @@ class Constraint:
         (i.e., it can be transformed to a set of simple constraints)."""
         split_ctcs = split_constraint(self)
         return len(split_ctcs) > 1 and all(
-            self.is_simple_constraint() for ctc in split_ctcs
+            ctc.is_simple_constraint() for ctc in split_ctcs
         )
 
     def is_strictcomplex_constraint(self) -> bool:
         """Return true if the constraint is a strict-complex constraint
         (i.e., it cannot be transformed to a set of simple constraints)."""
         split_ctcs = split_constraint(self)
-        return any(self.is_complex_constraint() for ctc in split_ctcs)
+        return any(ctc.is_complex_constraint() for ctc in split_ctcs)
 
     def __str__(self) -> str:
         return f"({self.name}) {str(self.ast)}"
