@@ -1,5 +1,5 @@
 import functools
-from typing import Optional
+from typing import Optional, Union
 
 from flamapy.core.models.ast import AST, Node, ASTOperation
 from flamapy.core.transformations import ModelToModel
@@ -62,7 +62,7 @@ class PysatToFM(ModelToModel):
         raise FlamaException('Error converting from SAT to FM. ',
                              'There is not candidate for the root feature.')
 
-    def _get_node_from_clause_term(self, term: Node | int) -> Node:
+    def _get_node_from_clause_term(self, term: Union[Node, int]) -> Node:
         if isinstance(term, Node):
             return term
         name = self.source_model.features[abs(term)]

@@ -70,7 +70,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             if callable(getattr(self, method_name))
             and hasattr(getattr(self, method_name), "_is_metric_method")
         ]
-        
+
         if self.filter is not None:
             metric_methods = [
                 method for method in metric_methods if method.__name__ in self.filter

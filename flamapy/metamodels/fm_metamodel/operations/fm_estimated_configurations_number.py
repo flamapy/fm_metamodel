@@ -19,7 +19,7 @@ class FMEstimatedConfigurationsNumber(EstimatedConfigurationsNumber):
         self.result = 0
         self.feature_model: Optional[FeatureModel] = None
 
-    def execute(self, model: VariabilityModel) -> 'FMEstimatedProductsNumber':
+    def execute(self, model: VariabilityModel) -> 'FMEstimatedConfigurationsNumber':
         self.feature_model = cast(FeatureModel, model)
         self.result = self.get_configurations_number()
         return self

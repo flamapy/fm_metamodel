@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from flamapy.core.transformations import ModelToText
 from flamapy.core.models.ast import ASTOperation
@@ -93,7 +93,7 @@ def read_feature_attributes(feature: Feature, tab_count: int) -> str:
     return result
 
 
-def parse_group_type(feature: Feature) -> str | None:
+def parse_group_type(feature: Feature) -> Optional[str]:
     group_type = None
     if feature.is_alternative_group():
         group_type = 'xor'
@@ -134,8 +134,8 @@ def attributes_definition(feature_model: FeatureModel) -> str:
     result = ''
     if attributes:
         result = f'abstract {ATTRIBUTED_FEATURE}\n'
-        for name, type in attributes.items():
-            result += f'\t{name} -> {type}\n'
+        for name, v_type in attributes.items():
+            result += f'\t{name} -> {v_type}\n'
     return result
 
 

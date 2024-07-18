@@ -50,7 +50,7 @@ def to_json(feature_model: FeatureModel) -> dict[str, Any]:
 def get_tree_info(feature: Feature) -> dict[str, Any]:
     feature_info = {}
     feature_info['name'] = feature.name
-    feature_info['abstract'] = feature.is_abstract
+    feature_info['abstract'] = str(feature.is_abstract)
 
     relations = []
     for relation in feature.get_relations():

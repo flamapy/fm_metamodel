@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import Any 
+from typing import Any, Dict, List, Optional
 
 from flamapy.core.models.ast import Node, AST, ASTOperation
 from flamapy.core.exceptions import ParsingException
@@ -26,7 +26,7 @@ class JSONReader(TextToModel):
     def __init__(self, path: str) -> None:
         self.path = path
 
-    def transform(self) -> str:
+    def transform(self) -> FeatureModel:
         with open(self.path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             features_info = data['features']
@@ -36,7 +36,7 @@ class JSONReader(TextToModel):
             return FeatureModel(root_feature, constraints)
 
     @staticmethod
-    def parse_json(json_content: str) -> FeatureModel:
+    def parse_json(json_content: Dict[str, Any]) -> FeatureModel:
         features_info = json_content['features']
         constraints_info = json_content['constraints']
         root_feature = parse_tree(None, features_info)
@@ -44,7 +44,7 @@ class JSONReader(TextToModel):
         return FeatureModel(root_feature, constraints)
 
 
-def parse_tree(parent: Feature, feature_node: dict[str, Any]) -> Feature:
+def parse_tree(parent: Optional[Feature], feature_node: Dict[str, Any]) -> Feature:
     """Parse the tree structure and returns the root feature."""
     feature_name = feature_node['name']
     is_abstract = feature_node['abstract']
@@ -55,20 +55,17 @@ def parse_tree(parent: Feature, feature_node: dict[str, Any]) -> Feature:
     return feature
 
 
-def parse_attributes(feature: Feature, feature_node: dict[str, Any]) -> None:
+def parse_attributes(feature: Feature, feature_node: Dict[str, Any]) -> None:
     if 'attributes' in feature_node:
         for attribute in feature_node['attributes']:
             attribute_name = attribute['name']
-            if 'value' in attribute:
-                attribute_value = attribute['value']
-            else:
-                attribute_value = None
+            attribute_value = attribute.get('value')
             attr = Attribute(attribute_name, None, attribute_value, None)
             attr.set_parent(feature)
             feature.add_attribute(attr)
 
 
-def parse_relations(feature: Feature, feature_node: dict[str, Any]) -> None:
+def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:
     if 'relations' in feature_node:
         for relation in feature_node['relations']:
             children = []
@@ -93,11 +90,10 @@ def parse_relations(feature: Feature, feature_node: dict[str, Any]) -> None:
             feature.add_relation(new_relation)
 
 
-def parse_constraints(constraints_info: dict[str, Any]) -> list[Constraint]:
+def parse_constraints(constraints_info: List[Dict[str, Any]]) -> List[Constraint]:
     constraints = []
     for ctc_info in constraints_info:
         name = ctc_info['name']
-        # ctc_expr = ctc_info['expr']  # not used
         ast_tree = ctc_info['ast']
         ctc_node = parse_ast_constraint(ast_tree)
         ctc = Constraint(name, AST(ctc_node))
@@ -105,7 +101,7 @@ def parse_constraints(constraints_info: dict[str, Any]) -> list[Constraint]:
     return constraints
 
 
-def parse_ast_constraint(ctc_info: dict[str, Any]) -> Node:
+def parse_ast_constraint(ctc_info: Dict[str, Any]) -> Node:
     ctc_type = ctc_info['type']
     ctc_operands = ctc_info['operands']
     node = None
