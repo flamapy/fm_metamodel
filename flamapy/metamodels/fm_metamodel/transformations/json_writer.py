@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, List
 
 from flamapy.core.models.ast import Node
 from flamapy.core.transformations import ModelToText
@@ -40,21 +40,21 @@ class JSONWriter(ModelToText):
         return json.dumps(json_object, indent=4)
 
 
-def to_json(feature_model: FeatureModel) -> dict[str, Any]:
-    result: dict[str, Any] = {}
+def to_json(feature_model: FeatureModel) -> Dict[str, Any]:
+    result: Dict[str, Any] = {}
     result['features'] = get_tree_info(feature_model.root)
     result['constraints'] = get_constraints_info(feature_model.get_constraints())
     return result
 
 
-def get_tree_info(feature: Feature) -> dict[str, Any]:
-    feature_info = {}
+def get_tree_info(feature: Feature) -> Dict[str, Any]:
+    feature_info: Dict[str, Any] = {}
     feature_info['name'] = feature.name
     feature_info['abstract'] = str(feature.is_abstract)
 
-    relations = []
+    relations: List[Dict[str, Any]] = []
     for relation in feature.get_relations():
-        relation_info = {}
+        relation_info: Dict[str, Any] = {}
         relation_type = JSONFeatureType.FEATURE.value
         if relation.is_alternative():
             relation_type = JSONFeatureType.XOR.value
@@ -71,7 +71,7 @@ def get_tree_info(feature: Feature) -> dict[str, Any]:
         relation_info['type'] = relation_type
         relation_info['card_min'] = relation.card_min
         relation_info['card_max'] = relation.card_max
-        children = []
+        children: List[Dict[str, Any]] = []
         for child in relation.children:
             children.append(get_tree_info(child))
         relation_info['children'] = children
@@ -86,10 +86,10 @@ def get_tree_info(feature: Feature) -> dict[str, Any]:
     return feature_info
 
 
-def get_attributes_info(attributes: list[Attribute]) -> list[dict[str, Any]]:
-    attributes_info = []
+def get_attributes_info(attributes: List[Attribute]) -> List[Dict[str, Any]]:
+    attributes_info: List[Dict[str, Any]] = []
     for attribute in attributes:
-        attr_info = {}
+        attr_info: Dict[str, Any] = {}
         attr_info['name'] = attribute.name
         if attribute.default_value is not None:
             attr_info['value'] = attribute.default_value
@@ -97,10 +97,10 @@ def get_attributes_info(attributes: list[Attribute]) -> list[dict[str, Any]]:
     return attributes_info
 
 
-def get_constraints_info(constraints: list[Constraint]) -> list[dict[str, Any]]:
-    constraints_info = []
+def get_constraints_info(constraints: List[Constraint]) -> List[Dict[str, Any]]:
+    constraints_info: List[Dict[str, Any]] = []
     for ctc in constraints:
-        ctc_info = {}
+        ctc_info: Dict[str, Any] = {}
         ctc_info['name'] = ctc.name
         ctc_info['expr'] = ctc.ast.pretty_str()
         ctc_info['ast'] = get_ctc_info(ctc.ast.root)
@@ -108,14 +108,14 @@ def get_constraints_info(constraints: list[Constraint]) -> list[dict[str, Any]]:
     return constraints_info
 
 
-def get_ctc_info(ast_node: Node) -> dict[str, Any]:
-    ctc_info: dict[str, Any] = {}
+def get_ctc_info(ast_node: Node) -> Dict[str, Any]:
+    ctc_info: Dict[str, Any] = {}
     if ast_node.is_term():
         ctc_info['type'] = JSONFeatureType.FEATURE.value
         ctc_info['operands'] = [ast_node.data]
     else:
         ctc_info['type'] = ast_node.data.value
-        operands = []
+        operands: List[Dict[str, Any]] = []
         left = get_ctc_info(ast_node.left)
         operands.append(left)
         if ast_node.right is not None:

@@ -7,7 +7,12 @@ ignore-paths:
   - build
   - resources
   - .mypy_cache
-
+  - venv
+  - .venv
+  - env
+  - flamapy_fm.egg-info
+  - __pycache__
+  - flamapy/metamodels/fm_metamodel/transformations/pysat_to_fm.py  # This is a script that could will be only used in expert mode is not part of the package
 pycodestyle:
   options:
     max-line-length: 100
