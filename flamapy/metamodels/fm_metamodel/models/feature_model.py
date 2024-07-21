@@ -173,6 +173,9 @@ class Feature(VariabilityElement):
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        return f"{self.name}"
+
     def __hash__(self) -> int:
         return hash(self.name)
 

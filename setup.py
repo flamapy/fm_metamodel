@@ -16,7 +16,7 @@ dev_requirements = read_requirements("requirements-dev.txt")
 
 setuptools.setup(
     name="flamapy-fm",
-    version="2.0.0.dev4",
+    version="2.0.0.dev5",
     author="Flamapy",
     author_email="flamapy@us.es",
     description="flamapy-fm is a plugin to Flamapy module",
