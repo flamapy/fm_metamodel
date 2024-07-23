@@ -123,6 +123,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_abstract_features,
             size=len(_abstract_features),
             ratio=self.get_ratio(_abstract_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -137,6 +139,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_concrete_features,
             size=len(_concrete_features),
             ratio=self.get_ratio(_concrete_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -151,6 +155,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_leaf_features,
             size=len(_leaf_features),
             ratio=self.get_ratio(_leaf_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -167,6 +173,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_compound_features,
             size=len(_compound_features),
             ratio=self.get_ratio(_compound_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -187,6 +195,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _concrete_compound_features, self.concrete_features()["result"]
             ),
+            parent="Concrete features",
+            level=2
         )
         return result
 
@@ -207,6 +217,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _concrete_leaf_features, self.concrete_features()["result"]
             ),
+            parent="Concrete features",
+            level=2
         )
         return result
 
@@ -227,6 +239,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _abstract_compound_features, self._abstract_features.keys()
             ),
+            parent="Abstract features",
+            level=2
         )
         return result
 
@@ -247,6 +261,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _abstract_leaf_features, self._abstract_features.keys()
             ),
+            parent="Abstract features",
+            level=2
         )
         return result
 
@@ -280,6 +296,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_root_feature,
             size=1,
             ratio=self.get_ratio([_root_feature], self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -299,6 +317,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_top_features,
             size=len(_top_features),
             ratio=self.get_ratio(_top_features, self._features),
+            parent="Root feature",
+            level=2
         )
         return result
 
@@ -320,6 +340,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_solitary_features,
             size=len(_solitary_features),
             ratio=self.get_ratio(_solitary_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -338,6 +360,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_grouped_features,
             size=len(_grouped_features),
             ratio=self.get_ratio(_grouped_features, self._features),
+            parent="Features",
+            level=1
         )
         return result
 
@@ -357,6 +381,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _mandatory_features, self.solitary_features()["result"]
             ),
+            parent="Tree relationships",
+            level=1
         )
         return result
 
@@ -376,6 +402,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _optional_features, self.solitary_features()["result"]
             ),
+            parent="Tree relationships",
+            level=1
         )
         return result
 
@@ -394,6 +422,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_feature_groups,
             size=len(_feature_groups),
             ratio=self.get_ratio(_feature_groups, _tree_relationships),
+            parent="Tree relationships",
+            level=1
         )
         return result
 
@@ -415,6 +445,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_alternative_groups,
             size=len(_alternative_groups),
             ratio=self.get_ratio(_alternative_groups, _group_features),
+            parent="Feature groups",
+            level=2
         )
         return result
 
@@ -434,6 +466,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_or_groups,
             size=len(_or_groups),
             ratio=self.get_ratio(_or_groups, _group_features),
+            parent="Feature groups",
+            level=2
         )
         return result
 
@@ -450,6 +484,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_mutex_groups,
             size=len(_mutex_groups),
             ratio=self.get_ratio(_mutex_groups, _group_features),
+            parent="Feature groups",
+            level=2
         )
         return result
 
@@ -468,6 +504,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_cardinality_groups,
             size=len(_cardinality_groups),
             ratio=self.get_ratio(_cardinality_groups, _group_features),
+            parent="Feature groups",
+            level=2
         )
         return result
 
@@ -497,6 +535,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.min_children_per_feature.__doc__,
             result=_min_children_per_feature,
+            parent="Branching factor",
+            level=1
         )
         return result
 
@@ -512,6 +552,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.max_children_per_feature.__doc__,
             result=_max_children_per_feature,
+            parent="Branching factor",
+            level=1
         )
         return result
 
@@ -529,6 +571,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.avg_children_per_feature.__doc__,
             result=_avg_children_per_feature,
+            parent="Branching factor",
+            level=1
         )
         return result
 
@@ -548,7 +592,9 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         name = "Max depth of tree"
         _max_depth_tree = max(self._feature_ancestors)
         result = self.construct_result(
-            name=name, doc=self.max_depth_tree.__doc__, result=_max_depth_tree
+            name=name, doc=self.max_depth_tree.__doc__, result=_max_depth_tree,
+            parent="Depth of tree",
+            level=1
         )
         return result
 
@@ -561,6 +607,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.mean_depth_tree.__doc__,
             result=round(_mean_depth_tree, 2),
+            parent="Depth of tree",
+            level=1
         )
         return result
 
@@ -573,6 +621,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.median_depth_tree.__doc__,
             result=round(_median_depth_tree, 2),
+            parent="Depth of tree",
+            level=1
         )
         return result
 
@@ -606,6 +656,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_simple_constraints,
             size=len(_simple_constraints),
             ratio=self.get_ratio(_simple_constraints, self.model.get_constraints()),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
 
@@ -628,6 +680,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _requires_constraints, self.model.get_simple_constraints()
             ),
+            parent="Simple constraints",
+            level=2
         )
         return result
 
@@ -650,6 +704,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _excludes_constraints, self.model.get_simple_constraints()
             ),
+            parent="Simple constraints",
+            level=2
         )
         return result
 
@@ -669,6 +725,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_complex_constraints,
             size=len(_complex_constraints),
             ratio=self.get_ratio(_complex_constraints, self.model.get_constraints()),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
 
@@ -690,6 +748,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _pseudocomplex_constraints, self.model.get_complex_constraints()
             ),
+            parent="Complex constraints",
+            level=2
         )
         return result
 
@@ -711,6 +771,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             ratio=self.get_ratio(
                 _strictcomplex_constraints, self.model.get_complex_constraints()
             ),
+            parent="Complex constraints",
+            level=2
         )
         return result
 
@@ -723,6 +785,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.min_constraints_per_feature.__doc__,
             result=min(_constraints_per_feature),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
 
@@ -735,6 +799,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.max_constraints_per_feature.__doc__,
             result=max(_constraints_per_feature),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
 
@@ -747,6 +813,8 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             name=name,
             doc=self.avg_constraints_per_feature.__doc__,
             result=round(statistics.mean(_constraints_per_feature), 2),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
 
@@ -767,5 +835,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             result=_features_in_constraints,
             size=len(_features_in_constraints),
             ratio=self.get_ratio(_features_in_constraints, self._features, 2),
+            parent="Cross-tree constraints",
+            level=1
         )
         return result
