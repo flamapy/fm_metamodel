@@ -70,7 +70,7 @@ def _get_attributes(feature: Feature) -> dict[str, str]:
         atributes['mandatory'] = 'true'
     if feature.is_abstract: 
         atributes['abstract'] = 'true'
-    atributes['name'] = feature.name
+    atributes['name'] = safename(feature.name)
     return atributes
 
 
@@ -119,7 +119,7 @@ def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
     ctc_info: dict[str, Any] = {}
     if ast_node.is_term():
         ctc_info['type'] = FeatureIDEReader.TAG_VAR
-        ctc_info['operands'] = [ast_node.data]
+        ctc_info['operands'] = [safename(str(ast_node.data))]
     else:
         ctc_info['type'] = FeatureIDEWriter.CTC_TYPES[ast_node.data]
         operands = []
@@ -136,3 +136,7 @@ def prettify(xml: str) -> bytes:
     """Return a pretty-printed XML string for the Element."""
     reparsed = minidom.parseString(xml)
     return reparsed.toprettyxml(indent="\t", encoding='UTF-8')
+
+
+def safename(name: str) -> str:
+    return f'"{name}"' if ' ' in name else name

@@ -38,7 +38,7 @@ class UVLWriter(ModelToText):
             result
             + "\n"
             + tab_count * "\t"
-            + feature.name
+            + safename(feature.name)
             + " "
             + self.read_attributes(feature)
         )
@@ -56,7 +56,7 @@ class UVLWriter(ModelToText):
         if feature.is_abstract:
             attributes.append("abstract")
         for attribute in feature.get_attributes():
-            attribute_str = attribute.name
+            attribute_str = safename(attribute.name)
             if attribute.default_value is not None:
                 if isinstance(attribute.default_value, str):
                     attribute_str += f" '{attribute.default_value}'"
@@ -132,3 +132,7 @@ class UVLWriter(ModelToText):
                 ),
             )
         )
+
+
+def safename(name: str) -> str:
+    return f'"{name}"' if ' ' in name else name

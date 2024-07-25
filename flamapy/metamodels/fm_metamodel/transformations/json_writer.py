@@ -49,7 +49,7 @@ def to_json(feature_model: FeatureModel) -> Dict[str, Any]:
 
 def get_tree_info(feature: Feature) -> Dict[str, Any]:
     feature_info: Dict[str, Any] = {}
-    feature_info['name'] = feature.name
+    feature_info['name'] = safename(feature.name)
     feature_info['abstract'] = str(feature.is_abstract)
 
     relations: List[Dict[str, Any]] = []
@@ -90,7 +90,7 @@ def get_attributes_info(attributes: List[Attribute]) -> List[Dict[str, Any]]:
     attributes_info: List[Dict[str, Any]] = []
     for attribute in attributes:
         attr_info: Dict[str, Any] = {}
-        attr_info['name'] = attribute.name
+        attr_info['name'] = safename(attribute.name)
         if attribute.default_value is not None:
             attr_info['value'] = attribute.default_value
         attributes_info.append(attr_info)
@@ -112,7 +112,7 @@ def get_ctc_info(ast_node: Node) -> Dict[str, Any]:
     ctc_info: Dict[str, Any] = {}
     if ast_node.is_term():
         ctc_info['type'] = JSONFeatureType.FEATURE.value
-        ctc_info['operands'] = [ast_node.data]
+        ctc_info['operands'] = [safename(str(ast_node.data))]
     else:
         ctc_info['type'] = ast_node.data.value
         operands: List[Dict[str, Any]] = []
@@ -123,3 +123,7 @@ def get_ctc_info(ast_node: Node) -> Dict[str, Any]:
             operands.append(right)
         ctc_info['operands'] = operands
     return ctc_info
+
+
+def safename(name: str) -> str:
+    return f'"{name}"' if ' ' in name else name

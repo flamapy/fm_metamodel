@@ -36,8 +36,8 @@ class GlencoeWriter(ModelToText):
 
 def _to_json(feature_model: FeatureModel) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    result["id"] = f"FM_{feature_model.root.name}"
-    result["name"] = f"FM_{feature_model.root.name}"
+    result["id"] = f"FM_{feature_model.root.name.replace(' ', '')}"
+    result["name"] = f"FM_{feature_model.root.name.replace(' ', '')}"
     result["features"] = _get_features_info(feature_model.get_features())
     result["tree"] = _get_tree_info(feature_model.root)
     result["constraints"] = _get_constraints_info(feature_model.get_constraints())
@@ -71,7 +71,7 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
 
 def _get_tree_info(feature: Feature) -> dict[str, Any]:
     feature_info: dict[str, Any] = {}
-    feature_info["id"] = feature.name
+    feature_info["id"] = safename(feature.name)
     children = [
         _get_tree_info(child)
         for child in sorted(feature.get_children(), key=lambda f: f.name)
@@ -92,7 +92,7 @@ def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
     ctc_info: dict[str, Any] = {}
     if ast_node.is_term():
         ctc_info["type"] = "FeatureTerm"
-        ctc_info["operands"] = [ast_node.data]
+        ctc_info["operands"] = [safename(str(ast_node.data))]
     else:
         ctc_info["type"] = GlencoeWriter.CTC_TYPES[ast_node.data]
         operands = []
@@ -103,3 +103,7 @@ def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
             operands.append(right)
         ctc_info["operands"] = operands
     return ctc_info
+
+
+def safename(name: str) -> str:
+    return f'"{name}"' if ' ' in name else name

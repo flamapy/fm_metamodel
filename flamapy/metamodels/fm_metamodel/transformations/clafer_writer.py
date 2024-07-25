@@ -46,7 +46,7 @@ def fm_to_clafer(feature_model: FeatureModel) -> str:
     for ctc in feature_model.get_constraints():
         result += read_constraints(ctc)
     # Create an instance
-    result += f'\n\n{INSTANCE} : {feature_model.root.name}\n'
+    result += f'\n\n{INSTANCE} : {safename(feature_model.root.name)}\n'
     return result
 
 
@@ -60,7 +60,7 @@ def read_features(feature: Feature, tab_count: int) -> str:
         result += f'{group_type} '
 
     # Feature
-    result += feature.name
+    result += safename(feature.name)
     if feature.get_attributes():
         result += f' : {ATTRIBUTED_FEATURE}'
     if feature.is_optional():
@@ -89,7 +89,7 @@ def read_feature_attributes(feature: Feature, tab_count: int) -> str:
                 attribute_value = f"{str(attribute.default_value).lower()}"
             else:
                 attribute_value = f"{attribute.default_value}"
-        result += f'\n{tabs}[{attribute.get_name()} = {attribute_value}]'
+        result += f'\n{tabs}[{safename(attribute.get_name())} = {attribute_value}]'
     return result
 
 
@@ -149,3 +149,7 @@ def parse_type_value(value: Any) -> str:
     if isinstance(value, str):
         return ClaferAttributeType.STRING.value
     return ''
+
+
+def safename(name: str) -> str:
+    return f'"{name}"' if ' ' in name else name

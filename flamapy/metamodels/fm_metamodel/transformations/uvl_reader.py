@@ -200,7 +200,7 @@ class UVLReader(TextToModel):
     ) -> list[Feature]:
         list_features = []
         for feature_context in group_spec_node.feature():
-            feature_name = feature_context.reference().getText()
+            feature_name = feature_context.reference().getText().replace('"', '')
             feature = Feature(feature_name, [])
             self.process_feature(feature, feature_context)
             list_features.append(feature)
@@ -253,7 +253,7 @@ class UVLReader(TextToModel):
     ) -> Node:
         """Process a literal constraint."""
         literal = literal_context.reference()
-        return Node(literal.getText())
+        return Node(literal.getText().replace('"', ''))
 
     def process_parenthesis_constraint(
         self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext
@@ -407,7 +407,7 @@ class UVLReader(TextToModel):
         # Find ParseTree node of root feature
         root_feature_ast = self.parse_tree.features().feature()
         # Get the root and process it
-        feature_text = root_feature_ast.reference().getText()
+        feature_text = root_feature_ast.reference().getText().replace('"', '')
         feature = Feature(feature_text, [])
         root = self.process_feature(feature, root_feature_ast)
 
