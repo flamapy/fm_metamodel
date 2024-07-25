@@ -57,7 +57,9 @@ def add_features(feature: Feature, n_tabs: int) -> list[str]:
         elif relation.is_alternative() or relation.is_or():
             lines.append(indentation + f':g [{relation.card_min},{relation.card_max}]')
             for child in relation.children:
-                lines.append(indentation + TAB + f': {safename(child.name)} ({safename(child.name)})')
+                lines.append(
+                    indentation + TAB + f': {safename(child.name)} ({safename(child.name)})'
+                )
                 lines.extend(add_features(child, n_tabs + 2))
     return lines
 
@@ -69,7 +71,11 @@ def add_constraints(constraints: list[Constraint]) -> list[str]:
     for ctc in constraints:
         cnf_clauses = ctc.ast.get_clauses()
         for clause in cnf_clauses:
-            clause_list_str = ['~' + safename(t[1:]) if t.startswith('-') else safename(t) for t in clause]
+            clause_list_str = [
+                '~' + safename(t[1:]) if t.startswith('-') 
+                else safename(t) 
+                for t in clause
+            ]
             clause_str = ' or '.join(clause_list_str)
             lines.append(indentation + f'C{index}: {clause_str}')
             index += 1
