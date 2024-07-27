@@ -1,12 +1,13 @@
 import math
-from typing import Optional
+from typing import Optional, cast
 
+from flamapy.core.models import VariabilityModel
 from flamapy.core.exceptions import FlamaException
-from flamapy.core.operations import EstimatedProductsNumber
+from flamapy.core.operations import EstimatedConfigurationsNumber
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
-class FMEstimatedProductsNumber(EstimatedProductsNumber):
+class FMEstimatedConfigurationsNumber(EstimatedConfigurationsNumber):
     """It computes an estimation of the number of products of the feature model.
 
     It only uses the structure of the feature model,
@@ -18,17 +19,17 @@ class FMEstimatedProductsNumber(EstimatedProductsNumber):
         self.result = 0
         self.feature_model: Optional[FeatureModel] = None
 
-    def execute(self, model: FeatureModel) -> 'FMEstimatedProductsNumber':
-        self.feature_model = model
-        self.result = self.get_products_number()
+    def execute(self, model: VariabilityModel) -> 'FMEstimatedConfigurationsNumber':
+        self.feature_model = cast(FeatureModel, model)
+        self.result = self.get_configurations_number()
         return self
 
     def get_result(self) -> int:
         return self.result
 
-    def get_products_number(self) -> int:
+    def get_configurations_number(self) -> int:
         if self.feature_model is None:
-            raise FlamaException("Feature is not defined")
+            raise FlamaException("The feature model is not defined")
 
         return count_configurations(self.feature_model)
 

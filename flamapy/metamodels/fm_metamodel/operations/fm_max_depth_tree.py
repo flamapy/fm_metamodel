@@ -1,7 +1,10 @@
-from flamapy.core.operations import Operation
+from typing import cast
 
+from flamapy.core.models import VariabilityModel
+from flamapy.core.operations import Operation
 from flamapy.metamodels.fm_metamodel.models import FeatureModel
-from flamapy.metamodels.fm_metamodel.operations import get_feature_ancestors, get_leaf_features
+from flamapy.metamodels.fm_metamodel.operations.fm_feature_ancestors import get_feature_ancestors
+from flamapy.metamodels.fm_metamodel.operations.fm_leaf_features import get_leaf_features
 
 
 class FMMaxDepthTree(Operation):
@@ -13,8 +16,9 @@ class FMMaxDepthTree(Operation):
     def get_result(self) -> int:
         return self.result
 
-    def execute(self, model: FeatureModel) -> 'FMMaxDepthTree':
-        self.result = max_depth_tree(model)
+    def execute(self, model: VariabilityModel) -> 'FMMaxDepthTree':
+        fm_model = cast(FeatureModel, model)
+        self.result = max_depth_tree(fm_model)
         return self
 
 

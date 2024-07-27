@@ -15,7 +15,7 @@ class AFMWriter(ModelToText):
     def get_destination_extension() -> str:
         return 'afm'
 
-    def __init__(self, source_model: FeatureModel, path: str):
+    def __init__(self, path: str, source_model: FeatureModel):
         self.path = path
         self.model = source_model
 
@@ -25,8 +25,9 @@ class AFMWriter(ModelToText):
         serialized_model += self.serialize_attributes()
         serialized_model += self.serialize_constraints()
 
-        with open(self.path, 'w', encoding='utf8') as file:
-            file.write(serialized_model)
+        if self.path is not None:
+            with open(self.path, 'w', encoding='utf8') as file:
+                file.write(serialized_model)
 
         return serialized_model
 

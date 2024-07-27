@@ -3,6 +3,7 @@ import logging
 from typing import Any, Optional
 
 from antlr4 import CommonTokenStream, FileStream
+from antlr4.error.ErrorListener import ErrorListener
 from uvl.UVLCustomLexer import UVLCustomLexer
 from uvl.UVLPythonParser import UVLPythonParser
 
@@ -17,27 +18,34 @@ from flamapy.metamodels.fm_metamodel.models import (
     Attribute,
 )
 
-from antlr4.error.ErrorListener import ErrorListener
 
 class CustomErrorListener(ErrorListener):
-    def __init__(self):
-        super(CustomErrorListener, self).__init__()
-        self.errors = []
+    def __init__(self) -> None:
+        super().__init__()
+        self.errors: list[str] = []
 
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+    def syntaxError(  # noqa: N802
+        self,
+        recognizer: Any,
+        offendingSymbol: Any,  # noqa: N803
+        line: Any,
+        column: Any,
+        msg: Any,
+        e: Any,
+    ) -> None:
         error_msg = f"Syntax error at line {line}, column {column}: {msg}"
         self.errors.append(error_msg)
 
-class UVLReader(TextToModel):
 
+class UVLReader(TextToModel):
     @staticmethod
     def get_source_extension() -> str:
-        return 'uvl'
+        return "uvl"
 
     def __init__(self, path: str) -> None:
         self.path: str = os.sep.join(path.split(os.sep)[:-1])
         self.file: str = path.split(os.sep)[-1]
-        self.namespace: str = ''
+        self.namespace: str = ""
         self.parse_tree: Any = None
         self.model: Optional[FeatureModel] = None
         self.imports: dict[str, FeatureModel] = {}
@@ -50,7 +58,7 @@ class UVLReader(TextToModel):
 
         stream = CommonTokenStream(lexer)
         parser = UVLPythonParser(stream)
-    
+
         # Attach custom error listener
         error_listener = CustomErrorListener()
         parser.removeErrorListeners()
@@ -62,11 +70,13 @@ class UVLReader(TextToModel):
             for error in error_listener.errors:
                 logging.error(error)
             raise FlamaException("Parsing failed due to syntax errors.")
-        
-    def process_attributes(self, attributes_node):
+
+    def process_attributes(
+        self, attributes_node: UVLPythonParser.AttributeContext
+    ) -> dict[str, Any]:
         attributes_list = attributes_node.attribute()
         attributes_dict = {}
-        
+
         for attribute_context in attributes_list:
             # First, check which kind of attribute we're dealing with
             value_attribute = attribute_context.valueAttribute()
@@ -78,56 +88,67 @@ class UVLReader(TextToModel):
                     value = self.process_value(value_attribute.value())
                 else:
                     value = None  # or some default value
-           
+
             elif constraint_attribute:
                 # Here you can handle constraint attributes if you need them
                 # If they should be processed differently, provide methods similar to process_value
                 logging.warning("This attributes are not yet supported in flama.")
-                pass  # Adjust accordingly
             else:
                 # Handle unexpected case
-                raise ValueError(f"Unknown attribute type for: {attribute_context.getText()}")
+                raise ValueError(
+                    f"Unknown attribute type for: {attribute_context.getText()}"
+                )
 
             attributes_dict[key] = value
         return attributes_dict
 
-
-   
-
-    def process_value(self, value_context):
+    def process_value(self, value_context: UVLPythonParser.ValueContext) -> Any:
+        value = None
         if value_context.BOOLEAN():
-            return value_context.BOOLEAN().getText() == 'true'
+            value = value_context.BOOLEAN().getText() == "true"
         elif value_context.FLOAT():
-            return float(value_context.FLOAT().getText())
+            value = float(value_context.FLOAT().getText())
         elif value_context.INTEGER():
-            return int(value_context.INTEGER().getText())
+            value = int(value_context.INTEGER().getText())
         elif value_context.STRING():
-            return value_context.STRING().getText()[1:-1]  # Removing quotes
+            value = value_context.STRING().getText()[1:-1]  # Removing quotes
         elif value_context.attributes():
-            return self.process_attributes(value_context.attributes())
+            value = self.process_attributes(value_context.attributes())
         elif value_context.vector():
-            return [self.process_value(val) for val in value_context.vector().value()]
+            value = [self.process_value(val) for val in value_context.vector().value()]
+        return value
 
-    def process_feature(self, feature:Feature, feature_node: UVLPythonParser.FeatureContext) -> Feature:
-        
-        #See if there is a feature cardinality and attributes (TODO)
+    def _check_feature_cardinality(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> None:
+        # See if there is a feature cardinality and attributes (TODO)
         if feature_node.featureCardinality():
             cardinality_text = feature_node.featureCardinality().CARDINALITY().getText()
             min_val, max_val = self.parse_cardinality(cardinality_text)
             feature.card_min = min_val
             feature.card_max = max_val
-        
+
+    def _check_attributes(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> None:
         if feature_node.attributes():
             attributes = self.process_attributes(feature_node.attributes())
+
             for key, value in attributes.items():
-                if key == 'abstract':
-                    feature.abstract = True
+                if key == "abstract" and (value is None or value):
+                    feature.is_abstract = True
                 else:
                     feature.add_attribute(Attribute(name=key, default_value=value))
-                    
+
+    def process_feature(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> Feature:
+        self._check_feature_cardinality(feature, feature_node)
+        self._check_attributes(feature, feature_node)
+
         # Get the relationship type
         for relationship in feature_node.group():
-            childs=self.process_group(relationship.groupSpec())
+            childs = self.process_group(relationship.groupSpec())
             if isinstance(relationship, UVLPythonParser.AlternativeGroupContext):
                 feature.add_relation(Relation(feature, childs, 1, 1))
             elif isinstance(relationship, UVLPythonParser.OptionalGroupContext):
@@ -141,117 +162,164 @@ class UVLReader(TextToModel):
             elif isinstance(relationship, UVLPythonParser.CardinalityGroupContext):
                 # Access the CARDINALITY token text.
                 cardinality_text = relationship.CARDINALITY().getText()
-                
-                min_value, max_value=self.parse_cardinality(cardinality_text)
-                feature.add_relation(Relation(feature, childs,min_value, max_value))
-                
-                if(max_value>len(childs)):
-                    logging.warning("Cardinality error: max value is greater than the number of childs")
+
+                min_value, max_value = self.parse_cardinality(cardinality_text)
+                feature.add_relation(Relation(feature, childs, min_value, max_value))
+
+                if max_value > len(childs):
+                    logging.warning(
+                        "Cardinality error: max value is greater than the number of childs"
+                    )
 
         return feature
 
     def parse_cardinality(self, cardinality_text: str) -> tuple[int, int]:
         # Extract the minimum and maximum values.
         # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
-        min_value = None
-        max_value = None
+        min_value: str = ""
+        max_value: str = ""
 
         # Remove brackets.
         cardinality_text = cardinality_text[1:-1]
 
-        if '..' in cardinality_text:
-            parts = cardinality_text.split('..')
+        if ".." in cardinality_text:
+            parts = cardinality_text.split("..")
             min_value = parts[0]
             max_value = parts[1]
         else:
             min_value = cardinality_text
             max_value = min_value  # Assuming max is the same as min if not specified.
 
-        min_value=(int)(min_value)
-        max_value=(int)(max_value)
-        return min_value, max_value
-    
-    def process_group(self, groupSpec_node) ->list[Feature]:
-        list_features=[]
-        for feature_context in groupSpec_node.feature():
-            feature_name = feature_context.reference().getText()
+        try:
+            return int(min_value), int(max_value)
+        except Exception as exc:
+            raise exc
+
+    def process_group(
+        self, group_spec_node: UVLPythonParser.GroupSpecContext
+    ) -> list[Feature]:
+        list_features = []
+        for feature_context in group_spec_node.feature():
+            feature_name = feature_context.reference().getText().replace('"', '')
             feature = Feature(feature_name, [])
             self.process_feature(feature, feature_context)
             list_features.append(feature)
         return list_features
-    
-    def process_constraints(self, constraint_node) -> Node:
-        n = None
+
+    def process_constraints(
+        self, constraint_node: UVLPythonParser.ConstraintContext
+    ) -> Node:
+        process = None
         if isinstance(constraint_node, UVLPythonParser.EquationConstraintContext):
-            n = self.process_equation_constraint(constraint_node)
-        elif isinstance(constraint_node, UVLPythonParser.LiteralConstraintContext) :
-            n = self.process_literal_constraint(constraint_node)
+            process = self.process_equation_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.LiteralConstraintContext):
+            process = self.process_literal_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.ParenthesisConstraintContext):
-            n = self.process_parenthesis_constraint(constraint_node)
+            process = self.process_parenthesis_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.NotConstraintContext):
-            n = self.process_not_constraint(constraint_node)
+            process = self.process_not_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.AndConstraintContext):
-            n = self.process_and_constraint(constraint_node)
+            process = self.process_and_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.OrConstraintContext):
-            n = self.process_or_constraint(constraint_node)
+            process = self.process_or_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.ImplicationConstraintContext):
-            n = self.process_implication_constraint(constraint_node)
+            process = self.process_implication_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.EquivalenceConstraintContext):
-            n = self.process_equivalence_constraint(constraint_node)
-            
+            process = self.process_equivalence_constraint(constraint_node)
+
         else:
             # Handle unexpected constraint types
-            raise NotImplementedError(f"Constraint of type {type(constraint_node)} not handled")
+            raise NotImplementedError(
+                f"Constraint of type {type(constraint_node)} not handled"
+            )
 
-        return n
+        return process
 
-    def process_equation_constraint(self, equation_context: UVLPythonParser.EquationConstraintContext) -> Node:
+    def process_equation_constraint(
+        self, equation_context: UVLPythonParser.EquationConstraintContext
+    ) -> Node:
         """Process an equation constraint."""
         left_expr = equation_context.expression(0)  # Gets the left expression text
-        right_expr = equation_context.expression(1) # Gets the right expression text
-        operator = equation_context.getChild(1).getText()     # Gets the operator
-        return Node(operator, self.process_constraints(left_expr), self.process_constraints(right_expr))
+        right_expr = equation_context.expression(1)  # Gets the right expression text
+        operator = equation_context.getChild(1).getText()  # Gets the operator
+        return Node(
+            operator,
+            self.process_constraints(left_expr),
+            self.process_constraints(right_expr),
+        )
 
-    def process_literal_constraint(self, literal_context: UVLPythonParser.LiteralConstraintContext)-> Node:
+    def process_literal_constraint(
+        self, literal_context: UVLPythonParser.LiteralConstraintContext
+    ) -> Node:
         """Process a literal constraint."""
         literal = literal_context.reference()
-        return Node(literal.getText())
+        return Node(literal.getText().replace('"', ''))
 
-    def process_parenthesis_constraint(self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext)-> Node:
+    def process_parenthesis_constraint(
+        self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext
+    ) -> Node:
         """Process a parenthesis constraint."""
         inner_constraint = parenthesis_context.constraint()
         return self.process_constraints(inner_constraint)
 
-    def process_not_constraint(self, not_context: UVLPythonParser.NotConstraintContext)-> Node:
+    def process_not_constraint(
+        self, not_context: UVLPythonParser.NotConstraintContext
+    ) -> Node:
         """Process a not constraint."""
         inner_constraint = not_context.constraint()
         return Node(ASTOperation.NOT, self.process_constraints(inner_constraint))
 
-    def process_and_constraint(self, and_context: UVLPythonParser.AndConstraintContext)-> Node:
+    def process_and_constraint(
+        self, and_context: UVLPythonParser.AndConstraintContext
+    ) -> Node:
         """Process an and constraint."""
         left_constraint = and_context.constraint(0)
         right_constraint = and_context.constraint(1)
-        return Node(ASTOperation.AND, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
+        return Node(
+            ASTOperation.AND,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
 
-    def process_or_constraint(self, or_context: UVLPythonParser.OrConstraintContext)-> Node:
+    def process_or_constraint(
+        self, or_context: UVLPythonParser.OrConstraintContext
+    ) -> Node:
         """Process an or constraint."""
         left_constraint = or_context.constraint(0)
         right_constraint = or_context.constraint(1)
-        return Node(ASTOperation.OR, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
+        return Node(
+            ASTOperation.OR,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
 
-    def process_implication_constraint(self, implication_context: UVLPythonParser.ImplicationConstraintContext)-> Node:
+    def process_implication_constraint(
+        self, implication_context: UVLPythonParser.ImplicationConstraintContext
+    ) -> Node:
         """Process an implication constraint."""
         left_constraint = implication_context.constraint(0)
         right_constraint = implication_context.constraint(1)
-        return Node(ASTOperation.IMPLIES, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
+        return Node(
+            ASTOperation.IMPLIES,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
 
-    def process_equivalence_constraint(self, equivalence_context: UVLPythonParser.EquivalenceConstraintContext)-> Node:
+    def process_equivalence_constraint(
+        self, equivalence_context: UVLPythonParser.EquivalenceConstraintContext
+    ) -> Node:
         """Process an equivalence constraint."""
         left_constraint = equivalence_context.constraint(0)
         right_constraint = equivalence_context.constraint(1)
-        return Node(ASTOperation.EQUIVALENCE, self.process_constraints(left_constraint), self.process_constraints(right_constraint))
-    
-    def process_includes(self, includes_node):
+        return Node(
+            ASTOperation.EQUIVALENCE,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_includes(
+        self, includes_node: UVLPythonParser.IncludesContext
+    ) -> list[str]:
         include_lines = includes_node.includeLine()
 
         # This will hold the processed includes
@@ -263,22 +331,32 @@ class UVLReader(TextToModel):
 
         return includes_list
 
-    def process_language_level(self, language_level_node):
+    def process_language_level(
+        self, language_level_node: UVLPythonParser.LanguageLevelContext
+    ) -> str:
         major_level = language_level_node.majorLevel().getText()
-        
+
         # Check if there's a minor level or a wildcard
         if language_level_node.minorLevel():
             minor_level = language_level_node.minorLevel().getText()
             return f"{major_level}.{minor_level}"
-        elif language_level_node.getChildCount() > 1 and language_level_node.getChild(1).getText() == '*':
-            return f"{major_level}.*"
-        else:
-            return major_level
 
-    def process_namespace(self, namespace_node):
+        if (
+            language_level_node.getChildCount() > 1
+            and language_level_node.getChild(1).getText() == "*"
+        ):
+            return f"{major_level}.*"
+
+        return major_level
+
+    def process_namespace(
+        self, namespace_node: UVLPythonParser.NamespaceContext
+    ) -> str:
         return namespace_node.reference().getText()
 
-    def process_imports(self, imports_node):
+    def process_imports(
+        self, imports_node: UVLPythonParser.ImportsContext
+    ) -> list[tuple[str, Optional[str]]]:
         import_lines = imports_node.importLine()
 
         # This will hold the processed imports
@@ -286,49 +364,64 @@ class UVLReader(TextToModel):
 
         for import_line in import_lines:
             namespace = import_line.ns.getText()
-            
+
             # Check if there's an alias
             alias = import_line.alias.getText() if import_line.alias else None
-            
+
             imports_list.append((namespace, alias))
 
         return imports_list
 
     def transform(self) -> FeatureModel:
         self.set_parse_tree()
-        
+
         # Processing the namespace
         namespace_node = self.parse_tree.namespace()
         if namespace_node:
             namespace_value = self.process_namespace(namespace_node)
-            logging.warning("Namespaces are not meningful for Flama.This model has the following namespaces: %s ",namespace_value)
+            logging.warning(
+                "Namespaces are not meningful for Flama."
+                "This model has the following namespaces: %s ",
+                namespace_value,
+            )
 
         # Processing the imports
         imports_node = self.parse_tree.imports()
         if imports_node:
             imports_list = self.process_imports(imports_node)
-            logging.warning("Imports are not yet supported in flama.This model has the following imports: %s", imports_list)
-            
-            
+            logging.warning(
+                "Imports are not yet supported in flama."
+                "This model has the following imports: %s",
+                imports_list,
+            )
+
         includes_node = self.parse_tree.includes()
         if includes_node:
             includes_list = self.process_includes(includes_node)
-            logging.warning("Includes are not yet supported in flama.This model has the following imports: %s", includes_list)
+            logging.warning(
+                "Includes are not yet supported in flama."
+                "This model has the following imports: %s",
+                includes_list,
+            )
 
         # Find ParseTree node of root feature
         root_feature_ast = self.parse_tree.features().feature()
-        #Get the root and process it
-        feature_text = root_feature_ast.reference().getText()
+        # Get the root and process it
+        feature_text = root_feature_ast.reference().getText().replace('"', '')
         feature = Feature(feature_text, [])
-        root=self.process_feature(feature,root_feature_ast)
-        
-        feature_model=FeatureModel(root, [])
-        
+        root = self.process_feature(feature, root_feature_ast)
+
+        feature_model = FeatureModel(root, [])
+
         if self.parse_tree.constraints():  # Check if constraints exist
             contraint_counter = 0
             for constraint_line in self.parse_tree.constraints().constraintLine():
                 node = self.process_constraints(constraint_line.constraint())
-                feature_model.ctcs.append(Constraint(name='Constraint '+str(contraint_counter),ast=AST(node)))
+                feature_model.ctcs.append(
+                    Constraint(
+                        name="Constraint " + str(contraint_counter), ast=AST(node)
+                    )
+                )
                 contraint_counter = contraint_counter + 1
-        self.model=feature_model
+        self.model = feature_model
         return self.model
