@@ -30,7 +30,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         super().__init__()
         self.model: Optional[FeatureModel] = None
         self.result: list[dict[str, Any]] = []
-        self.model_type_extension = "fm"
+        self._model_type_extension = "fm"
         self._features: list[Feature] = []
         self._features_by_name: dict[str, Feature] = {}
         self._abstract_features: dict[str, Feature] = {}
@@ -39,8 +39,13 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         self._constraints_per_features: list[int] = []
         self._feature_ancestors: list[int] = []
 
+    @property
     def model_type_extension(self) -> str:
-        return 'fm'
+        return self._model_type_extension
+    
+    @model_type_extension.setter
+    def model_type_extension(self, ext: str) -> None:
+        self._model_type_extension = ext
         
     def get_result(self) -> list[dict[str, Any]]:
         return self.result
