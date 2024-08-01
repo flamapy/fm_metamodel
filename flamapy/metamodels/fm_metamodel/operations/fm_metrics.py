@@ -39,6 +39,9 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         self._constraints_per_features: list[int] = []
         self._feature_ancestors: list[int] = []
 
+    def model_type_extension(self) -> str:
+        return 'fm'
+        
     def get_result(self) -> list[dict[str, Any]]:
         return self.result
 
