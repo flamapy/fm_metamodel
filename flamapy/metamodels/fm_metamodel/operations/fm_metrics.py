@@ -5,7 +5,7 @@ from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.variability_model import VariabilityModel
 from flamapy.core.operations.metrics_operation import Metrics
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
-from flamapy.metamodels.fm_metamodel import operations as fm_operations
+from flamapy.metamodels.fm_metamodel.operations import FMAverageBranchingFactor
 
 
 def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
@@ -524,7 +524,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             raise FlamaException("Feature model is not defined.")
 
         name = "Branching factor"
-        _avg_branching_factor = fm_operations.average_branching_factor(self.model)
+        _avg_branching_factor = FMAverageBranchingFactor().execute(self.model).get_result()
         result = self.construct_result(
             name=name, doc=self.branching_factor.__doc__, result=_avg_branching_factor
         )
