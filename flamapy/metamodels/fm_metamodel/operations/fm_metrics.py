@@ -42,11 +42,11 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
     @property
     def model_type_extension(self) -> str:
         return self._model_type_extension
-    
+
     @model_type_extension.setter
     def model_type_extension(self, ext: str) -> None:
         self._model_type_extension = ext
-        
+
     def get_result(self) -> list[dict[str, Any]]:
         return self.result
 
