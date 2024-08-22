@@ -83,7 +83,7 @@ class UVLReader(TextToModel):
             constraint_attribute = attribute_context.constraintAttribute()
 
             if value_attribute:
-                key = value_attribute.key().getText()
+                key = value_attribute.key().getText().replace('"', '')
                 if value_attribute.value():
                     value = self.process_value(value_attribute.value())
                 else:
@@ -96,7 +96,7 @@ class UVLReader(TextToModel):
             else:
                 # Handle unexpected case
                 raise ValueError(
-                    f"Unknown attribute type for: {attribute_context.getText()}"
+                    f"Unknown attribute type for: {attribute_context.getText().replace('"', '')}"
                 )
 
             attributes_dict[key] = value
