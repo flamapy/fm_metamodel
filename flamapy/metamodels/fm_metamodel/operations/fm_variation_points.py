@@ -8,7 +8,7 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 class FMVariationPoints(VariationPoints):
 
     def __init__(self) -> None:
-        self.result = 0
+        self.result: dict[Feature, list[Feature]] = {}
 
     def get_result(self) -> dict[Feature, list[Feature]]:
         return self.result
