@@ -23,7 +23,7 @@ class FMVariationPoints(VariationPoints):
 
 
 def variation_points(feature_model: FeatureModel) -> dict[Feature, list[Feature]]:
-    vps: dict[Feature, list[Feature]] = dict()
+    vps: dict[Feature, list[Feature]] = {}
     features = [feature_model.root]
     while features:
         feature = features.pop()
