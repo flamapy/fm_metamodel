@@ -5,7 +5,7 @@ from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.variability_model import VariabilityModel
 from flamapy.core.operations.metrics_operation import Metrics
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
-from flamapy.metamodels.fm_metamodel import operations as fm_operations
+from flamapy.metamodels.fm_metamodel.operations import FMAverageBranchingFactor
 
 
 def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
@@ -30,7 +30,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         super().__init__()
         self.model: Optional[FeatureModel] = None
         self.result: list[dict[str, Any]] = []
-        self.model_type_extension = "fm"
+        self._model_type_extension = "fm"
         self._features: list[Feature] = []
         self._features_by_name: dict[str, Feature] = {}
         self._abstract_features: dict[str, Feature] = {}
@@ -38,6 +38,14 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
         self._leaf_features: list[str] = []
         self._constraints_per_features: list[int] = []
         self._feature_ancestors: list[int] = []
+
+    @property
+    def model_type_extension(self) -> str:
+        return self._model_type_extension
+
+    @model_type_extension.setter
+    def model_type_extension(self, ext: str) -> None:
+        self._model_type_extension = ext
 
     def get_result(self) -> list[dict[str, Any]]:
         return self.result
@@ -516,7 +524,7 @@ class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
             raise FlamaException("Feature model is not defined.")
 
         name = "Branching factor"
-        _avg_branching_factor = fm_operations.average_branching_factor(self.model)
+        _avg_branching_factor = FMAverageBranchingFactor().execute(self.model).get_result()
         result = self.construct_result(
             name=name, doc=self.branching_factor.__doc__, result=_avg_branching_factor
         )

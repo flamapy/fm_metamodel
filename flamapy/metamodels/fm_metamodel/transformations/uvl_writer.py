@@ -1,4 +1,5 @@
 import re
+import string
 
 from flamapy.core.models.ast import ASTOperation
 from flamapy.core.transformations import ModelToText
@@ -135,4 +136,8 @@ class UVLWriter(ModelToText):
 
 
 def safename(name: str) -> str:
-    return f'"{name}"' if ' ' in name else name
+    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
+
+
+def safecharacters() -> str:
+    return string.ascii_letters + string.digits + '_'

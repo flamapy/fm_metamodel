@@ -83,7 +83,7 @@ class UVLReader(TextToModel):
             constraint_attribute = attribute_context.constraintAttribute()
 
             if value_attribute:
-                key = value_attribute.key().getText()
+                key = value_attribute.key().getText().replace('"', '')
                 if value_attribute.value():
                     value = self.process_value(value_attribute.value())
                 else:
@@ -95,9 +95,10 @@ class UVLReader(TextToModel):
                 logging.warning("This attributes are not yet supported in flama.")
             else:
                 # Handle unexpected case
-                raise ValueError(
-                    f"Unknown attribute type for: {attribute_context.getText()}"
-                )
+                cleaned_text = attribute_context.getText().replace('"', '')
+
+                # Raise the ValueError with the cleaned text
+                raise ValueError(f"Unknown attribute type for: {cleaned_text}")
 
             attributes_dict[key] = value
         return attributes_dict

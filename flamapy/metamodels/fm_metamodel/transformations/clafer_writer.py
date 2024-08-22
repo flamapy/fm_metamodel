@@ -1,4 +1,5 @@
 import re
+import string
 from enum import Enum
 from typing import Any, Optional
 
@@ -152,4 +153,8 @@ def parse_type_value(value: Any) -> str:
 
 
 def safename(name: str) -> str:
-    return f'"{name}"' if ' ' in name else name
+    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
+
+
+def safecharacters() -> str:
+    return string.ascii_letters + string.digits + '_'

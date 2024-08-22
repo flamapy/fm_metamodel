@@ -1,3 +1,5 @@
+import string
+
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
@@ -83,4 +85,8 @@ def add_constraints(constraints: list[Constraint]) -> list[str]:
 
 
 def safename(name: str) -> str:
-    return f'"{name}"' if ' ' in name else name
+    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
+
+
+def safecharacters() -> str:
+    return string.ascii_letters + string.digits + '_'
