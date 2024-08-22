@@ -127,7 +127,7 @@ def get_ctc_info(ast_node: Node) -> Dict[str, Any]:
 
 
 def safename(name: str) -> str:
-    return f'"{name}"' if any(char in name for char in safecharacters()) else name
+    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
 
 
 def safecharacters() -> str:

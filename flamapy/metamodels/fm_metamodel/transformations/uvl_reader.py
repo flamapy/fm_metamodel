@@ -95,8 +95,9 @@ class UVLReader(TextToModel):
                 logging.warning("This attributes are not yet supported in flama.")
             else:
                 # Handle unexpected case
+                attribute_name = attribute_context.getText().replace('"', '')
                 raise ValueError(
-                    f"Unknown attribute type for: {attribute_context.getText().replace('"', '')}"
+                    f"Unknown attribute type for: {attribute_name}"
                 )
 
             attributes_dict[key] = value
