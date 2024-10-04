@@ -214,6 +214,13 @@ class Constraint:
                 stack.append(node.left)
         return list(features)
 
+    def is_single_feature_constraint(self) -> bool:
+        """Return true if the constraint is a single feature or its negation."""
+        root_op = self._ast.root
+        return (root_op.is_term() or 
+                root_op.is_unary_op() and root_op.left.is_term() or
+                root_op.is_unary_op() and root_op.right.is_term())
+
     def is_simple_constraint(self) -> bool:
         """Return true if the constraint is a simple constraint (requires or excludes)."""
         return self.is_requires_constraint() or self.is_excludes_constraint()
