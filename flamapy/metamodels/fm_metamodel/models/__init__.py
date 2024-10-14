@@ -5,7 +5,9 @@ from .feature_model import (
     Relation,
     Domain,
     Range,
-    Attribute
+    Attribute,
+    Cardinality,
+    FeatureType
 )
 
 __all__ = ['Constraint',
@@ -14,4 +16,6 @@ __all__ = ['Constraint',
            'Relation',
            'Domain',
            'Range',
-           'Attribute']
+           'Attribute',
+           'Cardinality',
+           'FeatureType']

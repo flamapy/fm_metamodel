@@ -16,6 +16,8 @@ from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
     Relation,
     Attribute,
+    Cardinality,
+    FeatureType
 )
 
 
@@ -126,8 +128,25 @@ class UVLReader(TextToModel):
         if feature_node.featureCardinality():
             cardinality_text = feature_node.featureCardinality().CARDINALITY().getText()
             min_val, max_val = self.parse_cardinality(cardinality_text)
-            feature.card_min = min_val
-            feature.card_max = max_val
+            feature.feature_cardinality = Cardinality(min=min_val, max=max_val)
+
+    def _check_feature_type(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> None:
+        if feature_node.featureType():
+            typed_text = feature_node.featureType().getText()
+            if typed_text == 'Boolean':
+                feature_type = FeatureType.BOOLEAN
+            elif typed_text == 'String':
+                feature_type = FeatureType.STRING
+            elif typed_text == 'Integer':
+                feature_type = FeatureType.INTEGER
+            elif typed_text == 'Real':
+                feature_type = FeatureType.REAL
+            else:
+                raise FlamaException('Error: unknow feature type for ' \
+                                     f'{typed_text} of feature {feature.name}.')
+            feature.feature_type = feature_type
 
     def _check_attributes(
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
@@ -145,6 +164,7 @@ class UVLReader(TextToModel):
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
     ) -> Feature:
         self._check_feature_cardinality(feature, feature_node)
+        self._check_feature_type(feature, feature_node)
         self._check_attributes(feature, feature_node)
 
         # Get the relationship type

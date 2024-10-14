@@ -1,5 +1,6 @@
 from typing import Any, Optional
 from functools import total_ordering
+from enum import Enum
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
@@ -88,6 +89,20 @@ class Relation:
         return str(self) < str(other)
 
 
+class FeatureType(Enum):
+    BOOLEAN = 'Boolean'
+    INTEGER = 'Integer'
+    REAL = 'Real'
+    STRING = 'String'
+
+
+class Cardinality:
+
+    def __init__(self, min: int = 1, max: int = 1):
+        self.min = min
+        self.max = max
+
+
 @total_ordering
 class Feature(VariabilityElement):
 
@@ -97,12 +112,16 @@ class Feature(VariabilityElement):
         relations: Optional[list["Relation"]] = None,
         parent: Optional["Feature"] = None,
         is_abstract: bool = False,
+        feature_type: FeatureType = FeatureType.BOOLEAN,
+        feature_cardinality: Cardinality = Cardinality(1,1)
     ):
         super().__init__(name)
         self.name = name
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
+        self.feature_type = feature_type
+        self.feature_cardinality = feature_cardinality
         self.attributes = list["Attribute"]([])
 
     def is_empty(self) -> bool:
