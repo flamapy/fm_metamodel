@@ -247,7 +247,26 @@ class UVLReader(TextToModel):
             process = self.process_implication_constraint(constraint_node)
         elif isinstance(constraint_node, UVLPythonParser.EquivalenceConstraintContext):
             process = self.process_equivalence_constraint(constraint_node)
-
+        elif isinstance(constraint_node, UVLPythonParser.LiteralExpressionContext):
+            process = self.process_literal_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.IntegerLiteralExpressionContext):
+            process = self.process_integer_literal_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.FloatLiteralExpressionContext):
+            process = self.process_float_literal_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.StringLiteralExpressionContext):
+            process = self.process_string_literal_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.BracketExpressionContext):
+            process = self.process_bracket_expression_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.AddExpressionContext):
+            process = self.process_add_expression_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.SubExpressionContext):
+            process = self.process_sub_expression_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.DivExpressionContext):
+            process = self.process_div_expression_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.MulExpressionContext):
+            process = self.process_mul_expression_constraint(constraint_node)
+        elif isinstance(constraint_node, UVLPythonParser.AggregateFunctionExpressionContext):
+            process = self.process_aggregate_function_constraint(constraint_node)
         else:
             # Handle unexpected constraint types
             raise NotImplementedError(
@@ -256,17 +275,120 @@ class UVLReader(TextToModel):
 
         return process
 
+    def process_aggregate_function_constraint(
+        self, aggregate_function_context: UVLPythonParser.AggregateFunctionExpressionContext
+    ) -> Node:
+        """Process an aggregate function constraint."""
+        aggregate_function = aggregate_function_context.aggregateFunction()
+        if isinstance(aggregate_function, UVLPythonParser.StringAggregateFunctionExpressionContext):
+            string_function = aggregate_function.stringAggregateFunction()
+            if isinstance(string_function, UVLPythonParser.LengthAggregateFunctionContext):
+                literal = string_function.reference()
+                return Node(ASTOperation.LEN, Node(literal.getText().replace('"', '')))
+        elif isinstance(aggregate_function, UVLPythonParser.AvgAggregateFunctionContext):
+            pass
+            #literals = aggregate_function.reference()
+            #print(literals)
+            #return Node(ASTOperation.AVG, literal.getText().replace('"', ''))
+        elif isinstance(aggregate_function, UVLPythonParser.SumAggregateFunctionContext):
+            pass
+            #print("sum")
+        else:
+            raise NotImplementedError(f"Aggregate function {type(aggregate_function)} not handled.")
+        return None
+
     def process_equation_constraint(
         self, equation_context: UVLPythonParser.EquationConstraintContext
     ) -> Node:
         """Process an equation constraint."""
-        left_expr = equation_context.expression(0)  # Gets the left expression text
-        right_expr = equation_context.expression(1)  # Gets the right expression text
-        operator = equation_context.getChild(1).getText()  # Gets the operator
+        equation = equation_context.equation()
+        operator = None
+        if isinstance(equation, UVLPythonParser.EqualEquationContext):
+            operator = ASTOperation.EQUALS
+        elif isinstance(equation, UVLPythonParser.LowerEquationContext):
+            operator = ASTOperation.LOWER
+        elif isinstance(equation, UVLPythonParser.LowerEqualsEquationContext):
+            operator = ASTOperation.LOWER_EQUALS
+        elif isinstance(equation, UVLPythonParser.GreaterEquationContext):
+            operator = ASTOperation.GREATER
+        elif isinstance(equation, UVLPythonParser.GreaterEqualsEquationContext):
+            operator = ASTOperation.GREATER_EQUALS
+        elif isinstance(equation, UVLPythonParser.NotEqualsEquationContext):
+            operator = ASTOperation.NOT_EQUALS
+        else:
+            raise NotImplementedError(f"Expression of type {type(equation)} not handled.")
+        left_constraint = equation.expression(0)
+        right_constraint = equation.expression(1)
         return Node(
             operator,
-            self.process_constraints(left_expr),
-            self.process_constraints(right_expr),
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+
+    def process_integer_literal_constraint(
+        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
+    ) -> Node:
+        """Process an integer literal expression."""
+        return Node(int(literal_context.getText()))
+
+    def process_float_literal_constraint(
+        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
+    ) -> Node:
+        """Process a float literal expression."""
+        return Node(float(literal_context.getText()))
+
+    def process_string_literal_constraint(
+        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
+    ) -> Node:
+        """Process a string literal expression."""
+        return Node(literal_context.getText())
+
+    def process_add_expression_constraint(
+        self, context: UVLPythonParser.AddExpressionContext
+    ) -> Node:
+        """Process an add expression."""
+        left_constraint = context.expression(0)
+        right_constraint = context.expression(1)
+        return Node(
+            ASTOperation.ADD,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+    
+    def process_sub_expression_constraint(
+        self, context: UVLPythonParser.AddExpressionContext
+    ) -> Node:
+        """Process a sub expression."""
+        left_constraint = context.expression(0)
+        right_constraint = context.expression(1)
+        return Node(
+            ASTOperation.SUB,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+    
+    def process_div_expression_constraint(
+        self, context: UVLPythonParser.AddExpressionContext
+    ) -> Node:
+        """Process a div expression."""
+        left_constraint = context.expression(0)
+        right_constraint = context.expression(1)
+        return Node(
+            ASTOperation.DIV,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
+        )
+    
+    def process_mul_expression_constraint(
+        self, context: UVLPythonParser.AddExpressionContext
+    ) -> Node:
+        """Process a mul expression."""
+        left_constraint = context.expression(0)
+        right_constraint = context.expression(1)
+        return Node(
+            ASTOperation.MUL,
+            self.process_constraints(left_constraint),
+            self.process_constraints(right_constraint),
         )
 
     def process_literal_constraint(
@@ -281,6 +403,13 @@ class UVLReader(TextToModel):
     ) -> Node:
         """Process a parenthesis constraint."""
         inner_constraint = parenthesis_context.constraint()
+        return self.process_constraints(inner_constraint)
+    
+    def process_bracket_expression_constraint(
+        self, bracket_context: UVLPythonParser.BracketExpressionContext
+    ) -> Node:
+        """Process a bracket (parenthesis) expression constraint."""
+        inner_constraint = bracket_context.expression()
         return self.process_constraints(inner_constraint)
 
     def process_not_constraint(
