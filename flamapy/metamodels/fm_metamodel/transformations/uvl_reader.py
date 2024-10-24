@@ -300,14 +300,22 @@ class UVLReader(TextToModel):
                 raise NotImplementedError(f"Numeric function {type(numeric_function)} not handled.")
         elif isinstance(aggregate_function, UVLPythonParser.AvgAggregateFunctionContext):
             literals = aggregate_function.reference()
-            elements = [Node(literal.getText().replace('"', '')) for literal in literals]
-            return functools.reduce(lambda node, left: AST.create_binary_operation(ASTOperation.AVG, 
-                                                                     Node(left), node).root, elements)
+            attribute_literal = literals[0].getText().replace('"', '')
+            if len(literals) > 1:
+                feature_literal = literals[1].getText().replace('"', '')
+                node = Node(ASTOperation.AVG, Node(attribute_literal), Node(feature_literal))
+            else:
+                node = Node(ASTOperation.AVG, Node(attribute_literal))
+            return node
         elif isinstance(aggregate_function, UVLPythonParser.SumAggregateFunctionContext):
             literals = aggregate_function.reference()
-            elements = [Node(literal.getText().replace('"', '')) for literal in literals]
-            return functools.reduce(lambda node, left: AST.create_binary_operation(ASTOperation.SUM, 
-                                                                     Node(left), node).root, elements)
+            attribute_literal = literals[0].getText().replace('"', '')
+            if len(literals) > 1:
+                feature_literal = literals[1].getText().replace('"', '')
+                node = Node(ASTOperation.SUM, Node(attribute_literal), Node(feature_literal))
+            else:
+                node = Node(ASTOperation.SUM, Node(attribute_literal))
+            return node
         else:
             raise NotImplementedError(f"Aggregate function {type(aggregate_function)} not handled.")
         return None
