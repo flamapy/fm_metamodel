@@ -1,5 +1,6 @@
 import os
 import logging
+import functools
 from typing import Any, Optional
 
 from antlr4 import CommonTokenStream, FileStream
@@ -285,14 +286,28 @@ class UVLReader(TextToModel):
             if isinstance(string_function, UVLPythonParser.LengthAggregateFunctionContext):
                 literal = string_function.reference()
                 return Node(ASTOperation.LEN, Node(literal.getText().replace('"', '')))
+            else:
+                raise NotImplementedError(f"String function {type(string_function)} not handled.")
+        elif isinstance(aggregate_function, UVLPythonParser.NumericAggregateFunctionExpressionContext):
+            numeric_function = aggregate_function.numericAggregateFunction()
+            if isinstance(numeric_function, UVLPythonParser.FloorAggregateFunctionContext):
+                literal = numeric_function.reference()
+                return Node(ASTOperation.FLOOR, Node(literal.getText().replace('"', '')))
+            elif isinstance(numeric_function, UVLPythonParser.CeilAggregateFunctionContext):
+                literal = numeric_function.reference()
+                return Node(ASTOperation.CEIL, Node(literal.getText().replace('"', '')))
+            else:
+                raise NotImplementedError(f"Numeric function {type(numeric_function)} not handled.")
         elif isinstance(aggregate_function, UVLPythonParser.AvgAggregateFunctionContext):
-            pass
-            #literals = aggregate_function.reference()
-            #print(literals)
-            #return Node(ASTOperation.AVG, literal.getText().replace('"', ''))
+            literals = aggregate_function.reference()
+            elements = [Node(literal.getText().replace('"', '')) for literal in literals]
+            return functools.reduce(lambda node, left: AST.create_binary_operation(ASTOperation.AVG, 
+                                                                     Node(left), node).root, elements)
         elif isinstance(aggregate_function, UVLPythonParser.SumAggregateFunctionContext):
-            pass
-            #print("sum")
+            literals = aggregate_function.reference()
+            elements = [Node(literal.getText().replace('"', '')) for literal in literals]
+            return functools.reduce(lambda node, left: AST.create_binary_operation(ASTOperation.SUM, 
+                                                                     Node(left), node).root, elements)
         else:
             raise NotImplementedError(f"Aggregate function {type(aggregate_function)} not handled.")
         return None
