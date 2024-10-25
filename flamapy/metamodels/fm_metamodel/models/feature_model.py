@@ -189,7 +189,20 @@ class Feature(VariabilityElement):
 
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
+    
+    def is_boolean(self) -> bool:
+        return self.feature_type == FeatureType.BOOLEAN
 
+    def is_numerical(self) -> bool:
+        return self.feature_type in [FeatureType.INTEGER, FeatureType.REAL]
+
+    def is_string(self) -> bool:
+        return self.feature_type == FeatureType.STRING
+
+    def is_multifeature(self):
+        """Return true if the feature has a cardinality different from [1..1]."""
+        return self.feature_cardinality.min != 1 or self.feature_cardinality.max != 1
+    
     def __str__(self) -> str:
         return self.name
 
@@ -248,7 +261,7 @@ class Constraint:
         """Return true if the constraint contains at least one arithmetic operator."""
         return any(op in ARITHMETIC_OPERATORS for op in self.ast.get_operators())
     
-    def is_aggregate_constraint(self) -> bool:
+    def is_aggregation_constraint(self) -> bool:
         """Return true if the constraint contains at least one aggregation operator."""
         return any(op in AGGREGATION_OPERATORS for op in self.ast.get_operators())
     
@@ -383,6 +396,15 @@ class FeatureModel(VariabilityModel):
                 features.extend(relation.children)
         return features
 
+    def get_boolean_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_boolean()]
+    
+    def get_numerical_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_numerical()]
+    
+    def get_string_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_string()]
+    
     def get_constraints(self) -> list["Constraint"]:
         return self.ctcs
 
@@ -400,6 +422,15 @@ class FeatureModel(VariabilityModel):
 
     def get_feature_by_name(self, feature_name: str) -> Optional["Feature"]:
         return next((f for f in self.get_features() if f.name == feature_name), None)
+
+    def get_logical_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_logical_constraint()]
+
+    def get_arithmetic_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_arithmetic_constraint()]
+
+    def get_aggregations_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_aggregation_constraint()]
 
     def get_complex_constraints(self) -> list["Constraint"]:
         return [c for c in self.get_constraints() if c.is_complex_constraint()]
