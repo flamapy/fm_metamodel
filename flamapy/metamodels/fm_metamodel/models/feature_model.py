@@ -4,6 +4,7 @@ from enum import Enum
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
+from flamapy.core.models.ast import LOGICAL_OPERATORS, ARITHMETIC_OPERATORS, AGGREGATION_OPERATORS
 from flamapy.core.models.ast import simplify_formula, propagate_negation, to_cnf
 
 
@@ -224,7 +225,13 @@ class Constraint:
         stack = [self.ast.root]
         while stack:
             node = stack.pop()
+            if node is None:
+                continue
             if node.is_unique_term():
+                if (isinstance(node.data, int) or 
+                    isinstance(node.data, float) or 
+                    node.data.startswith("'")):
+                    continue
                 features.add(node.data)
             elif node.is_unary_op():
                 stack.append(node.left)
@@ -233,12 +240,24 @@ class Constraint:
                 stack.append(node.left)
         return list(features)
 
+    def is_logical_constraint(self) -> bool:
+        """Return true if the constraint contains only logical operators."""
+        return all(op in LOGICAL_OPERATORS for op in self.ast.get_operators())
+    
+    def is_arithmetic_constraint(self) -> bool:
+        """Return true if the constraint contains at least one arithmetic operator."""
+        return any(op in ARITHMETIC_OPERATORS for op in self.ast.get_operators())
+    
+    def is_aggregate_constraint(self) -> bool:
+        """Return true if the constraint contains at least one aggregation operator."""
+        return any(op in AGGREGATION_OPERATORS for op in self.ast.get_operators())
+    
     def is_single_feature_constraint(self) -> bool:
         """Return true if the constraint is a single feature or its negation."""
         root_op = self._ast.root
         return (root_op.is_term() or 
-                root_op.is_unary_op() and root_op.left.is_term() or
-                root_op.is_unary_op() and root_op.right.is_term())
+                root_op.data == ASTOperation.NOT and 
+                (root_op.left.is_term() or root_op.right.is_term()))
 
     def is_simple_constraint(self) -> bool:
         """Return true if the constraint is a simple constraint (requires or excludes)."""
@@ -247,7 +266,7 @@ class Constraint:
     def is_complex_constraint(self) -> bool:
         """Return true if the constraint is a complex constraint
         (i.e., it is not a simple constraint)."""
-        return not self.is_simple_constraint()
+        return self.is_logical_constraint() and not self.is_simple_constraint()
 
     def is_requires_constraint(self) -> bool:
         """Return true if the constraint is a requires constraint."""
@@ -302,6 +321,8 @@ class Constraint:
     def is_pseudocomplex_constraint(self) -> bool:
         """Return true if the constraint is a pseudo-complex constraint
         (i.e., it can be transformed to a set of simple constraints)."""
+        if not self.is_logical_constraint():
+            return False
         split_ctcs = split_constraint(self)
         return len(split_ctcs) > 1 and all(
             ctc.is_simple_constraint() for ctc in split_ctcs
@@ -310,6 +331,8 @@ class Constraint:
     def is_strictcomplex_constraint(self) -> bool:
         """Return true if the constraint is a strict-complex constraint
         (i.e., it cannot be transformed to a set of simple constraints)."""
+        if not self.is_logical_constraint():
+            return False
         split_ctcs = split_constraint(self)
         return any(ctc.is_complex_constraint() for ctc in split_ctcs)
 
