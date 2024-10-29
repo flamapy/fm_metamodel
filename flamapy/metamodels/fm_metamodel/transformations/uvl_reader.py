@@ -200,7 +200,7 @@ class UVLReader(TextToModel):
         # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
         min_value: str = ""
         max_value: str = ""
-
+        print(f'Cardinality_text: {cardinality_text}')
         # Remove brackets.
         cardinality_text = cardinality_text[1:-1]
 
@@ -211,7 +211,8 @@ class UVLReader(TextToModel):
         else:
             min_value = cardinality_text
             max_value = min_value  # Assuming max is the same as min if not specified.
-
+        if max_value == "*":
+            max_value = -1
         try:
             return int(min_value), int(max_value)
         except Exception as exc:
