@@ -200,7 +200,6 @@ class UVLReader(TextToModel):
         # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
         min_value: str = ""
         max_value: str = ""
-        print(f'Cardinality_text: {cardinality_text}')
         # Remove brackets.
         cardinality_text = cardinality_text[1:-1]
 
