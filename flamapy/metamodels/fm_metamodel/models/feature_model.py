@@ -70,6 +70,8 @@ class Relation:
         else:
             relation_type = "Other"
         res = f"({relation_type}) " + res
+        if res.endswith(" "):
+            res = res[:-1]
         return res
 
     def __hash__(self) -> int:
