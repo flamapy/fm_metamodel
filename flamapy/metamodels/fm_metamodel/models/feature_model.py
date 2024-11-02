@@ -101,22 +101,22 @@ class FeatureType(Enum):
 
 class Cardinality:
 
-    def __init__(self, min: int = 1, max: int = 1):
-        self.min = min
-        self.max = max
+    def __init__(self, card_min: int = 1, card_max: int = 1):
+        self.min = card_min
+        self.max = card_max
 
 
 @total_ordering
 class Feature(VariabilityElement):
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         name: str,
         relations: Optional[list["Relation"]] = None,
         parent: Optional["Feature"] = None,
         is_abstract: bool = False,
         feature_type: FeatureType = FeatureType.BOOLEAN,
-        feature_cardinality: Cardinality = Cardinality(1,1)
+        feature_cardinality: Cardinality = Cardinality(1, 1)
     ):
         super().__init__(name)
         self.name = name
@@ -191,7 +191,7 @@ class Feature(VariabilityElement):
 
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
-    
+
     def is_boolean(self) -> bool:
         return self.feature_type == FeatureType.BOOLEAN
 
@@ -204,7 +204,7 @@ class Feature(VariabilityElement):
     def is_multifeature(self):
         """Return true if the feature has a cardinality different from [1..1]."""
         return self.feature_cardinality.min != 1 or self.feature_cardinality.max != 1
-    
+
     def __str__(self) -> str:
         return self.name
 
@@ -243,9 +243,7 @@ class Constraint:
             if node is None:
                 continue
             if node.is_unique_term():
-                if (isinstance(node.data, int) or 
-                    isinstance(node.data, float) or 
-                    node.data.startswith("'")):
+                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
                     continue
                 features.add(node.data)
             elif node.is_unary_op():
@@ -258,15 +256,15 @@ class Constraint:
     def is_logical_constraint(self) -> bool:
         """Return true if the constraint contains only logical operators."""
         return all(op in LOGICAL_OPERATORS for op in self.ast.get_operators())
-    
+
     def is_arithmetic_constraint(self) -> bool:
         """Return true if the constraint contains at least one arithmetic operator."""
         return any(op in ARITHMETIC_OPERATORS for op in self.ast.get_operators())
-    
+
     def is_aggregation_constraint(self) -> bool:
         """Return true if the constraint contains at least one aggregation operator."""
         return any(op in AGGREGATION_OPERATORS for op in self.ast.get_operators())
-    
+
     def is_single_feature_constraint(self) -> bool:
         """Return true if the constraint is a single feature or its negation."""
         root_op = self._ast.root
@@ -400,13 +398,13 @@ class FeatureModel(VariabilityModel):
 
     def get_boolean_features(self) -> list["Feature"]:
         return [f for f in self.get_features() if f.is_boolean()]
-    
+
     def get_numerical_features(self) -> list["Feature"]:
         return [f for f in self.get_features() if f.is_numerical()]
-    
+
     def get_string_features(self) -> list["Feature"]:
         return [f for f in self.get_features() if f.is_string()]
-    
+
     def get_constraints(self) -> list["Constraint"]:
         return self.ctcs
 

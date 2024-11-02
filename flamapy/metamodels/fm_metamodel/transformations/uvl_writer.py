@@ -36,7 +36,7 @@ UVL_OPERATORS: dict[ASTOperation, str] = {ASTOperation.AND: "&",
                                           ASTOperation.CEIL: 'ceil',
                                           ASTOperation.XOR: ASTOperation.XOR.value  # Not soported
                                           }
-                                         
+
 
 class UVLWriter(ModelToText):
     @staticmethod
@@ -65,6 +65,7 @@ class UVLWriter(ModelToText):
         feature_type = f'{feature.feature_type.value} ' if not feature.is_boolean() else ''
         fmincard = feature.feature_cardinality.min
         fmaxcard = feature.feature_cardinality.max
+        fmaxcard = '*' if fmaxcard == -1 else fmaxcard
         feature_cardinality = f'cardinality [{fmincard}..{fmaxcard}] '
         feature_cardinality = feature_cardinality if feature.is_multifeature() else ''
         result = (
@@ -120,6 +121,7 @@ class UVLWriter(ModelToText):
             if min_value == max_value:
                 result = "[" + str(min_value) + "]"
             else:
+                max_value = '*' if max_value == -1 else max_value
                 result = "[" + str(min_value) + ".." + str(max_value) + "]"
 
         return result
@@ -139,7 +141,7 @@ class UVLWriter(ModelToText):
                              operator: ASTOperation, 
                              new_operator: str) -> str:
         return re.sub(rf"\b{operator.value}\b", new_operator, str_constraint)
-    
+
     @staticmethod
     def serialize_constraint(ctc: Constraint) -> str:
         str_constraint = ctc.ast.pretty_str()

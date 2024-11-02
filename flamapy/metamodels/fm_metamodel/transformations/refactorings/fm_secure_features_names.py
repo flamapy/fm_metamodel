@@ -10,7 +10,7 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 class FMSecureFeaturesNames(ModelToModel):
     """Given a feature model, it returns a new feature model with secure feature names.
-    
+
     That is, it replaces the feature names with a secure version of the name.
     It replaces the feature names in the feature tree and in the constraints.
 
@@ -56,7 +56,6 @@ class FMSecureFeaturesNames(ModelToModel):
             for constraint in new_feature_model.get_constraints():
                 constraint.ast = secure_ast(constraint.ast, self.mapping_names)
         return new_feature_model
-        
 
 
 def secure_name(name: str, 
@@ -68,12 +67,12 @@ def secure_name(name: str,
     # Replace all characters that are not alphanumeric or underscore with an underscore
     regex = f'[^{secure_chars}]'
     secure = re.sub(regex, replacement_char, name)
-    
+
     # If the name starts with a digit, add an underscore at the beginning
     if not allow_starting_digit:
         if re.match(r'^\d', secure):  
             secure = replacement_char + secure
-    
+
     # Check if the name is already in the set of existing names
     original_secure = secure
     suffix = 1
