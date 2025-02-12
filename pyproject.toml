@@ -1,0 +1,27 @@
+[tool.ruff]
+line-length = 100  # Matches max-line-length from pycodestyle
+target-version = "py38"  # Adjust if using another Python version
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "C", "PL", "RUF"]  # Includes pycodestyle, pylint, and McCabe complexity
+ignore = [
+    "RUF012",  # Equivalent to Pylint's super-init-not-called
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10  # Equivalent to enabling mccabe in Prospector
+
+[tool.ruff.lint.per-file-ignores]
+"flamapy/metamodels/fm_metamodel/transformations/pysat_to_fm.py" = ["ALL"]  # Ignore this file entirely
+"tests/*" = ["ALL"]  # Ignore all test files
+"build/*" = ["ALL"]
+"resources/*" = ["ALL"]
+".mypy_cache/*" = ["ALL"]
+"venv/*" = ["ALL"]
+".venv/*" = ["ALL"]
+"env/*" = ["ALL"]
+"flamapy_fm.egg-info/*" = ["ALL"]
+"__pycache__/*" = ["ALL"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 100  # Matches your existing pycodestyle setting

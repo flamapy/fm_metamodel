@@ -12,16 +12,17 @@ from .pseudocomplex_constraint_refactoring import PseudoComplexConstraintRefacto
 from .strictcomplex_constraint_refactoring import StrictComplexConstraintRefactoring
 
 
-__all__ = ['DeletionFeature',
-           'CommitmentFeature',
-           'FMSecureFeaturesNames',
-           'FMRefactoring',
-           'RefactoringException',
-           'MutexGroupRefactoring',
-           'MultipleGroupDecompositionRefactoring',
-           'OrMandatoryRefactoring',
-           'XorMandatoryRefactoring',
+__all__ = [
            'CardinalityGroupRefactoring',
+           'CommitmentFeature',
+           'DeletionFeature',
+           'FMRefactoring',
+           'FMSecureFeaturesNames',
+           'MultipleGroupDecompositionRefactoring',
+           'MutexGroupRefactoring',
+           'OrMandatoryRefactoring',
            'PseudoComplexConstraintRefactoring',
-           'StrictComplexConstraintRefactoring'
+           'RefactoringException',
+           'StrictComplexConstraintRefactoring',
+           'XorMandatoryRefactoring'
            ]

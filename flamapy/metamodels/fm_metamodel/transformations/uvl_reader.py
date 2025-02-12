@@ -26,10 +26,10 @@ class CustomErrorListener(ErrorListener):
         super().__init__()
         self.errors: list[str] = []
 
-    def syntaxError(  # noqa: N802  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    def syntaxError(  # noqa: PLR0913
         self,
         recognizer: Any,
-        offendingSymbol: Any,  # noqa: N803
+        offendingSymbol: Any,
         line: Any,
         column: Any,
         msg: Any,
@@ -296,8 +296,8 @@ class UVLReader(TextToModel):
     def process_literal_constraint(self, ctc_node: UVLPythonParser.ConstraintContext) -> Node:
         """Process a literal constraint."""
         process = None
-        if isinstance(ctc_node, 
-                      (UVLPythonParser.LiteralConstraintContext, 
+        if isinstance(ctc_node,
+                      (UVLPythonParser.LiteralConstraintContext,
                        UVLPythonParser.LiteralExpressionContext)):
             process = self.process_literal(ctc_node)
         elif isinstance(ctc_node, UVLPythonParser.IntegerLiteralExpressionContext):
@@ -387,11 +387,11 @@ class UVLReader(TextToModel):
     def process_binary_constraints(
         self, context: UVLPythonParser.ConstraintContext, operation: ASTOperation
     ) -> Node:
-        """Process a binary constraint."""        
+        """Process a binary constraint."""
         left_constraint = context.constraint(0)
         right_constraint = context.constraint(1)
-        return Node(operation, 
-                    self.process_constraints(left_constraint), 
+        return Node(operation,
+                    self.process_constraints(left_constraint),
                     self.process_constraints(right_constraint)
                     )
 
@@ -403,11 +403,11 @@ class UVLReader(TextToModel):
         return Node(operation, self.process_constraints(inner_constraint))
 
     def process_binary_expression(self, context: Any, operation: ASTOperation) -> Node:
-        """Process a binary expression."""        
+        """Process a binary expression."""
         left_constraint = context.expression(0)
         right_constraint = context.expression(1)
-        return Node(operation, 
-                    self.process_constraints(left_constraint), 
+        return Node(operation,
+                    self.process_constraints(left_constraint),
                     self.process_constraints(right_constraint)
                     )
 

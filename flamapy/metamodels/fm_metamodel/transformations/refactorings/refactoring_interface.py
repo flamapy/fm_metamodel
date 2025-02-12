@@ -14,11 +14,11 @@ class FMRefactoring(ModelToModel):
     Refactoring normally involves restructuring the feature model (e.g., by moving features around,
     adding or removing features and/or constraints, etc.).
     Thus, configurations of the feature model may change, but the set of products remains the same.
-    This means that refactorings take into account the difference between abstract and concrete 
+    This means that refactorings take into account the difference between abstract and concrete
     features.
 
     Note that refactorings are applied in-place, so that the given feature model is modified.
-    You should create a copy of the feature model before applying the refactoring if you want to 
+    You should create a copy of the feature model before applying the refactoring if you want to
     keep the original model .
     """
 

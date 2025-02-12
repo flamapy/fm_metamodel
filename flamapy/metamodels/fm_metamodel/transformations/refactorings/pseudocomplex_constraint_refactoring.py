@@ -9,7 +9,7 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class PseudoComplexConstraintRefactoring(FMRefactoring):
-    """It splits a pseudo-complex constraint in multiple constraints dividing it by the AND 
+    """It splits a pseudo-complex constraint in multiple constraints dividing it by the AND
     operator when possible."""
 
     def get_name(self) -> str:
@@ -19,14 +19,14 @@ class PseudoComplexConstraintRefactoring(FMRefactoring):
         return self.feature_model.get_pseudocomplex_constraints()
 
     def is_applicable(self) -> bool:
-        return any(ctc.is_pseudocomplex_constraint() 
+        return any(ctc.is_pseudocomplex_constraint()
                    for ctc in self.feature_model.get_constraints())
 
     def apply(self, instance: Any) -> FeatureModel:
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Constraint):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Constraint, '
                                        f'got {type(instance)} for {instance}.')
         if not instance.is_pseudocomplex_constraint():

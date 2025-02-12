@@ -144,26 +144,26 @@ def get_cardinality_formula(relation: Relation) -> str:
                 and_ctc = f'{positives_and_ctc} {PLWriter.LogicConnective.AND} {negatives_and_ctc}'
             else:
                 and_ctc = f'{positives_and_ctc}{negatives_and_ctc}'
-            or_ctc.append(and_ctc) 
+            or_ctc.append(and_ctc)
     formula_or_ctc = f'{f" {PLWriter.LogicConnective.OR} ".join(or_ctc)}'
     return f'{parent} {PLWriter.LogicConnective.EQUIVALENCE} {formula_or_ctc}'
 
 
 def get_constraint_formula(ctc: Constraint) -> str:
     constraint_str = ctc.ast.pretty_str()
-    constraint_str = re.sub(rf"\b{ASTOperation.XOR.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.XOR.value}\b",
                             PLWriter.LogicConnective.XOR.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.NOT.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.NOT.value}\b",
                             PLWriter.LogicConnective.NOT.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.AND.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.AND.value}\b",
                             PLWriter.LogicConnective.AND.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.OR.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.OR.value}\b",
                             PLWriter.LogicConnective.OR.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.IMPLIES.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.IMPLIES.value}\b",
                             PLWriter.LogicConnective.IMPLIES.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.EQUIVALENCE.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.EQUIVALENCE.value}\b",
                             PLWriter.LogicConnective.EQUIVALENCE.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.REQUIRES.value}\b", 
+    constraint_str = re.sub(rf"\b{ASTOperation.REQUIRES.value}\b",
                             PLWriter.LogicConnective.IMPLIES.value, constraint_str)
     constraint_str = re.sub(
         rf"\b{ASTOperation.EXCLUDES.value}\b",

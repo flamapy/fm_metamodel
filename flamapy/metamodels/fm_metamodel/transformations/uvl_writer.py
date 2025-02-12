@@ -12,8 +12,8 @@ from flamapy.metamodels.fm_metamodel.models import (
 )
 
 
-UVL_OPERATORS: dict[ASTOperation, str] = {ASTOperation.AND: "&", 
-                                          ASTOperation.OR: "|", 
+UVL_OPERATORS: dict[ASTOperation, str] = {ASTOperation.AND: "&",
+                                          ASTOperation.OR: "|",
                                           ASTOperation.NOT: "!",
                                           ASTOperation.IMPLIES: "=>",
                                           ASTOperation.EQUIVALENCE: "<=>",
@@ -137,17 +137,17 @@ class UVLWriter(ModelToText):
         return result
 
     @staticmethod
-    def _substitute_operator(str_constraint: str, 
-                             operator: ASTOperation, 
+    def _substitute_operator(str_constraint: str,
+                             operator: ASTOperation,
                              new_operator: str) -> str:
         return re.sub(rf"\b{operator.value}\b", new_operator, str_constraint)
 
     @staticmethod
     def serialize_constraint(ctc: Constraint) -> str:
         str_constraint = ctc.ast.pretty_str()
-        return functools.reduce(lambda acc, op: UVLWriter._substitute_operator(acc, 
-                                                                               op, 
-                                                                               UVL_OPERATORS[op]), 
+        return functools.reduce(lambda acc, op: UVLWriter._substitute_operator(acc,
+                                                                               op,
+                                                                               UVL_OPERATORS[op]),
                                 ASTOperation, str_constraint)
 
 

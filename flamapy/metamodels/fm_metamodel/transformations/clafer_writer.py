@@ -129,8 +129,8 @@ def serialize_constraint(ctc: Constraint) -> str:
 
 
 def attributes_definition(feature_model: FeatureModel) -> str:
-    attributes = {attribute.get_name(): parse_type_value(attribute.get_default_value()) 
-                  for feature in feature_model.get_features() 
+    attributes = {attribute.get_name(): parse_type_value(attribute.get_default_value())
+                  for feature in feature_model.get_features()
                   for attribute in feature.get_attributes()}
     result = ''
     if attributes:

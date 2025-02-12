@@ -7,7 +7,7 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relati
 
 
 class CommitmentFeature(ModelToModel):
-    """Given a feature diagram T and a feature F, this algorithm computes T(+F) 
+    """Given a feature diagram T and a feature F, this algorithm computes T(+F)
     whose products are precisely those products of T with contain F.
 
     The algorithm is an adaptation from:
@@ -36,26 +36,26 @@ class CommitmentFeature(ModelToModel):
             return None
         feature_to_commit = feature
         # Step 2. If F is the root of T, the result is T.
-        while feature_to_commit != self.feature_model.root:  
+        while feature_to_commit != self.feature_model.root:
             # Step 3. Let the parent feature of F be P.
-            parent = feature_to_commit.get_parent()  
-            # If P is a MandOpt feature and F is an optional subfeature, 
+            parent = feature_to_commit.get_parent()
+            # If P is a MandOpt feature and F is an optional subfeature,
             # make F a mandatory subfeature of P.
-            if not parent.is_group() and feature_to_commit.is_optional():  
-                rel = next((r for r in parent.get_relations() 
+            if not parent.is_group() and feature_to_commit.is_optional():
+                rel = next((r for r in parent.get_relations()
                             if feature_to_commit in r.children), None)
                 rel.card_min = 1
-            # If P is an Xor feature, 
-            # make P a MandOpt feature which has F as single mandatory subfeature 
-            # and has no optional subfeatures. All other subfeatures of P are removed from 
+            # If P is an Xor feature,
+            # make P a MandOpt feature which has F as single mandatory subfeature
+            # and has no optional subfeatures. All other subfeatures of P are removed from
             # the tree.
-            elif parent.is_alternative_group(): 
+            elif parent.is_alternative_group():
                 # Delete feature branch
                 parent.get_relations()[0].children = [feature_to_commit]
-            # If P is an Or feature, 
-            # make P a MandOpt feature which has F as single mandatory subfeature, 
+            # If P is an Or feature,
+            # make P a MandOpt feature which has F as single mandatory subfeature,
             # and has all other subfeatures of P as optional subfeatures.
-            elif parent.is_or_group():  
+            elif parent.is_or_group():
                 parent_relations = parent.get_relations()
                 or_relation = parent_relations[0]
                 or_relation.children.remove(feature_to_commit)

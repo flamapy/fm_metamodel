@@ -74,8 +74,8 @@ def add_constraints(constraints: list[Constraint]) -> list[str]:
         cnf_clauses = ctc.ast.get_clauses()
         for clause in cnf_clauses:
             clause_list_str = [
-                '~' + safename(t[1:]) if t.startswith('-') 
-                else safename(t) 
+                '~' + safename(t[1:]) if t.startswith('-')
+                else safename(t)
                 for t in clause
             ]
             clause_str = ' or '.join(clause_list_str)

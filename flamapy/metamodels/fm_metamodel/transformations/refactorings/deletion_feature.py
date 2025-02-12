@@ -7,7 +7,7 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
 class DeletionFeature(ModelToModel):
-    """Given a feature diagram T and a feature F, this algorithm computes T(-F) 
+    """Given a feature diagram T and a feature F, this algorithm computes T(-F)
     whose products are precisely those products of T with do not contain F.
 
     The algorithm is an adaptation from:
@@ -34,23 +34,23 @@ class DeletionFeature(ModelToModel):
         if feature is not None:  # Step 1. If T does not contain F, the result is T.
             feature_to_delete = feature
             parent = feature_to_delete.get_parent()  # Step 2. Let the parent feature of F be P.
-            # Step 3. If P is a MandOpt feature and F is a mandatory subfeature of P, 
+            # Step 3. If P is a MandOpt feature and F is a mandatory subfeature of P,
             # GOTO step 4 with P instead of F.
-            while (feature_to_delete != self.feature_model.root and 
-                    not parent.is_group() and 
+            while (feature_to_delete != self.feature_model.root and
+                    not parent.is_group() and
                     feature_to_delete.is_mandatory()):
                 feature_to_delete = parent
                 parent = feature_to_delete.get_parent()
             # If F is the root of T, the result is NIL.
-            if feature_to_delete == self.feature_model.root:  
+            if feature_to_delete == self.feature_model.root:
                 return None
             # If P is a MandOpt feature and F is an optional subfeature of P, delete F.
             if not parent.is_group() and feature_to_delete.is_optional():
-                rel = next((r for r in parent.get_relations() if feature_to_delete in r.children), 
+                rel = next((r for r in parent.get_relations() if feature_to_delete in r.children),
                            None)
                 parent.get_relations().remove(rel)  # Delete feature branch
-            # If P is an Xor feature or an Or feature, delete F; 
-            # if P has only one remaining subfeature, 
+            # If P is an Xor feature or an Or feature, delete F;
+            # if P has only one remaining subfeature,
             # make P a MandOpt feature and its subfeature a mandatory subfeature.
             elif parent.is_alternative_group() or parent.is_or_group():
                 rel = parent.get_relations()[0]

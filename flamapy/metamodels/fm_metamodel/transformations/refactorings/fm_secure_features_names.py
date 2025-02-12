@@ -14,7 +14,7 @@ class FMSecureFeaturesNames(ModelToModel):
     That is, it replaces the feature names with a secure version of the name.
     It replaces the feature names in the feature tree and in the constraints.
 
-    By default, it uses only alphanumeric characters and underscores 
+    By default, it uses only alphanumeric characters and underscores
     (no spaces, no special characters).
     It replaces each character that is not alphanumeric or underscore with an underscore.
     If the name starts with a number, it adds an underscore at the beginning.
@@ -45,10 +45,10 @@ class FMSecureFeaturesNames(ModelToModel):
         self.mapping_names = {}
         new_feature_model = copy.deepcopy(self.feature_model)
         for feature in new_feature_model.get_features():
-            new_feature_name = secure_name(name=feature.name, 
-                                           secure_chars=self.secure_chars, 
-                                           replacement_char=self.replacement_char, 
-                                           allow_starting_digit=self.allow_starting_digit, 
+            new_feature_name = secure_name(name=feature.name,
+                                           secure_chars=self.secure_chars,
+                                           replacement_char=self.replacement_char,
+                                           allow_starting_digit=self.allow_starting_digit,
                                            existing_names=self.mapping_names.keys())
             self.mapping_names[feature.name] = new_feature_name
             feature.name = new_feature_name
@@ -58,7 +58,7 @@ class FMSecureFeaturesNames(ModelToModel):
         return new_feature_model
 
 
-def secure_name(name: str, 
+def secure_name(name: str,
                 secure_chars: str,
                 replacement_char: str,
                 allow_starting_digit: bool,
@@ -70,7 +70,7 @@ def secure_name(name: str,
 
     # If the name starts with a digit, add an underscore at the beginning
     if not allow_starting_digit:
-        if re.match(r'^\d', secure):  
+        if re.match(r'^\d', secure):
             secure = replacement_char + secure
 
     # Check if the name is already in the set of existing names

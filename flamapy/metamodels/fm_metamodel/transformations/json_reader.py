@@ -7,10 +7,10 @@ from flamapy.core.exceptions import ParsingException
 from flamapy.core.transformations import TextToModel
 
 from flamapy.metamodels.fm_metamodel.models import (
-    FeatureModel, 
-    Relation, 
-    Feature, 
-    Constraint, 
+    FeatureModel,
+    Relation,
+    Feature,
+    Constraint,
     Attribute
 )
 

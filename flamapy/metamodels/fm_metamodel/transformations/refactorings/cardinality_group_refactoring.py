@@ -11,8 +11,8 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class CardinalityGroupRefactoring(FMRefactoring):
-    """It changes the cardinality group to an and-group where all sub-features are optionals and 
-    add a new complex constraint with all feature combinations of the sub-features where each 
+    """It changes the cardinality group to an and-group where all sub-features are optionals and
+    add a new complex constraint with all feature combinations of the sub-features where each
     combination has at least 'a' and at most 'b' elements."""
 
     def get_name(self) -> str:
@@ -28,9 +28,9 @@ class CardinalityGroupRefactoring(FMRefactoring):
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Feature, got {type(instance)} for {instance}.')
-        if not instance.is_cardinality_group():   
+        if not instance.is_cardinality_group():
             raise RefactoringException(f'Feature {instance.name} is not a cardinality group.')
 
         r_card = next((r for r in instance.get_relations() if r.is_cardinal()), None)
@@ -41,19 +41,19 @@ class CardinalityGroupRefactoring(FMRefactoring):
             instance.add_relation(r_opt)
 
         ast = get_ast_constraint_for_cardinality_group(instance, r_card)
-        constraint = Constraint(FMRefactoring.get_new_constraint_name(self.feature_model, 'CG'), 
+        constraint = Constraint(FMRefactoring.get_new_constraint_name(self.feature_model, 'CG'),
                                 ast)
         self.feature_model.ctcs.append(constraint)
         return self.feature_model
 
 
-def create_and_constraints_for_cardinality_group(positives: list[Feature], 
+def create_and_constraints_for_cardinality_group(positives: list[Feature],
                                                  negatives: list[Feature]) -> Node:
     elements = [Node(f.name) for f in positives]
-    elements += [AST.create_unary_operation(ASTOperation.NOT, Node(f.name)).root 
+    elements += [AST.create_unary_operation(ASTOperation.NOT, Node(f.name)).root
                  for f in negatives]
-    result = functools.reduce(lambda left, right: 
-                              AST.create_binary_operation(ASTOperation.AND, left, right).root, 
+    result = functools.reduce(lambda left, right:
+                              AST.create_binary_operation(ASTOperation.AND, left, right).root,
                               elements)
     return result
 

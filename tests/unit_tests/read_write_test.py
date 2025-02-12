@@ -1,7 +1,6 @@
 import os
 import filecmp
 import tempfile
-import pytest
 
 
 from flamapy.metamodels.fm_metamodel.transformations import XMLReader, UVLWriter, UVLReader, GlencoeWriter, GlencoeReader, AFMReader, AFMWriter

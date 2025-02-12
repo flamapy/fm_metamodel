@@ -8,27 +8,27 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class MultipleGroupDecompositionRefactoring(FMRefactoring):
-    """"It substitutes each group in the feature by a mandatory abstract feature which becomes a 
+    """"It substitutes each group in the feature by a mandatory abstract feature which becomes a
     new group below the original feature."""
 
     def get_name(self) -> str:
         return 'Multiple group decomposition refactoring'
 
     def get_instances(self) -> list[Feature]:
-        return [feat for feat in self.feature_model.get_features() 
+        return [feat for feat in self.feature_model.get_features()
                 if feat.is_multiple_group_decomposition()]
 
     def is_applicable(self) -> bool:
-        return any(feat.is_multiple_group_decomposition() 
+        return any(feat.is_multiple_group_decomposition()
                    for feat in self.feature_model.get_features())
 
     def apply(self, instance: Any) -> FeatureModel:
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Feature, got {type(instance)} for {instance}.')
-        if not instance.is_multiple_group_decomposition():   
+        if not instance.is_multiple_group_decomposition():
             raise RefactoringException(f'Feature {instance.name} does not have multiple groups.')
 
         for relation in instance.get_relations():

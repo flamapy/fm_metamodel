@@ -13,16 +13,18 @@ from .glencoe_writer import GlencoeWriter
 from .clafer_writer import ClaferWriter
 
 
-__all__ = ['AFMReader',
+__all__ = [
+           'AFMReader',
            'AFMWriter',
+           'ClaferWriter',
            'FeatureIDEReader',
            'FeatureIDEWriter',
-           'JSONWriter',
+           'GlencoeReader',
+           'GlencoeWriter',
            'JSONReader',
+           'JSONWriter',
            'SPLOTWriter',
            'UVLReader',
            'UVLWriter',
            'XMLReader',
-           'GlencoeReader',
-           'GlencoeWriter',
-           'ClaferWriter']
+]

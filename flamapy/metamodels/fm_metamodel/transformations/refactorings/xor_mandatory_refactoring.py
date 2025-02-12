@@ -8,15 +8,15 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class XorMandatoryRefactoring(FMRefactoring):
-    """It transforms the xor-group with a mandatory subfeature into an or-group with cardinality 
-    <0..0> (converting all non-mandatory subfeatures in dead features) and mantaining the mandatory 
+    """It transforms the xor-group with a mandatory subfeature into an or-group with cardinality
+    <0..0> (converting all non-mandatory subfeatures in dead features) and mantaining the mandatory
     subfeature."""
 
     def get_name(self) -> str:
         return 'Xor mandatory refactoring'
 
     def get_instances(self) -> list[Feature]:
-        return [feat for feat in self.feature_model.get_features() 
+        return [feat for feat in self.feature_model.get_features()
                 if is_xor_group_with_mandatory(feat)]
 
     def is_applicable(self) -> bool:
@@ -26,14 +26,14 @@ class XorMandatoryRefactoring(FMRefactoring):
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Feature, got {type(instance)} for {instance}.')
-        if not is_xor_group_with_mandatory(instance):   
+        if not is_xor_group_with_mandatory(instance):
             raise RefactoringException(f'Feature {instance.name} is not a xor-group '
                                        f'with mandatory features.')
 
         xor_group = next((r for r in instance.get_relations() if r.is_alternative()), None)
-        if xor_group is not None:    
+        if xor_group is not None:
             mandatory_features = [c for c in xor_group.children if c.is_mandatory()]
             if mandatory_features:
                 xor_group.card_min = 0
@@ -43,8 +43,8 @@ class XorMandatoryRefactoring(FMRefactoring):
 
 
 def is_xor_group_with_mandatory(feature: Feature) -> bool:
-    xor_group = next((relation for relation in feature.get_relations() 
+    xor_group = next((relation for relation in feature.get_relations()
                       if relation.is_alternative()), None)
-    return (xor_group is not None and 
-            any(r.children[0] in xor_group.children for r in feature.get_relations() 
+    return (xor_group is not None and
+            any(r.children[0] in xor_group.children for r in feature.get_relations()
                 if r.is_mandatory()))

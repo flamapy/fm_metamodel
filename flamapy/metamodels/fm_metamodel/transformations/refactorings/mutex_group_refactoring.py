@@ -8,7 +8,7 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class MutexGroupRefactoring(FMRefactoring):
-    """It changes the mutex group to an and-group with one optional abstract sub-feature f which 
+    """It changes the mutex group to an and-group with one optional abstract sub-feature f which
     becomes an alternative-group with the original sub-features."""
 
     def get_name(self) -> str:
@@ -24,15 +24,15 @@ class MutexGroupRefactoring(FMRefactoring):
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Feature, got {type(instance)} for {instance}.')
-        if not instance.is_mutex_group():   
+        if not instance.is_mutex_group():
             raise RefactoringException(f'Feature {instance.name} is not a mutex group.')
 
         new_name = FMRefactoring.get_new_feature_name(self.feature_model, instance.name)
         parent = Feature(name=new_name, parent=instance, is_abstract=True)
         r_opt = Relation(instance, [parent], 0, 1)  # optional
-        r_mutex = next((relation for relation in instance.get_relations() if relation.is_mutex()), 
+        r_mutex = next((relation for relation in instance.get_relations() if relation.is_mutex()),
                        None)
         r_mutex.parent = parent
         r_mutex.card_min = 1  # xor

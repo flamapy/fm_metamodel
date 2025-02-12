@@ -109,7 +109,7 @@ class Cardinality:
 @total_ordering
 class Feature(VariabilityElement):
 
-    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    def __init__(  # noqa: PLR0913
         self,
         name: str,
         relations: Optional[list["Relation"]] = None,
@@ -268,9 +268,9 @@ class Constraint:
     def is_single_feature_constraint(self) -> bool:
         """Return true if the constraint is a single feature or its negation."""
         root_op = self._ast.root
-        return (root_op.is_term() or 
-                root_op.data == ASTOperation.NOT and 
-                (root_op.left.is_term() or root_op.right.is_term()))
+        return (root_op.is_term() or
+                (root_op.data == ASTOperation.NOT and
+                (root_op.left.is_term() or root_op.right.is_term())))
 
     def is_simple_constraint(self) -> bool:
         """Return true if the constraint is a simple constraint (requires or excludes)."""
@@ -298,10 +298,10 @@ class Constraint:
                     and root_op.right.left.is_term()
                 )
                 return (
-                    neg_left
-                    and root_op.right.is_term()
-                    or neg_right
-                    and root_op.left.is_term()
+                    (neg_left
+                    and root_op.right.is_term())
+                    or (neg_right
+                    and root_op.left.is_term())
                 )
         return False
 
@@ -350,7 +350,7 @@ class Constraint:
         return any(ctc.is_complex_constraint() for ctc in split_ctcs)
 
     def __str__(self) -> str:
-        return f"({self.name}) {str(self.ast)}"
+        return f"({self.name}) {self.ast!s}"
 
     def __hash__(self) -> int:
         return hash(str(self.ast).lower())

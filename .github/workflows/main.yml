@@ -16,7 +16,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m venv venv
           source venv/bin/activate
-          pip install setuptools prospector[with_everything]==1.10.3
+          pip install setuptools ruff
           pip install .
       - name: Analysing the code with prospector
         run: |

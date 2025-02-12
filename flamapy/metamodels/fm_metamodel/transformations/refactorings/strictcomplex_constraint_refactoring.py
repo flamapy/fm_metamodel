@@ -11,7 +11,7 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 
 class StrictComplexConstraintRefactoring(FMRefactoring):
-    """It transforms a strict-complex constraint to an additional abstract feature tree and a new 
+    """It transforms a strict-complex constraint to an additional abstract feature tree and a new
     set of simple constraints."""
 
     ABSTRACT_AUX_OR_FEATURE_NAME = 'OR_FEATURE'
@@ -23,14 +23,14 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
         return self.feature_model.get_strictcomplex_constraints()
 
     def is_applicable(self) -> bool:
-        return any(ctc.is_strictcomplex_constraint() 
+        return any(ctc.is_strictcomplex_constraint()
                    for ctc in self.feature_model.get_constraints())
 
     def apply(self, instance: Any) -> FeatureModel:
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Constraint):
-            raise RefactoringException(f'Invalid instance for {self.get_name()}.' 
+            raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Constraint, '
                                        f'got {type(instance)} for {instance}.')
         if not instance.is_strictcomplex_constraint():
@@ -40,7 +40,9 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
         ctcs_names = [ctc.name for ctc in self.feature_model.get_constraints()]
         features_dict = get_features_clauses(instance)  # NOT before negatives (dict)
         if len(features_dict) == 1:
-            feature = self.feature_model.get_feature_by_name(list(features_dict.keys())[0])
+            feature = self.feature_model.get_feature_by_name(next(iter(features_dict.keys())))
+            # this is an old method to be avoided
+            # feature = self.feature_model.get_feature_by_name(list(features_dict.keys())[0])
             if features_dict[feature.name]:
                 commit_feature_op = CommitmentFeature(self.feature_model)
                 commit_feature_op.set_feature(feature)
@@ -50,8 +52,8 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
                 deletion_feature_op.set_feature(feature)
                 self.feature_model = deletion_feature_op.transform()
         else:
-            new_or = Feature(FMRefactoring.get_new_feature_name(self.feature_model, 
-                             StrictComplexConstraintRefactoring.ABSTRACT_AUX_OR_FEATURE_NAME), 
+            new_or = Feature(FMRefactoring.get_new_feature_name(self.feature_model,
+                             StrictComplexConstraintRefactoring.ABSTRACT_AUX_OR_FEATURE_NAME),
                              is_abstract=True)
             features = []
             for feat, positive in features_dict.items():
@@ -59,8 +61,8 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
                     self.feature_model, feat), parent=new_or, is_abstract=True)
                 features.append(new_feature)
                 ast_op = ASTOperation.REQUIRES if positive else ASTOperation.EXCLUDES
-                ctc = Constraint(FMRefactoring.get_new_ctc_name(self.feature_model, 'CTC'), 
-                                 AST.create_binary_operation(ast_op, 
+                ctc = Constraint(FMRefactoring.get_new_ctc_name(self.feature_model, 'CTC'),
+                                 AST.create_binary_operation(ast_op,
                                  Node(new_feature.name), Node(feat)))
                 ctcs_names.append(ctc.name)
                 self.feature_model.ctcs.append(ctc)
@@ -85,7 +87,7 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
 
 
 def get_features_clauses(instance: Constraint) -> dict[str, bool]:
-    """Returns a dictionary of 'feature name -> bool', 
+    """Returns a dictionary of 'feature name -> bool',
     that sets 'bool' to 'false' if the feature has a negation."""
     features = {}
     clauses = instance.ast.to_cnf()
