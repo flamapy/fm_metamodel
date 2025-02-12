@@ -13,7 +13,7 @@ upload-pypi:
 
 lint:
 	echo "To lint this project, make sure that you have installed the core" >&2;
-	prospector
+	ruff check .
 
 mypy:
 	echo "To lint this project, make sure that you have installed the core" >&2;
