@@ -26,7 +26,7 @@ class CustomErrorListener(ErrorListener):
         super().__init__()
         self.errors: list[str] = []
 
-    def syntaxError(  # noqa: N802
+    def syntaxError(  # noqa: N802  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         recognizer: Any,
         offendingSymbol: Any,  # noqa: N803
@@ -83,6 +83,9 @@ class UVLReader(TextToModel):
             # First, check which kind of attribute we're dealing with
             value_attribute = attribute_context.valueAttribute()
             constraint_attribute = attribute_context.constraintAttribute()
+
+            key = None  # Ensure key is initialized
+            value = None  # Ensure value is initialized
 
             if value_attribute:
                 key = value_attribute.key().getText().replace('"', '')

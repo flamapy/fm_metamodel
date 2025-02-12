@@ -73,6 +73,7 @@ def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:
                 child_feature = parse_tree(feature, child)
                 children.append(child_feature)
             relation_type = relation['type']
+            new_relation = None  # type: Optional[Relation]
             if relation_type == JSONFeatureType.OPTIONAL.value:
                 new_relation = Relation(feature, children, 0, 1)
             elif relation_type == JSONFeatureType.MANDATORY.value:
@@ -129,13 +130,13 @@ def parse_ast_constraint(ctc_info: Dict[str, Any]) -> Node:
         node = Node(ASTOperation.EQUIVALENCE, left, right)
     elif ctc_type == ASTOperation.AND.value:
         op_list = [parse_ast_constraint(op) for op in ctc_operands]
-        node = functools.reduce(lambda l, r: Node(ASTOperation.AND, l, r), op_list)
+        node = functools.reduce(lambda lambd, r: Node(ASTOperation.AND, lambd, r), op_list)
     elif ctc_type == ASTOperation.OR.value:
         op_list = [parse_ast_constraint(op) for op in ctc_operands]
-        node = functools.reduce(lambda l, r: Node(ASTOperation.OR, l, r), op_list)
+        node = functools.reduce(lambda lambd, r: Node(ASTOperation.OR, lambd, r), op_list)
     elif ctc_type == ASTOperation.XOR.value:
         op_list = [parse_ast_constraint(op) for op in ctc_operands]
-        node = functools.reduce(lambda l, r: Node(ASTOperation.XOR, l, r), op_list)
+        node = functools.reduce(lambda lambd, r: Node(ASTOperation.XOR, lambd, r), op_list)
     else:
         raise ParsingException(f'Invalid constraint in JSON: {ctc_info}')
     return node
