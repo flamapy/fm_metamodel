@@ -47,9 +47,6 @@ class PLWriter(ModelToText):
 
 def to_exp(feature_model: FeatureModel) -> list[str]:
     """Traverse the feature tree and constraints and return a list of propositional formulas."""
-    if feature_model is None or feature_model.root is None:
-        return []
-
     formulas: list[str] = []
     formulas.append(feature_model.root.name)  # The root is always present
     features: list[Feature] = []
@@ -65,20 +62,20 @@ def to_exp(feature_model: FeatureModel) -> list[str]:
 
 
 def get_relation_formula(relation: Relation) -> str:
-    result = ''
     if relation.is_mandatory():
-        result = get_mandatory_formula(relation)
+        return get_mandatory_formula(relation)
     elif relation.is_optional():
-        result = get_optional_formula(relation)
+        return get_optional_formula(relation)
     elif relation.is_or():
-        result = get_or_formula(relation)
+        return get_or_formula(relation)
     elif relation.is_alternative():
-        result = get_alternative_formula(relation)
+        return get_alternative_formula(relation)
     elif relation.is_mutex():
-        result = get_mutex_formula(relation)
+        return get_mutex_formula(relation)
     elif relation.is_cardinal():
-        result = get_cardinality_formula(relation)
-    return result
+        return get_cardinality_formula(relation)
+
+    raise ValueError(f"Unknown relation type: {relation}")
 
 
 def get_mandatory_formula(relation: Relation) -> str:

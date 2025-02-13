@@ -201,7 +201,7 @@ class Feature(VariabilityElement):
     def is_string(self) -> bool:
         return self.feature_type == FeatureType.STRING
 
-    def is_multifeature(self):
+    def is_multifeature(self) -> bool:
         """Return true if the feature has a cardinality different from [1..1]."""
         return self.feature_cardinality.min != 1 or self.feature_cardinality.max != 1
 

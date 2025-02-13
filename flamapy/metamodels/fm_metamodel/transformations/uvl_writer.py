@@ -1,6 +1,7 @@
 import re
 import string
 import functools
+from typing import Union
 
 from flamapy.core.models.ast import ASTOperation
 from flamapy.core.transformations import ModelToText
@@ -64,7 +65,7 @@ class UVLWriter(ModelToText):
         tab_count = tab_count + 1
         feature_type = f'{feature.feature_type.value} ' if not feature.is_boolean() else ''
         fmincard = feature.feature_cardinality.min
-        fmaxcard = feature.feature_cardinality.max
+        fmaxcard: Union[int, str] = feature.feature_cardinality.max
         fmaxcard = '*' if fmaxcard == -1 else fmaxcard
         feature_cardinality = f'cardinality [{fmincard}..{fmaxcard}] '
         feature_cardinality = feature_cardinality if feature.is_multifeature() else ''
@@ -117,7 +118,8 @@ class UVLWriter(ModelToText):
             result = "or"
         else:
             min_value = rel.card_min
-            max_value = rel.card_max
+            max_value: Union[int, str] = rel.card_max
+
             if min_value == max_value:
                 result = "[" + str(min_value) + "]"
             else:

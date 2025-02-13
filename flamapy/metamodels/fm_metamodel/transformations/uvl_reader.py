@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from antlr4 import CommonTokenStream, FileStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -75,7 +75,7 @@ class UVLReader(TextToModel):
 
     def process_attributes(
         self, attributes_node: UVLPythonParser.AttributeContext
-    ) -> dict[str, Any]:
+    ) -> dict[Optional[Any], Optional[Any]]:
         attributes_list = attributes_node.attribute()
         attributes_dict = {}
 
@@ -161,7 +161,7 @@ class UVLReader(TextToModel):
                 if key == "abstract" and (value is None or value):
                     feature.is_abstract = True
                 else:
-                    feature.add_attribute(Attribute(name=key, default_value=value))
+                    feature.add_attribute(Attribute(name=str(key), default_value=value))
 
     def process_feature(
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
@@ -200,8 +200,8 @@ class UVLReader(TextToModel):
     def parse_cardinality(self, cardinality_text: str) -> tuple[int, int]:
         # Extract the minimum and maximum values.
         # This assumes a format like "[min..max]" or "[min]" or "[min..*]"
-        min_value: str = ""
-        max_value: str = ""
+        min_value: Union[int,str] = ""
+        max_value: Union[int,str] = ""
         # Remove brackets.
         cardinality_text = cardinality_text[1:-1]
 

@@ -64,8 +64,7 @@ def parse_attributes(feature: Feature, feature_node: Dict[str, Any]) -> None:
             attr.set_parent(feature)
             feature.add_attribute(attr)
 
-
-def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:
+def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:  # noqa: C901
     if 'relations' in feature_node:
         for relation in feature_node['relations']:
             children = []
@@ -73,7 +72,7 @@ def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:
                 child_feature = parse_tree(feature, child)
                 children.append(child_feature)
             relation_type = relation['type']
-            new_relation = None  # type: Optional[Relation]
+            new_relation: Optional[Relation] = None
             if relation_type == JSONFeatureType.OPTIONAL.value:
                 new_relation = Relation(feature, children, 0, 1)
             elif relation_type == JSONFeatureType.MANDATORY.value:
@@ -88,7 +87,10 @@ def parse_relations(feature: Feature, feature_node: Dict[str, Any]) -> None:
                 card_min = relation['card_min']
                 card_max = relation['card_max']
                 new_relation = Relation(feature, children, card_min, card_max)
-            feature.add_relation(new_relation)
+            if new_relation is not None:
+                feature.add_relation(new_relation)
+            else:
+                raise ParsingException(f'Invalid relation in JSON: {relation}')
 
 
 def parse_constraints(constraints_info: List[Dict[str, Any]]) -> List[Constraint]:
