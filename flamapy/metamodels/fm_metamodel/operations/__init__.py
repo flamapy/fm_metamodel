@@ -11,14 +11,16 @@ from .fm_generate_random_attribute import GenerateRandomAttribute
 from .fm_variation_points import FMVariationPoints
 
 
-__all__ = ['FMCoreFeatures',
-           'FMCountLeafs',
-           'FMLeafFeatures',
-           'FMAverageBranchingFactor',
-           'FMFeatureAncestors', 
-           'FMMaxDepthTree',
+__all__ = [
            'FMAtomicSets',
-           'FMMetrics',
-           'GenerateRandomAttribute', 
+           'FMAverageBranchingFactor',
+           'FMCoreFeatures',
+           'FMCountLeafs',
            'FMEstimatedConfigurationsNumber',
-           'FMVariationPoints']
+           'FMFeatureAncestors',
+           'FMLeafFeatures',
+           'FMMaxDepthTree',
+           'FMMetrics',
+           'FMVariationPoints',
+           'GenerateRandomAttribute',
+]

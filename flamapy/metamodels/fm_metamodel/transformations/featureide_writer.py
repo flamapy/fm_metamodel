@@ -2,7 +2,7 @@ import string
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 from xml.dom import minidom
-from typing import Any 
+from typing import Any
 
 from flamapy.core.models.ast import Node, ASTOperation
 from flamapy.core.transformations import ModelToText
@@ -32,9 +32,9 @@ class FeatureIDEWriter(ModelToText):
 
     def transform(self) -> str:
         fm_tree = _to_featureidexml(self._source_model).getroot()
-        xml_str = ElementTree.tostring(fm_tree, 
-                                       encoding='UTF-8', 
-                                       method='xml', 
+        xml_str = ElementTree.tostring(fm_tree,
+                                       encoding='UTF-8',
+                                       method='xml',
                                        xml_declaration=True)
         xml_str = prettify(xml_str)
         if self._path is not None:
@@ -48,8 +48,8 @@ def _to_featureidexml(feature_model: FeatureModel) -> ElementTree.ElementTree:
     tree = ElementTree.ElementTree(fm_element)
     struct = ElementTree.SubElement(fm_element, FeatureIDEReader.TAG_STRUCT)
     constraints = ElementTree.SubElement(fm_element, FeatureIDEReader.TAG_CONSTRAINTS)
-    root = ElementTree.SubElement(struct, 
-                                  _tag_element(feature_model.root), 
+    root = ElementTree.SubElement(struct,
+                                  _tag_element(feature_model.root),
                                   _get_attributes(feature_model.root))
     _create_tree(root, feature_model.root.get_relations())
     _get_constraints(constraints, feature_model.get_constraints())
@@ -67,24 +67,23 @@ def _create_tree(parent_element: Element, relations: list[Relation]) -> None:
 
 def _get_attributes(feature: Feature) -> dict[str, str]:
     atributes = {}
-    if feature.is_mandatory(): 
+    if feature.is_mandatory():
         atributes['mandatory'] = 'true'
-    if feature.is_abstract: 
+    if feature.is_abstract:
         atributes['abstract'] = 'true'
     atributes['name'] = safename(feature.name)
     return atributes
 
 
 def _tag_element(feature: Feature) -> str:
-    if feature.is_leaf(): 
+    if feature.is_leaf():
         name = FeatureIDEReader.TAG_FEATURE
-    else: 
-        if feature.is_or_group(): 
-            name = FeatureIDEReader.TAG_OR
-        elif feature.is_alternative_group(): 
-            name = FeatureIDEReader.TAG_ALT
-        else: 
-            name = FeatureIDEReader.TAG_AND
+    elif feature.is_or_group():
+        name = FeatureIDEReader.TAG_OR
+    elif feature.is_alternative_group():
+        name = FeatureIDEReader.TAG_ALT
+    else:
+        name = FeatureIDEReader.TAG_AND
     return name
 
 

@@ -1,8 +1,10 @@
 from typing import Any, Optional
 from functools import total_ordering
+from enum import Enum
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
+from flamapy.core.models.ast import LOGICAL_OPERATORS, ARITHMETIC_OPERATORS, AGGREGATION_OPERATORS
 from flamapy.core.models.ast import simplify_formula, propagate_negation, to_cnf
 
 
@@ -68,6 +70,8 @@ class Relation:
         else:
             relation_type = "Other"
         res = f"({relation_type}) " + res
+        if res.endswith(" "):
+            res = res[:-1]
         return res
 
     def __hash__(self) -> int:
@@ -88,21 +92,39 @@ class Relation:
         return str(self) < str(other)
 
 
+class FeatureType(Enum):
+    BOOLEAN = 'Boolean'
+    INTEGER = 'Integer'
+    REAL = 'Real'
+    STRING = 'String'
+
+
+class Cardinality:
+
+    def __init__(self, card_min: int = 1, card_max: int = 1):
+        self.min = card_min
+        self.max = card_max
+
+
 @total_ordering
 class Feature(VariabilityElement):
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name: str,
         relations: Optional[list["Relation"]] = None,
         parent: Optional["Feature"] = None,
         is_abstract: bool = False,
+        feature_type: FeatureType = FeatureType.BOOLEAN,
+        feature_cardinality: Cardinality = Cardinality(1, 1)
     ):
         super().__init__(name)
         self.name = name
         self.relations = [] if relations is None else relations
         self.parent = self._get_parent() if parent is None else parent
         self.is_abstract = is_abstract
+        self.feature_type = feature_type
+        self.feature_cardinality = feature_cardinality
         self.attributes = list["Attribute"]([])
 
     def is_empty(self) -> bool:
@@ -170,6 +192,19 @@ class Feature(VariabilityElement):
     def is_leaf(self) -> bool:
         return len(self.get_relations()) == 0
 
+    def is_boolean(self) -> bool:
+        return self.feature_type == FeatureType.BOOLEAN
+
+    def is_numerical(self) -> bool:
+        return self.feature_type in [FeatureType.INTEGER, FeatureType.REAL]
+
+    def is_string(self) -> bool:
+        return self.feature_type == FeatureType.STRING
+
+    def is_multifeature(self) -> bool:
+        """Return true if the feature has a cardinality different from [1..1]."""
+        return self.feature_cardinality.min != 1 or self.feature_cardinality.max != 1
+
     def __str__(self) -> str:
         return self.name
 
@@ -205,7 +240,11 @@ class Constraint:
         stack = [self.ast.root]
         while stack:
             node = stack.pop()
+            if node is None:
+                continue
             if node.is_unique_term():
+                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
+                    continue
                 features.add(node.data)
             elif node.is_unary_op():
                 stack.append(node.left)
@@ -214,6 +253,25 @@ class Constraint:
                 stack.append(node.left)
         return list(features)
 
+    def is_logical_constraint(self) -> bool:
+        """Return true if the constraint contains only logical operators."""
+        return all(op in LOGICAL_OPERATORS for op in self.ast.get_operators())
+
+    def is_arithmetic_constraint(self) -> bool:
+        """Return true if the constraint contains at least one arithmetic operator."""
+        return any(op in ARITHMETIC_OPERATORS for op in self.ast.get_operators())
+
+    def is_aggregation_constraint(self) -> bool:
+        """Return true if the constraint contains at least one aggregation operator."""
+        return any(op in AGGREGATION_OPERATORS for op in self.ast.get_operators())
+
+    def is_single_feature_constraint(self) -> bool:
+        """Return true if the constraint is a single feature or its negation."""
+        root_op = self._ast.root
+        return (root_op.is_term() or
+                (root_op.data == ASTOperation.NOT and
+                (root_op.left.is_term() or root_op.right.is_term())))
+
     def is_simple_constraint(self) -> bool:
         """Return true if the constraint is a simple constraint (requires or excludes)."""
         return self.is_requires_constraint() or self.is_excludes_constraint()
@@ -221,7 +279,7 @@ class Constraint:
     def is_complex_constraint(self) -> bool:
         """Return true if the constraint is a complex constraint
         (i.e., it is not a simple constraint)."""
-        return not self.is_simple_constraint()
+        return self.is_logical_constraint() and not self.is_simple_constraint()
 
     def is_requires_constraint(self) -> bool:
         """Return true if the constraint is a requires constraint."""
@@ -240,10 +298,10 @@ class Constraint:
                     and root_op.right.left.is_term()
                 )
                 return (
-                    neg_left
-                    and root_op.right.is_term()
-                    or neg_right
-                    and root_op.left.is_term()
+                    (neg_left
+                    and root_op.right.is_term())
+                    or (neg_right
+                    and root_op.left.is_term())
                 )
         return False
 
@@ -276,6 +334,8 @@ class Constraint:
     def is_pseudocomplex_constraint(self) -> bool:
         """Return true if the constraint is a pseudo-complex constraint
         (i.e., it can be transformed to a set of simple constraints)."""
+        if not self.is_logical_constraint():
+            return False
         split_ctcs = split_constraint(self)
         return len(split_ctcs) > 1 and all(
             ctc.is_simple_constraint() for ctc in split_ctcs
@@ -284,11 +344,13 @@ class Constraint:
     def is_strictcomplex_constraint(self) -> bool:
         """Return true if the constraint is a strict-complex constraint
         (i.e., it cannot be transformed to a set of simple constraints)."""
+        if not self.is_logical_constraint():
+            return False
         split_ctcs = split_constraint(self)
         return any(ctc.is_complex_constraint() for ctc in split_ctcs)
 
     def __str__(self) -> str:
-        return f"({self.name}) {str(self.ast)}"
+        return f"({self.name}) {self.ast!s}"
 
     def __hash__(self) -> int:
         return hash(str(self.ast).lower())
@@ -334,6 +396,15 @@ class FeatureModel(VariabilityModel):
                 features.extend(relation.children)
         return features
 
+    def get_boolean_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_boolean()]
+
+    def get_numerical_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_numerical()]
+
+    def get_string_features(self) -> list["Feature"]:
+        return [f for f in self.get_features() if f.is_string()]
+
     def get_constraints(self) -> list["Constraint"]:
         return self.ctcs
 
@@ -351,6 +422,15 @@ class FeatureModel(VariabilityModel):
 
     def get_feature_by_name(self, feature_name: str) -> Optional["Feature"]:
         return next((f for f in self.get_features() if f.name == feature_name), None)
+
+    def get_logical_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_logical_constraint()]
+
+    def get_arithmetic_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_arithmetic_constraint()]
+
+    def get_aggregations_constraints(self) -> list["Constraint"]:
+        return [c for c in self.get_constraints() if c.is_aggregation_constraint()]
 
     def get_complex_constraints(self) -> list["Constraint"]:
         return [c for c in self.get_constraints() if c.is_complex_constraint()]

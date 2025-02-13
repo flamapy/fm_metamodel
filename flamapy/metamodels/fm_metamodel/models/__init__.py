@@ -5,13 +5,19 @@ from .feature_model import (
     Relation,
     Domain,
     Range,
-    Attribute
+    Attribute,
+    Cardinality,
+    FeatureType
 )
 
-__all__ = ['Constraint',
-           'FeatureModel',
-           'Feature',
-           'Relation',
-           'Domain',
-           'Range',
-           'Attribute']
+__all__ = [
+    'Attribute',
+    'Cardinality',
+    'Constraint',
+    'Domain',
+    'Feature',
+    'FeatureModel',
+    'FeatureType',
+    'Range',
+    'Relation',
+]

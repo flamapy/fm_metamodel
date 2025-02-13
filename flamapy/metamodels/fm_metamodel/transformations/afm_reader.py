@@ -128,6 +128,8 @@ class AFMReader(TextToModel):
         if attribute_feature is None:
             raise FlamaException("attribute_feature is not defined")
 
+        domain = None  # type: Optional[Domain]
+
         discrete_domain_node = attribute_spec.attribute_domain().discrete_domain_spec()
         if discrete_domain_node is not None:
             values = []
@@ -179,6 +181,8 @@ class AFMReader(TextToModel):
     def build_ast_node(
         self, expression: AFMParser.ExpressionContext, prefix: str
     ) -> Node:
+        var_name = None  # Ensure var_name is initialized
+
         if isinstance(expression, AFMParser.AtomContext):
             if expression.variable() is not None:
                 var_name = prefix + expression.variable().getText()

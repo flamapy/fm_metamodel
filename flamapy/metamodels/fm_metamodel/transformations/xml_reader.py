@@ -58,6 +58,8 @@ class XMLReader(TextToModel):
         if el_feature in self.name_feature:
             origin = self.name_feature[el_feature]
 
+        operator_type = None  # type: Optional[ASTOperation]
+
         el_exclude = element.attrib.get('excludes')
         el_require = element.attrib.get('requires')
         if ctc_type == 'excludes' and el_exclude in self.name_feature:

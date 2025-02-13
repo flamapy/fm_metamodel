@@ -1,5 +1,7 @@
 import re
 import string
+import functools
+from typing import Union
 
 from flamapy.core.models.ast import ASTOperation
 from flamapy.core.transformations import ModelToText
@@ -7,8 +9,34 @@ from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
     FeatureModel,
-    Relation,
+    Relation
 )
+
+
+UVL_OPERATORS: dict[ASTOperation, str] = {ASTOperation.AND: "&",
+                                          ASTOperation.OR: "|",
+                                          ASTOperation.NOT: "!",
+                                          ASTOperation.IMPLIES: "=>",
+                                          ASTOperation.EQUIVALENCE: "<=>",
+                                          ASTOperation.REQUIRES: "=>",
+                                          ASTOperation.EXCLUDES: "=> !",
+                                          ASTOperation.EQUALS: '==',
+                                          ASTOperation.LOWER: '<',
+                                          ASTOperation.GREATER: '>',
+                                          ASTOperation.LOWER_EQUALS: '<=',
+                                          ASTOperation.GREATER_EQUALS: '>=',
+                                          ASTOperation.NOT_EQUALS: '!=',
+                                          ASTOperation.ADD: '+',
+                                          ASTOperation.SUB: '-',
+                                          ASTOperation.MUL: '*',
+                                          ASTOperation.DIV: '/',
+                                          ASTOperation.SUM: 'sum',
+                                          ASTOperation.AVG: 'avg',
+                                          ASTOperation.LEN: 'len',
+                                          ASTOperation.FLOOR: 'floor',
+                                          ASTOperation.CEIL: 'ceil',
+                                          ASTOperation.XOR: ASTOperation.XOR.value  # Not soported
+                                          }
 
 
 class UVLWriter(ModelToText):
@@ -35,12 +63,20 @@ class UVLWriter(ModelToText):
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:
         tab_count = tab_count + 1
+        feature_type = f'{feature.feature_type.value} ' if not feature.is_boolean() else ''
+        fmincard = feature.feature_cardinality.min
+        fmaxcard: Union[int, str] = feature.feature_cardinality.max
+        fmaxcard = '*' if fmaxcard == -1 else fmaxcard
+        feature_cardinality = f'cardinality [{fmincard}..{fmaxcard}] '
+        feature_cardinality = feature_cardinality if feature.is_multifeature() else ''
         result = (
             result
             + "\n"
             + tab_count * "\t"
+            + feature_type
             + safename(feature.name)
             + " "
+            + feature_cardinality
             + self.read_attributes(feature)
         )
         tab_count = tab_count + 1
@@ -82,10 +118,12 @@ class UVLWriter(ModelToText):
             result = "or"
         else:
             min_value = rel.card_min
-            max_value = rel.card_max
+            max_value: Union[int, str] = rel.card_max
+
             if min_value == max_value:
                 result = "[" + str(min_value) + "]"
             else:
+                max_value = '*' if max_value == -1 else max_value
                 result = "[" + str(min_value) + ".." + str(max_value) + "]"
 
         return result
@@ -101,41 +139,29 @@ class UVLWriter(ModelToText):
         return result
 
     @staticmethod
+    def _substitute_operator(str_constraint: str,
+                             operator: ASTOperation,
+                             new_operator: str) -> str:
+        return re.sub(rf"\b{operator.value}\b", new_operator, str_constraint)
+
+    @staticmethod
     def serialize_constraint(ctc: Constraint) -> str:
-        return str(
-            re.sub(
-                rf"\b{ASTOperation.EXCLUDES.value}\b",
-                "=> !",
-                re.sub(
-                    rf"\b{ASTOperation.REQUIRES.value}\b",
-                    "=>",
-                    re.sub(
-                        rf"\b{ASTOperation.EQUIVALENCE.value}\b",
-                        "<=>",
-                        re.sub(
-                            rf"\b{ASTOperation.IMPLIES.value}\b",
-                            "=>",
-                            re.sub(
-                                rf"\b{ASTOperation.OR.value}\b",
-                                "|",
-                                re.sub(
-                                    rf"\b{ASTOperation.AND.value}\b",
-                                    "&",
-                                    re.sub(
-                                        rf"\b{ASTOperation.NOT.value}\b",
-                                        "!",
-                                        ctc.ast.pretty_str(),
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            )
-        )
+        str_constraint = ctc.ast.pretty_str()
+        return functools.reduce(lambda acc, op: UVLWriter._substitute_operator(acc,
+                                                                               op,
+                                                                               UVL_OPERATORS[op]),
+                                ASTOperation, str_constraint)
 
 
 def safename(name: str) -> str:
+    if '.' in name:
+        return '.'.join([safe_simple_name(simple_name) for simple_name in name.split('.')])
+    return safe_simple_name(name)
+
+
+def safe_simple_name(name: str) -> str:
+    if name.startswith("'") and name.endswith("'"):
+        return name
     return f'"{name}"' if any(char not in safecharacters() for char in name) else name
 
 
