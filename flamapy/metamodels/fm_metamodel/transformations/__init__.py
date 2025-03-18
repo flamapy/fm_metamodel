@@ -11,6 +11,7 @@ from .xml_reader import XMLReader
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
 from .clafer_writer import ClaferWriter
+from .pl_writer import PLWriter
 
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
            'UVLReader',
            'UVLWriter',
            'XMLReader',
+           'PLWriter'
 ]
