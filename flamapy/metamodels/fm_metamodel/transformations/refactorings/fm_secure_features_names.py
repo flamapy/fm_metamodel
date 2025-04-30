@@ -24,7 +24,7 @@ class FMSecureFeaturesNames(ModelToModel):
     """
 
     SECURE_CHARS = r'A-Za-z0-9_'
-    REPLECEMENT_CHAR = '_'
+    REPLACEMENT_CHAR = '_'
 
     @staticmethod
     def get_source_extension() -> str:
@@ -37,7 +37,7 @@ class FMSecureFeaturesNames(ModelToModel):
     def __init__(self, source_model: VariabilityModel) -> None:
         self.feature_model = cast(FeatureModel, source_model)
         self.secure_chars: str = FMSecureFeaturesNames.SECURE_CHARS
-        self.replacement_char: str = FMSecureFeaturesNames.REPLECEMENT_CHAR
+        self.replacement_char: str = FMSecureFeaturesNames.REPLACEMENT_CHAR
         self.allow_starting_digit: bool = False
         self.mapping_names: dict[str, str] = {}
 
