@@ -10,6 +10,7 @@ from .xor_mandatory_refactoring import XorMandatoryRefactoring
 from .cardinality_group_refactoring import CardinalityGroupRefactoring
 from .pseudocomplex_constraint_refactoring import PseudoComplexConstraintRefactoring
 from .strictcomplex_constraint_refactoring import StrictComplexConstraintRefactoring
+from .feature_cardinality_refactoring import FeatureCardinalityRefactoring
 
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
            'PseudoComplexConstraintRefactoring',
            'RefactoringException',
            'StrictComplexConstraintRefactoring',
-           'XorMandatoryRefactoring'
+           'XorMandatoryRefactoring',
+           'FeatureCardinalityRefactoring'
            ]

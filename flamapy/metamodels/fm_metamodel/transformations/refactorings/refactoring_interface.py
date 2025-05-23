@@ -73,7 +73,7 @@ class FMRefactoring(ModelToModel):
         count = 1
         new_name = f'{name}'
         while feature_model.get_feature_by_name(new_name) is not None:
-            new_name = f'{name}{count}'
+            new_name = f'{name}_{count}'
             count += 1
         return new_name
 
@@ -83,6 +83,6 @@ class FMRefactoring(ModelToModel):
         count = 1
         new_name = f'{name}'
         while new_name in ctcs_names:
-            new_name = f'{name}{count}'
+            new_name = f'{name}_{count}'
             count += 1
         return new_name
