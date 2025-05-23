@@ -150,7 +150,8 @@ def rename_features(feature_model: FeatureModel,
     while features:
         child = features.pop()
         old_name = child.name
-        child.name = FMRefactoring.get_new_feature_name(feature_model, f'{old_name}_{clone_i}')
+        new_name = f'{root_feature.name}_{old_name}'
+        child.name = FMRefactoring.get_new_feature_name(feature_model, new_name)
         features_map[old_name] = child.name
         features.extend(child.get_children())
     return features_map
