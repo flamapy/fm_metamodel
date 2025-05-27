@@ -52,6 +52,7 @@ class UVLReader(TextToModel):
         self.model: Optional[FeatureModel] = None
         self.imports: dict[str, FeatureModel] = {}
         self.import_root: dict[str, str] = {}
+        self._constraints_attributes: list[Constraint] = []
 
     def set_parse_tree(self) -> None:
         absolute_path = os.path.abspath(os.path.join(self.path, self.file))
@@ -93,19 +94,16 @@ class UVLReader(TextToModel):
                     value = self.process_value(value_attribute.value())
                 else:
                     value = None  # or some default value
-
+                attributes_dict[key] = value
+                
             elif constraint_attribute:
-                # Here you can handle constraint attributes if you need them
-                # If they should be processed differently, provide methods similar to process_value
-                logging.warning("This attributes are not yet supported in flama.")
+                self.process_constraints_attributes(constraint_attribute)
             else:
                 # Handle unexpected case
                 cleaned_text = attribute_context.getText().replace('"', '')
 
                 # Raise the ValueError with the cleaned text
                 raise ValueError(f"Unknown attribute type for: {cleaned_text}")
-
-            attributes_dict[key] = value
         return attributes_dict
 
     def process_value(self, value_context: UVLPythonParser.ValueContext) -> Any:
@@ -123,6 +121,25 @@ class UVLReader(TextToModel):
         elif value_context.vector():
             value = [self.process_value(val) for val in value_context.vector().value()]
         return value
+
+    def process_constraints_attributes(self, 
+                                       cac: UVLPythonParser.ConstraintAttributeContext) -> None:
+        """Process a constraint attribute."""
+        if isinstance(cac, UVLPythonParser.SingleConstraintAttributeContext):
+            node = self.process_constraints(cac.constraint())
+            ctc = Constraint(name=f'Constraint {len(self._constraints_attributes)}',
+                             ast=AST(node))
+            self._constraints_attributes.append(ctc)
+        elif isinstance(cac, UVLPythonParser.ListConstraintAttributeContext):
+            for constraint_attribute in cac.constraintList().constraint():
+                node = self.process_constraints(constraint_attribute)
+                ctc = Constraint(name=f'Constraint {len(self._constraints_attributes)}',
+                                 ast=AST(node))
+                self._constraints_attributes.append(ctc)
+        else:
+            raise NotImplementedError(
+                f"Constraint attribute of type {type(cac)} not handled."
+            )
 
     def _check_feature_cardinality(
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
@@ -534,9 +551,11 @@ class UVLReader(TextToModel):
         root = self.process_feature(feature, root_feature_ast)
 
         feature_model = FeatureModel(root, [])
+        for ctc in self._constraints_attributes:  # Add contextual constraints previously processed
+            feature_model.ctcs.append(ctc)
 
         if self.parse_tree.constraints():  # Check if constraints exist
-            contraint_counter = 0
+            contraint_counter = len(feature_model.ctcs)
             for constraint_line in self.parse_tree.constraints().constraintLine():
                 node = self.process_constraints(constraint_line.constraint())
                 feature_model.ctcs.append(
