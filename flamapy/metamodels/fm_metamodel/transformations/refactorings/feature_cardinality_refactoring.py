@@ -1,8 +1,8 @@
 import copy
-import functools
-from typing import Any
+from typing import Any, cast
 
-from flamapy.core.models.ast import AST, ASTOperation, Node
+from flamapy.core.models.variability_model import VariabilityModel
+from flamapy.core.models.ast import AST
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel, 
     Feature, 
@@ -27,6 +27,12 @@ class FeatureCardinalityRefactoring(FMRefactoring):
     [Benavides et al. 2025 - UVL: Feature modelling with the Universal Variability Language]
     (https://doi.org/10.1016/j.jss.2024.112326) which does not preserve the semantics.
     """
+    
+    def __init__(self, source_model: VariabilityModel) -> None:
+        self._feature_model: FeatureModel = cast(FeatureModel, source_model)
+        # A mapping of feature names to their clones' names
+        # Original features -> clones' names -> subtree features' names
+        self.mapping_names: dict[str, dict[str, dict[str, str]]] = {}
 
     def get_name(self) -> str:
         return 'Feature cardinality refactoring'
@@ -46,8 +52,6 @@ class FeatureCardinalityRefactoring(FMRefactoring):
         if not instance.is_multifeature():
             raise RefactoringException(f'Feature {instance.name} is not a feature cardinality.')
 
-        # Get feature names (to check for duplicates when creating clones)
-        #feature_names = {feature.name for feature in self.feature_model.get_features()}
         # Get cardinalities
         card_min = instance.feature_cardinality.min
         card_max = instance.feature_cardinality.max
@@ -98,6 +102,8 @@ class FeatureCardinalityRefactoring(FMRefactoring):
                                                            features_names_map)
                         constraints_to_be_removed.add(constraint)
                         constraints_to_be_added.append(new_ctc)
+        # Store the mapping names
+        self.mapping_names[instance.name] = clones_features_names_map
         # The original feature cardinality becomes abstract
         instance.is_abstract = True
         # Create the alternative group relationship
