@@ -48,8 +48,11 @@ class FMRefactoring(ModelToModel):
         """
         if not self.is_applicable():
             return self.feature_model
-        for instance in self.get_instances():
+        instances = self.get_instances()
+        while instances:
+            instance = instances.pop(0)
             self.feature_model = self.apply(instance)
+            instances = self.get_instances()
         return self.feature_model
 
     @abstractmethod
