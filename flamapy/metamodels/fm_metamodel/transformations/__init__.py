@@ -24,9 +24,9 @@ __all__ = [
            'GlencoeWriter',
            'JSONReader',
            'JSONWriter',
+           'PLWriter',
            'SPLOTWriter',
            'UVLReader',
            'UVLWriter',
-           'XMLReader',
-           'PLWriter'
+           'XMLReader'
 ]

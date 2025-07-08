@@ -49,7 +49,7 @@ class FMSecureFeaturesNames(ModelToModel):
                                            secure_chars=self.secure_chars,
                                            replacement_char=self.replacement_char,
                                            allow_starting_digit=self.allow_starting_digit,
-                                           existing_names=self.mapping_names.keys())
+                                           existing_names=set(self.mapping_names.keys()))
             self.mapping_names[feature.name] = new_feature_name
             feature.name = new_feature_name
         if set(self.mapping_names.keys()) != set(self.mapping_names.values()):

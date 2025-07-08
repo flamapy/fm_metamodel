@@ -19,12 +19,12 @@ __all__ = [
            'DeletionFeature',
            'FMRefactoring',
            'FMSecureFeaturesNames',
+           'FeatureCardinalityRefactoring',
            'MultipleGroupDecompositionRefactoring',
            'MutexGroupRefactoring',
            'OrMandatoryRefactoring',
            'PseudoComplexConstraintRefactoring',
            'RefactoringException',
            'StrictComplexConstraintRefactoring',
-           'XorMandatoryRefactoring',
-           'FeatureCardinalityRefactoring'
+           'XorMandatoryRefactoring'
            ]

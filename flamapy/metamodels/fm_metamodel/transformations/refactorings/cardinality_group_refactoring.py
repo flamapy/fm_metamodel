@@ -19,12 +19,18 @@ class CardinalityGroupRefactoring(FMRefactoring):
         return 'Cardinality group refactoring'
 
     def get_instances(self) -> list[Feature]:
+        if self.feature_model is None:
+            return []
         return [feat for feat in self.feature_model.get_features() if feat.is_cardinality_group()]
 
     def is_applicable(self) -> bool:
+        if self.feature_model is None:
+            return False
         return any(feat.is_cardinality_group() for feat in self.feature_model.get_features())
 
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
+        if self.feature_model is None:
+            raise RefactoringException('Feature model is None.')
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
@@ -34,6 +40,9 @@ class CardinalityGroupRefactoring(FMRefactoring):
             raise RefactoringException(f'Feature {instance.name} is not a cardinality group.')
 
         r_card = next((r for r in instance.get_relations() if r.is_cardinal()), None)
+        if r_card is None:
+            raise RefactoringException(f'Feature {instance.name} \
+                                       does not have a cardinality relation.')
         instance.get_relations().remove(r_card)
 
         for child in r_card.children:
@@ -47,8 +56,8 @@ class CardinalityGroupRefactoring(FMRefactoring):
         return self.feature_model
 
 
-def create_and_constraints_for_cardinality_group(positives: list[Feature],
-                                                 negatives: list[Feature]) -> Node:
+def create_and_constraints_for_cardinality_group(positives: tuple[Feature, ...],
+                                                 negatives: set[Feature]) -> Node:
     elements = [Node(f.name) for f in positives]
     elements += [AST.create_unary_operation(ASTOperation.NOT, Node(f.name)).root
                  for f in negatives]

@@ -15,12 +15,18 @@ class MutexGroupRefactoring(FMRefactoring):
         return 'Mutex group refactoring'
 
     def get_instances(self) -> list[Feature]:
+        if self.feature_model is None:
+            return []
         return [feat for feat in self.feature_model.get_features() if feat.is_mutex_group()]
 
     def is_applicable(self) -> bool:
+        if self.feature_model is None:
+            return False
         return any(feat.is_mutex_group() for feat in self.feature_model.get_features())
 
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
+        if self.feature_model is None:
+            raise RefactoringException('Feature model is None.')
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
@@ -34,6 +40,8 @@ class MutexGroupRefactoring(FMRefactoring):
         r_opt = Relation(instance, [parent], 0, 1)  # optional
         r_mutex = next((relation for relation in instance.get_relations() if relation.is_mutex()),
                        None)
+        if r_mutex is None:
+            raise RefactoringException(f'Feature {instance.name} does not have a mutex relation.')
         r_mutex.parent = parent
         r_mutex.card_min = 1  # xor
 

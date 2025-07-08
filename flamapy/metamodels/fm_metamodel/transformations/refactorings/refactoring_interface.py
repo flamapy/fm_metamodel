@@ -31,17 +31,17 @@ class FMRefactoring(ModelToModel):
         return 'fm'
 
     def __init__(self, source_model: VariabilityModel) -> None:
-        self._feature_model: FeatureModel = cast(FeatureModel, source_model)
+        self._feature_model: FeatureModel | None = cast(FeatureModel, source_model)
 
     @property
-    def feature_model(self) -> FeatureModel:
+    def feature_model(self) -> FeatureModel | None:
         return self._feature_model
 
     @feature_model.setter
-    def feature_model(self, new_feature_model: FeatureModel):
+    def feature_model(self, new_feature_model: FeatureModel | None) -> None:
         self._feature_model = new_feature_model
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> FeatureModel | None:
         """Apply the refactoring to all instance of the feature model.
 
         If the refactoring is not applicable, the original feature model is returned.
@@ -68,7 +68,7 @@ class FMRefactoring(ModelToModel):
         """Return the instances of the refactoring that can be applied to the model."""
 
     @abstractmethod
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
         """Apply the refactoring to the given instance."""
 
     @staticmethod

@@ -16,13 +16,19 @@ class PseudoComplexConstraintRefactoring(FMRefactoring):
         return 'Pseudo-complex constraint refactoring'
 
     def get_instances(self) -> list[Constraint]:
+        if self.feature_model is None:
+            return []
         return self.feature_model.get_pseudocomplex_constraints()
 
     def is_applicable(self) -> bool:
+        if self.feature_model is None:
+            return False
         return any(ctc.is_pseudocomplex_constraint()
                    for ctc in self.feature_model.get_constraints())
 
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
+        if self.feature_model is None:
+            raise RefactoringException('Feature model is None.')
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Constraint):

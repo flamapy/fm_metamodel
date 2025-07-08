@@ -20,13 +20,19 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
         return 'Strict-complex constraint refactoring'
 
     def get_instances(self) -> list[Constraint]:
+        if self.feature_model is None:
+            return []
         return self.feature_model.get_strictcomplex_constraints()
 
     def is_applicable(self) -> bool:
+        if self.feature_model is None:
+            return False
         return any(ctc.is_strictcomplex_constraint()
                    for ctc in self.feature_model.get_constraints())
 
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
+        if self.feature_model is None:
+            raise RefactoringException('Feature model is None.')
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Constraint):
@@ -41,6 +47,9 @@ class StrictComplexConstraintRefactoring(FMRefactoring):
         features_dict = get_features_clauses(instance)  # NOT before negatives (dict)
         if len(features_dict) == 1:
             feature = self.feature_model.get_feature_by_name(next(iter(features_dict.keys())))
+            if feature is None:
+                raise RefactoringException(f'Feature {next(iter(features_dict.keys()))} \
+                                           not found in the feature model.')
             # this is an old method to be avoided
             # feature = self.feature_model.get_feature_by_name(list(features_dict.keys())[0])
             if features_dict[feature.name]:

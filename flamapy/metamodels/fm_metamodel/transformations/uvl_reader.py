@@ -95,7 +95,7 @@ class UVLReader(TextToModel):
                 else:
                     value = None  # or some default value
                 attributes_dict[key] = value
-                
+
             elif constraint_attribute:
                 self.process_constraints_attributes(constraint_attribute)
             else:
@@ -122,7 +122,7 @@ class UVLReader(TextToModel):
             value = [self.process_value(val) for val in value_context.vector().value()]
         return value
 
-    def process_constraints_attributes(self, 
+    def process_constraints_attributes(self,
                                        cac: UVLPythonParser.ConstraintAttributeContext) -> None:
         """Process a constraint attribute."""
         if isinstance(cac, UVLPythonParser.SingleConstraintAttributeContext):

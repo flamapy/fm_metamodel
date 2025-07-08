@@ -32,14 +32,16 @@ class FeatureIDEWriter(ModelToText):
 
     def transform(self) -> str:
         fm_tree = _to_featureidexml(self._source_model).getroot()
+        if fm_tree is None:
+            raise ValueError("The FeatureIDE XML tree has no root element.")
         xml_str = ElementTree.tostring(fm_tree,
                                        encoding='UTF-8',
                                        method='xml',
                                        xml_declaration=True)
-        xml_str = prettify(xml_str)
+        xml_bytes = prettify(xml_str)
         if self._path is not None:
             with open(self._path, 'wb') as file:
-                file.write(xml_str)
+                file.write(xml_bytes)
         return xml_str
 
 

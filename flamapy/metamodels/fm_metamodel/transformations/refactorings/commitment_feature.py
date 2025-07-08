@@ -24,12 +24,12 @@ class CommitmentFeature(ModelToModel):
 
     def __init__(self, source_model: VariabilityModel) -> None:
         self.feature_model = cast(FeatureModel, source_model)
-        self.feature = None
+        self.feature: Feature | None = None
 
     def set_feature(self, feature: Feature) -> None:
         self.feature = feature
 
-    def transform(self) -> FeatureModel:
+    def transform(self) -> FeatureModel | None:
         feature = self.feature
         # Step 1. If T does not contain F, the result is NIL.
         if feature is None:
@@ -41,21 +41,22 @@ class CommitmentFeature(ModelToModel):
             parent = feature_to_commit.get_parent()
             # If P is a MandOpt feature and F is an optional subfeature,
             # make F a mandatory subfeature of P.
-            if not parent.is_group() and feature_to_commit.is_optional():
+            if parent is not None and not parent.is_group() and feature_to_commit.is_optional():
                 rel = next((r for r in parent.get_relations()
                             if feature_to_commit in r.children), None)
-                rel.card_min = 1
+                if rel is not None:
+                    rel.card_min = 1
             # If P is an Xor feature,
             # make P a MandOpt feature which has F as single mandatory subfeature
             # and has no optional subfeatures. All other subfeatures of P are removed from
             # the tree.
-            elif parent.is_alternative_group():
+            elif parent is not None and parent.is_alternative_group():
                 # Delete feature branch
                 parent.get_relations()[0].children = [feature_to_commit]
             # If P is an Or feature,
             # make P a MandOpt feature which has F as single mandatory subfeature,
             # and has all other subfeatures of P as optional subfeatures.
-            elif parent.is_or_group():
+            elif parent is not None and parent.is_or_group():
                 parent_relations = parent.get_relations()
                 or_relation = parent_relations[0]
                 or_relation.children.remove(feature_to_commit)
@@ -66,5 +67,6 @@ class CommitmentFeature(ModelToModel):
                     new_optional_rel = Relation(parent, [child], 0, 1)
                     parent_relations.append(new_optional_rel)
             # Step 4. GOTO step 2 with P instead of F.
-            feature_to_commit = parent
+            if parent is not None:
+                feature_to_commit = parent
         return self.feature_model

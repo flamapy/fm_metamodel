@@ -16,13 +16,17 @@ class XorMandatoryRefactoring(FMRefactoring):
         return 'Xor mandatory refactoring'
 
     def get_instances(self) -> list[Feature]:
+        if self.feature_model is None:
+            return []
         return [feat for feat in self.feature_model.get_features()
                 if is_xor_group_with_mandatory(feat)]
 
     def is_applicable(self) -> bool:
+        if self.feature_model is None:
+            return False
         return any(is_xor_group_with_mandatory(feat) for feat in self.feature_model.get_features())
 
-    def apply(self, instance: Any) -> FeatureModel:
+    def apply(self, instance: Any) -> FeatureModel | None:
         if instance is None:
             raise RefactoringException(f'Invalid instance for {self.get_name()}.')
         if not isinstance(instance, Feature):
