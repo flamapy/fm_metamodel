@@ -3,7 +3,7 @@ import filecmp
 import tempfile
 
 
-from flamapy.metamodels.fm_metamodel.transformations import XMLReader, UVLWriter, UVLReader, GlencoeWriter, GlencoeReader, AFMReader, AFMWriter
+from flamapy.metamodels.fm_metamodel.transformations import XMLReader, UVLWriter, UVLReader, GlencoeWriter, GlencoeReader, AFMReader, AFMWriter, FeatureIDEReader, FeatureIDEWriter
 
 
 # Directory containing your .uvl files
@@ -70,6 +70,32 @@ def test_write_compare_glencoe(model):
     # File deletion should be here, outside of the 'with' block
     os.remove(glencoe_file_path)
     os.remove(glencoe_file_path_second)
+
+def test_write_compare_featueride(model):
+    assert model, "File could not be read returned empty content"
+    
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fide_file:
+        fide_file_path = fide_file.name
+        FeatureIDEWriter(path=fide_file_path, source_model=model).transform()
+        
+        fm_from_fide=FeatureIDEReader(path=fide_file_path).transform()
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as glencoe_file_second:
+            filde_file_path_second = glencoe_file_second.name
+            FeatureIDEWriter(path=filde_file_path_second,source_model=fm_from_fide).transform()
+            
+            fm_from_fide_2=FeatureIDEReader(path=filde_file_path_second).transform()
+
+            assert (len(fm_from_fide_2.get_features())==len(fm_from_fide.get_features())
+                    and len(fm_from_fide_2.get_relations()) == len(fm_from_fide.get_relations()) 
+                    and len(fm_from_fide_2.get_constraints()) == len(fm_from_fide.get_constraints()) 
+                    ), "the two fms are not equal"
+            # Step 3: Compare the original and new file
+            assert filecmp.cmp(fide_file_path, filde_file_path_second), f"Files {fide_file_path} and {filde_file_path_second} are not identical."
+
+    # File deletion should be here, outside of the 'with' block
+    os.remove(fide_file_path)
+    os.remove(filde_file_path_second)
+
 
 def test_write_compare_afm(model):
     assert model, "File could not be read returned empty content"

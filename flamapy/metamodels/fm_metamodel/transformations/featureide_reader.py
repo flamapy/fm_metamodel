@@ -157,6 +157,10 @@ class FeatureIDEReader(TextToModel):
             node = Node(ASTOperation.IMPLIES)
             node.left = self._parse_rule(rule[0]).root
             node.right = self._parse_rule(rule[1]).root
+        elif rule.tag == FeatureIDEReader.TAG_IMPN:
+            node = Node(ASTOperation.EXCLUDES)
+            node.left = self._parse_rule(rule[0]).root
+            node.right = self._parse_rule(rule[1]).root
         elif rule.tag == FeatureIDEReader.TAG_EQ:
             node = Node(ASTOperation.AND)
             node.left = Node(ASTOperation.IMPLIES)

@@ -59,6 +59,8 @@ def _to_featureidexml(feature_model: FeatureModel) -> ElementTree.ElementTree:
 
 
 def _create_tree(parent_element: Element, relations: list[Relation]) -> None:
+    if len(relations) > 1:
+        parent_element.tag = FeatureIDEReader.TAG_AND
     for rel in relations:
         for child in rel.children:
             new_elem = ElementTree.SubElement(parent_element,
