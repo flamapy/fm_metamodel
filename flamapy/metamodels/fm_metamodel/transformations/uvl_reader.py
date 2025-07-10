@@ -56,7 +56,7 @@ class UVLReader(TextToModel):
 
     def set_parse_tree(self) -> None:
         absolute_path = os.path.abspath(os.path.join(self.path, self.file))
-        input_stream = FileStream(absolute_path)
+        input_stream = FileStream(absolute_path, encoding="utf-8")
         lexer = UVLCustomLexer(input_stream)
 
         stream = CommonTokenStream(lexer)
