@@ -24,11 +24,11 @@ class FlatFM(ModelToModel):
 
     def __init__(self, source_model: VariabilityModel) -> None:
         self.feature_model = cast(FeatureModel, source_model)
-        self._maintain_namespace: bool = True
+        self._maintain_namespaces: bool = True
 
-    def set_maintain_namespace(self, maintain_namespace: bool) -> None:
-        """Set whether to maintain the namespace of the imported features."""
-        self._maintain_namespace = maintain_namespace
+    def set_maintain_namespaces(self, maintain_namespaces: bool) -> None:
+        """Set whether to maintain the namespaces of the imported features."""
+        self._maintain_namespaces = maintain_namespaces
 
     def transform(self) -> FeatureModel:
         new_feature_model = copy.deepcopy(self.feature_model)
@@ -39,14 +39,14 @@ class FlatFM(ModelToModel):
                 # Copy the feature's attributes and relations from the referenced feature
                 feature.relations = feature.reference.relations
                 feature.attributes.extend(feature.reference.attributes)
-                if not self._maintain_namespace:
+                if not self._maintain_namespaces:
                     feature.name = feature.reference.name
                 else:
                     namespace = '.'.join(feature.name.split('.')[:-1])
                     put_namespace_to_features(feature.reference, namespace)
                 feature.reference = None  # Clear reference after copying
             features.extend(feature.get_children())
-        if not self._maintain_namespace:
+        if not self._maintain_namespaces:
             for ctcs in new_feature_model.ctcs:
                 process_namespace_constraint(ctcs.ast, new_feature_model.alias_namespace)
         new_feature_model.imports = {}  # Clear imports as they are not needed in the flat model
