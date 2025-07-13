@@ -50,8 +50,8 @@ class UVLReader(TextToModel):
         self.namespace: str = ""
         self.parse_tree: Any = None
         self.model: Optional[FeatureModel] = None
-        self.imports: dict[str, FeatureModel] = {}
-        self.import_root: dict[str, str] = {}
+        self.imports: dict[str, FeatureModel] = {}  # namespace -> FeatureModel
+        self.import_root: dict[str, str] = {}  # alias -> namespace
         self._constraints_attributes: list[Constraint] = []
 
     def set_parse_tree(self) -> None:
@@ -180,14 +180,28 @@ class UVLReader(TextToModel):
                 else:
                     feature.add_attribute(Attribute(name=str(key), default_value=value))
 
-    def process_feature(
-        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
-    ) -> Feature:
-        self._check_feature_cardinality(feature, feature_node)
-        self._check_feature_type(feature, feature_node)
-        self._check_attributes(feature, feature_node)
+    def _process_imported_feature(self, feature: Feature) -> bool:
+        feature_imported = False
+        feature_reference = feature.name.split('.')
+        if feature_reference[0] in self.import_root:
+            namespace = self.import_root[feature_reference[0]]
+            imported_fm = self.imports.get(namespace)
+            if imported_fm is None:
+                raise FlamaException(f'Imported model {namespace} not found.')
+            referenced_root = imported_fm.root
+            if feature_reference[1] == referenced_root.name:
+                feature.name = referenced_root.name
+                feature.attributes = referenced_root.attributes
+                feature.relations = referenced_root.relations
+                feature_imported = True
+            else:
+                raise FlamaException(f'Feature {feature_reference[1]} not found in '
+                                     f'imported model {namespace}.')
+        return feature_imported
 
-        # Get the relationship type
+    def process_relationship_type(self,
+                                  feature: Feature,
+                                  feature_node: UVLPythonParser.FeatureContext) -> None:
         for relationship in feature_node.group():
             childs = self.process_group(relationship.groupSpec())
             if isinstance(relationship, UVLPythonParser.AlternativeGroupContext):
@@ -203,15 +217,27 @@ class UVLReader(TextToModel):
             elif isinstance(relationship, UVLPythonParser.CardinalityGroupContext):
                 # Access the CARDINALITY token text.
                 cardinality_text = relationship.CARDINALITY().getText()
-
                 min_value, max_value = self.parse_cardinality(cardinality_text)
                 feature.add_relation(Relation(feature, childs, min_value, max_value))
-
                 if max_value > len(childs):
                     logging.warning(
                         "Cardinality error: max value is greater than the number of childs"
                     )
 
+    def process_feature(
+        self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
+    ) -> Feature:
+        is_imported_feature = self._process_imported_feature(feature)
+
+        self._check_feature_cardinality(feature, feature_node)
+        self._check_feature_type(feature, feature_node)
+        self._check_attributes(feature, feature_node)
+
+        if is_imported_feature:
+            return feature
+
+        # Get the relationship type
+        self.process_relationship_type(feature, feature_node)
         return feature
 
     def parse_cardinality(self, cardinality_text: str) -> tuple[int, int]:
@@ -511,6 +537,48 @@ class UVLReader(TextToModel):
 
         return imports_list
 
+    def process_namespace_constraint(self, node: Node) -> None:
+        """Replace the namespace of the features in the constraints."""
+        stack = [node]
+        while stack:
+            node = stack.pop()
+            if node is None:
+                continue
+            if node.is_unique_term():
+                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
+                    continue
+                feature_reference = node.data.split('.')
+                print(f'Feature reference: {feature_reference}')
+                if len(feature_reference) > 1:
+                    namespace = feature_reference[0]
+                    feature_name = feature_reference[-1]
+                    if namespace in self.import_root:
+                        node.data = feature_name
+            elif node.is_unary_op():
+                stack.append(node.left)
+            elif node.is_binary_op():
+                stack.append(node.right)
+                stack.append(node.left)
+
+    def read_submodels(self, imports_list: list[tuple[str, Optional[str]]]) -> None:
+        for import_model in imports_list:
+            namespace, alias = import_model
+            if namespace not in self.imports:
+                # If the import is not already processed, we can process it
+                relative_path = namespace.replace('.', '/')
+                import_path = os.path.join(self.path, f'{relative_path}.uvl')
+                if os.path.exists(import_path):
+                    imported_model = UVLReader(import_path).transform()
+                    self.imports[namespace] = imported_model
+                    if alias:
+                        self.import_root[alias] = namespace
+                    else:
+                        self.import_root[namespace] = namespace
+                else:
+                    logging.warning(
+                        "Import %s not found in path %s", namespace, self.path
+                    )
+
     def transform(self) -> FeatureModel:
         self.set_parse_tree()
 
@@ -528,12 +596,12 @@ class UVLReader(TextToModel):
         imports_node = self.parse_tree.imports()
         if imports_node:
             imports_list = self.process_imports(imports_node)
-            logging.warning(
-                "Imports are not yet supported in flama."
-                "This model has the following imports: %s",
-                imports_list,
-            )
-
+            self.read_submodels(imports_list)
+            # logging.warning(
+            #     "Imports are not yet supported in flama."
+            #     "This model has the following imports: %s",
+            #     imports_list,
+            # )
         includes_node = self.parse_tree.includes()
         if includes_node:
             includes_list = self.process_includes(includes_node)
@@ -558,6 +626,7 @@ class UVLReader(TextToModel):
             contraint_counter = len(feature_model.ctcs)
             for constraint_line in self.parse_tree.constraints().constraintLine():
                 node = self.process_constraints(constraint_line.constraint())
+                self.process_namespace_constraint(node)
                 feature_model.ctcs.append(
                     Constraint(
                         name="Constraint " + str(contraint_counter), ast=AST(node)
