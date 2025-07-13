@@ -1,6 +1,7 @@
 import re
 import string
 import functools
+import pathlib
 from typing import Union
 
 from flamapy.core.models.ast import ASTOperation
@@ -52,13 +53,28 @@ class UVLWriter(ModelToText):
         model = self.model
         root = model.root
 
+        result = ''
+        if self.model.imports:
+            result += "imports\n"
+            for alias, namespace in self.model.alias_namespace.items():
+                result += f'\t{namespace}'
+                if alias != namespace:
+                    result += f' as {alias}'
+                result += '\n'
+        result += 'features'
         serialized_model = (
-            self.read_features(root, "features", 0) + "\n" + self.read_constraints()
+            self.read_features(root, result, 0) + '\n' + self.read_constraints()
         )
 
         if self.path is not None:
             with open(self.path, "w", encoding="utf8") as file:
                 file.write(serialized_model)
+
+        for namespace, submodel in self.model.imports.items():
+            path = f'{"/".join(namespace.split("."))}.uvl'
+            pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+            submodel_str = UVLWriter(path, submodel).transform()
+            serialized_model += f'\n\n{submodel_str}'
         return serialized_model
 
     def read_features(self, feature: Feature, result: str, tab_count: int) -> str:

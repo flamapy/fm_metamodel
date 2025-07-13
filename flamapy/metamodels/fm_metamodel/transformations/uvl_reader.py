@@ -180,24 +180,20 @@ class UVLReader(TextToModel):
                 else:
                     feature.add_attribute(Attribute(name=str(key), default_value=value))
 
-    def _process_imported_feature(self, feature: Feature) -> bool:
-        feature_imported = False
+    def _process_imported_feature(self, feature: Feature) -> None:
         feature_reference = feature.name.split('.')
-        if feature_reference[0] in self.import_root:
-            namespace = self.import_root[feature_reference[0]]
+        alias_namespace = '.'.join(feature_reference[:-1])
+        feature_reference_name = feature_reference[-1]
+        if alias_namespace in self.import_root:
+            namespace = self.import_root[alias_namespace]
             imported_fm = self.imports.get(namespace)
             if imported_fm is None:
                 raise FlamaException(f'Imported model {namespace} not found.')
-            referenced_root = imported_fm.root
-            if feature_reference[1] == referenced_root.name:
-                feature.name = referenced_root.name
-                feature.attributes = referenced_root.attributes
-                feature.relations = referenced_root.relations
-                feature_imported = True
+            if feature_reference_name == imported_fm.root.name:
+                feature.reference = imported_fm.root
             else:
-                raise FlamaException(f'Feature {feature_reference[1]} not found in '
+                raise FlamaException(f'Feature {feature_reference_name} not found in '
                                      f'imported model {namespace}.')
-        return feature_imported
 
     def process_relationship_type(self,
                                   feature: Feature,
@@ -227,14 +223,11 @@ class UVLReader(TextToModel):
     def process_feature(
         self, feature: Feature, feature_node: UVLPythonParser.FeatureContext
     ) -> Feature:
-        is_imported_feature = self._process_imported_feature(feature)
+        self._process_imported_feature(feature)
 
         self._check_feature_cardinality(feature, feature_node)
         self._check_feature_type(feature, feature_node)
         self._check_attributes(feature, feature_node)
-
-        if is_imported_feature:
-            return feature
 
         # Get the relationship type
         self.process_relationship_type(feature, feature_node)
@@ -537,29 +530,6 @@ class UVLReader(TextToModel):
 
         return imports_list
 
-    def process_namespace_constraint(self, node: Node) -> None:
-        """Replace the namespace of the features in the constraints."""
-        stack = [node]
-        while stack:
-            node = stack.pop()
-            if node is None:
-                continue
-            if node.is_unique_term():
-                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
-                    continue
-                feature_reference = node.data.split('.')
-                print(f'Feature reference: {feature_reference}')
-                if len(feature_reference) > 1:
-                    namespace = feature_reference[0]
-                    feature_name = feature_reference[-1]
-                    if namespace in self.import_root:
-                        node.data = feature_name
-            elif node.is_unary_op():
-                stack.append(node.left)
-            elif node.is_binary_op():
-                stack.append(node.right)
-                stack.append(node.left)
-
     def read_submodels(self, imports_list: list[tuple[str, Optional[str]]]) -> None:
         for import_model in imports_list:
             namespace, alias = import_model
@@ -619,6 +589,8 @@ class UVLReader(TextToModel):
         root = self.process_feature(feature, root_feature_ast)
 
         feature_model = FeatureModel(root, [])
+        feature_model.imports = self.imports
+        feature_model.alias_namespace = self.import_root
         for ctc in self._constraints_attributes:  # Add contextual constraints previously processed
             feature_model.ctcs.append(ctc)
 
@@ -626,7 +598,6 @@ class UVLReader(TextToModel):
             contraint_counter = len(feature_model.ctcs)
             for constraint_line in self.parse_tree.constraints().constraintLine():
                 node = self.process_constraints(constraint_line.constraint())
-                self.process_namespace_constraint(node)
                 feature_model.ctcs.append(
                     Constraint(
                         name="Constraint " + str(contraint_counter), ast=AST(node)

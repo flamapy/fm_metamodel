@@ -11,6 +11,7 @@ from .cardinality_group_refactoring import CardinalityGroupRefactoring
 from .pseudocomplex_constraint_refactoring import PseudoComplexConstraintRefactoring
 from .strictcomplex_constraint_refactoring import StrictComplexConstraintRefactoring
 from .feature_cardinality_refactoring import FeatureCardinalityRefactoring
+from .flat_fm import FlatFM
 
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
            'FMRefactoring',
            'FMSecureFeaturesNames',
            'FeatureCardinalityRefactoring',
+           'FlatFM',
            'MultipleGroupDecompositionRefactoring',
            'MutexGroupRefactoring',
            'OrMandatoryRefactoring',

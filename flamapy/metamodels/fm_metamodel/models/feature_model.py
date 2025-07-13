@@ -116,7 +116,8 @@ class Feature(VariabilityElement):
         parent: Optional["Feature"] = None,
         is_abstract: bool = False,
         feature_type: FeatureType = FeatureType.BOOLEAN,
-        feature_cardinality: Cardinality = Cardinality(1, 1)
+        feature_cardinality: Cardinality = Cardinality(1, 1),
+        reference: Optional["Feature"] = None  # reference to another imported feature
     ):
         super().__init__(name)
         self.name = name
@@ -126,6 +127,7 @@ class Feature(VariabilityElement):
         self.feature_type = feature_type
         self.feature_cardinality = feature_cardinality
         self.attributes = list["Attribute"]([])
+        self.reference = reference
 
     def is_empty(self) -> bool:
         return self.parent is None and self.relations == []
@@ -209,7 +211,7 @@ class Feature(VariabilityElement):
         return self.name
 
     def __repr__(self) -> str:
-        return f"{self.name}"
+        return f'{self.name}'
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -375,6 +377,8 @@ class FeatureModel(VariabilityModel):
     ) -> None:
         self.root = root
         self.ctcs = [] if constraints is None else constraints
+        self.imports: dict[str, FeatureModel] = {}  # namespace -> FeatureModel
+        self.alias_namespace: dict[str, str] = {}  # alias -> namespace
 
     def get_relations(self, feature: Optional["Feature"] = None) -> list["Relation"]:
         if self.root is None or self.root.is_empty():
