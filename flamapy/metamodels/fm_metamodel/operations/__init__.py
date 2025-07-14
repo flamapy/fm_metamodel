@@ -9,6 +9,7 @@ from .fm_atomic_sets import FMAtomicSets
 from .fm_metrics import FMMetrics
 from .fm_generate_random_attribute import GenerateRandomAttribute
 from .fm_variation_points import FMVariationPoints
+from .fm_language_level import FMLanguageLevel, LanguageLevel, MajorLevel, MinorLevel
 
 
 __all__ = [
@@ -18,9 +19,13 @@ __all__ = [
            'FMCountLeafs',
            'FMEstimatedConfigurationsNumber',
            'FMFeatureAncestors',
+           'FMLanguageLevel',
            'FMLeafFeatures',
            'FMMaxDepthTree',
            'FMMetrics',
            'FMVariationPoints',
            'GenerateRandomAttribute',
+           'LanguageLevel',
+           'MajorLevel',
+           'MinorLevel'
 ]
