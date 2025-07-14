@@ -128,6 +128,7 @@ class Feature(VariabilityElement):
         self.feature_cardinality = feature_cardinality
         self.attributes = list["Attribute"]([])
         self.reference = reference
+        self.constraints_attributes: list["Constraint"] = []
 
     def is_empty(self) -> bool:
         return self.parent is None and self.relations == []

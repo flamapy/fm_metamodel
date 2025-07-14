@@ -57,6 +57,7 @@ class UVLWriter(ModelToText):
     def transform(self) -> str:
         model = self.model
         root = model.root
+        self._constraints_attributes: list[Constraint] = []
 
         result = ''
         if self.model.imports:
@@ -136,8 +137,7 @@ class UVLWriter(ModelToText):
             result = self.read_features(child, result, tab_count)
         return result
 
-    @classmethod
-    def read_attributes(cls, feature: Feature) -> str:
+    def read_attributes(self, feature: Feature) -> str:
         attributes = []
         if feature.is_abstract:
             attributes.append("abstract")
@@ -151,7 +151,26 @@ class UVLWriter(ModelToText):
                 else:
                     attribute_str += f" {attribute.default_value}"
             attributes.append(attribute_str)
+        feature_constraints_str = self.read_feature_constraints(feature)
+        if feature_constraints_str:
+            attributes.append(feature_constraints_str)
         return f'{{{", ".join(attributes)}}}' if attributes else ""
+
+    def read_feature_constraints(self, feature: Feature) -> str:
+        result = ''
+        feature_constraints = []
+        if feature.constraints_attributes:
+            for constraint in feature.constraints_attributes:
+                if isinstance(constraint, Constraint):
+                    feature_constraints.append(self.serialize_constraint(constraint))
+                    self._constraints_attributes.append(constraint)
+                else:
+                    raise TypeError(f"Unsupported type for constraint: {type(constraint)}")
+            if len(feature_constraints) == 1:
+                result += f'constraint {feature_constraints[0]}'
+            elif len(feature_constraints) > 1:
+                result += f'constraints [{", ".join(feature_constraints)}]'
+        return result
 
     @staticmethod
     def serialize_relation(rel: Relation) -> str:
@@ -179,12 +198,15 @@ class UVLWriter(ModelToText):
 
     def read_constraints(self) -> str:
         result = ""
-        constraints = self.model.ctcs
-        if constraints:
+        constraints = self.model.get_constraints()
+        if len(constraints) > len(self._constraints_attributes):
             result = "constraints"
             for constraint in constraints:
-                constraint_text = self.serialize_constraint(constraint)
-                result = result + "\n\t" + constraint_text
+                if constraint in self._constraints_attributes:
+                    self._constraints_attributes.remove(constraint)
+                else:
+                    constraint_text = self.serialize_constraint(constraint)
+                    result = result + "\n\t" + constraint_text
         return result
 
     @staticmethod
