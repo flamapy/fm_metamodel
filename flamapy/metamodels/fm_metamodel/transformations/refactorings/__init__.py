@@ -1,6 +1,5 @@
 from .deletion_feature import DeletionFeature
 from .commitment_feature import CommitmentFeature
-from .fm_secure_features_names import FMSecureFeaturesNames
 from .refactoring_interface import FMRefactoring
 from .refactoring_exception import RefactoringException
 from .mutex_group_refactoring import MutexGroupRefactoring
@@ -11,7 +10,6 @@ from .cardinality_group_refactoring import CardinalityGroupRefactoring
 from .pseudocomplex_constraint_refactoring import PseudoComplexConstraintRefactoring
 from .strictcomplex_constraint_refactoring import StrictComplexConstraintRefactoring
 from .feature_cardinality_refactoring import FeatureCardinalityRefactoring
-from .flat_fm import FlatFM
 
 
 __all__ = [
@@ -19,9 +17,7 @@ __all__ = [
            'CommitmentFeature',
            'DeletionFeature',
            'FMRefactoring',
-           'FMSecureFeaturesNames',
            'FeatureCardinalityRefactoring',
-           'FlatFM',
            'MultipleGroupDecompositionRefactoring',
            'MutexGroupRefactoring',
            'OrMandatoryRefactoring',

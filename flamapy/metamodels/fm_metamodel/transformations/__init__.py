@@ -12,14 +12,18 @@ from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
 from .clafer_writer import ClaferWriter
 from .pl_writer import PLWriter
+from .fm_secure_features_names import FMSecureFeaturesNames
+from .flat_fm import FlatFM
 
 
 __all__ = [
            'AFMReader',
            'AFMWriter',
            'ClaferWriter',
+           'FMSecureFeaturesNames',
            'FeatureIDEReader',
            'FeatureIDEWriter',
+           'FlatFM',
            'GlencoeReader',
            'GlencoeWriter',
            'JSONReader',
@@ -28,5 +32,5 @@ __all__ = [
            'SPLOTWriter',
            'UVLReader',
            'UVLWriter',
-           'XMLReader'
+           'XMLReader',
 ]
