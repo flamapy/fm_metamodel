@@ -42,12 +42,7 @@ class FMRefactoring(ModelToModel):
         self._feature_model = new_feature_model
 
     def transform(self) -> FeatureModel | None:
-        """Apply the refactoring to all instance of the feature model.
-
-        If the refactoring is not applicable, the original feature model is returned.
-        """
-        if not self.is_applicable():
-            return self.feature_model
+        """Apply the refactoring to all instance of the feature model."""
         instances = self.get_instances()
         while instances:
             instance = instances.pop(0)
