@@ -29,16 +29,19 @@ class GlencoeWriter(ModelToText):
 
     def transform(self) -> str:
         json_object = _to_json(self.source_model)
+        json_str = json.dumps(json_object, ensure_ascii=False, indent=4)
         if self.path is not None:
-            with open(self.path, "w", encoding="utf8") as file:
-                json.dump(json_object, file, indent=4)
-        return json.dumps(json_object, indent=4)
+            with open(self.path, 'w', encoding="utf8") as file:
+                file.write(json_str)
+        return json_str
 
 
 def _to_json(feature_model: FeatureModel) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    result["id"] = f"FM_{feature_model.root.name.replace(' ', '')}"
-    result["name"] = f"FM_{feature_model.root.name.replace(' ', '')}"
+    print(f'-{feature_model.root.name}-')
+    print(f'-{safename(feature_model.root.name)}-')
+    result["id"] = f"FM_{safename(feature_model.root.name)}"
+    result["name"] = f"FM_{safename(feature_model.root.name)}"
     result["features"] = _get_features_info(feature_model.get_features())
     result["tree"] = _get_tree_info(feature_model.root)
     result["constraints"] = _get_constraints_info(feature_model.get_constraints())
@@ -56,8 +59,8 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
         elif feature.is_cardinality_group():
             feature_type = "GENOR"
 
-        features_info[feature.name] = {
-            "name": feature.name,
+        features_info[safename(feature.name)] = {
+            "name": safename(feature.name),
             "optional": not feature.is_mandatory(),
             "type": feature_type,
             "note": "",  # ToDo: add 'note' attribute information
@@ -65,8 +68,8 @@ def _get_features_info(features: list[Feature]) -> dict[str, Any]:
 
         if feature_type == "GENOR":
             relation = next(r for r in feature.get_relations() if r.is_cardinal())
-            features_info[feature.name]["min"] = relation.card_min
-            features_info[feature.name]["max"] = relation.card_max
+            features_info[safename(feature.name)]["min"] = relation.card_min
+            features_info[safename(feature.name)]["max"] = relation.card_max
     return features_info
 
 
@@ -75,7 +78,7 @@ def _get_tree_info(feature: Feature) -> dict[str, Any]:
     feature_info["id"] = safename(feature.name)
     children = [
         _get_tree_info(child)
-        for child in sorted(feature.get_children(), key=lambda f: f.name)
+        for child in sorted(feature.get_children(), key=lambda f: safename(f.name))
     ]
     if children:
         feature_info["children"] = children
@@ -95,6 +98,8 @@ def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
         ctc_info["type"] = "FeatureTerm"
         ctc_info["operands"] = [safename(str(ast_node.data))]
     else:
+        if ast_node.data not in GlencoeWriter.CTC_TYPES:
+            raise ValueError(f"Unsupported constraint type: {ast_node.data}")
         ctc_info["type"] = GlencoeWriter.CTC_TYPES[ast_node.data]
         operands = []
         left = _get_ctc_info(ast_node.left)
@@ -107,8 +112,19 @@ def _get_ctc_info(ast_node: Node) -> dict[str, Any]:
 
 
 def safename(name: str) -> str:
-    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
+    if '.' in name:
+        return '.'.join([safe_simple_name(simple_name) for simple_name in name.split('.')])
+    return safe_simple_name(name)
+
+
+def safe_simple_name(name: str) -> str:
+    if name.startswith("'") and name.endswith("'"):
+        return name
+    allowed = set(safecharacters())
+    return ''.join(c if c in allowed else '_' for c in name)
 
 
 def safecharacters() -> str:
     return string.ascii_letters + string.digits + '_'
+
+
