@@ -48,6 +48,11 @@ class UVLWriter(ModelToText):
     def __init__(self, path: str, source_model: FeatureModel):
         self.path = path
         self.model = source_model
+        self._compact_relations = False
+
+    def set_compact_relations(self, compact_relations: bool) -> None:
+        """Set whether to compact relations in the UVL output."""
+        self._compact_relations = compact_relations
 
     def transform(self) -> str:
         model = self.model
@@ -96,11 +101,39 @@ class UVLWriter(ModelToText):
             + self.read_attributes(feature)
         )
         tab_count = tab_count + 1
-        for relation in feature.relations:
+        if not self._compact_relations:
+            result = self.serialize_relations_with_children(feature.relations, result, tab_count)
+        else:
+            mandatory_relations = [rel for rel in feature.relations if rel.is_mandatory()]
+            optional_relations = [rel for rel in feature.relations if rel.is_optional()]
+            group_relations = [rel for rel in feature.relations if rel.is_group()]
+            result = self.serialize_compact_relations(mandatory_relations, result, tab_count)
+            result = self.serialize_compact_relations(optional_relations, result, tab_count)
+            result = self.serialize_relations_with_children(group_relations, result, tab_count)
+        return result
+
+    def serialize_relations_with_children(self,
+                                          relations: list[Relation],
+                                          result: str,
+                                          tab_count: int) -> str:
+        for relation in relations:
             relation_name = self.serialize_relation(relation)
-            result = result + "\n" + tab_count * "\t" + relation_name
+            result += "\n" + tab_count * "\t" + relation_name
             for feature_node in relation.children:
                 result = self.read_features(feature_node, result, tab_count)
+        return result
+
+    def serialize_compact_relations(self,
+                                    relations: list[Relation],
+                                    result: str,
+                                    tab_count: int) -> str:
+        if not relations:
+            return result
+        relation_name = self.serialize_relation(relations[0])
+        result += "\n" + tab_count * "\t" + relation_name
+        children = [child for relation in relations for child in relation.children]
+        for child in children:
+            result = self.read_features(child, result, tab_count)
         return result
 
     @classmethod
