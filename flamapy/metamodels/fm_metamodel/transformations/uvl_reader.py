@@ -182,9 +182,27 @@ class UVLReader(TextToModel):
                 if key == "abstract" and (value is None or value):
                     feature.is_abstract = True
                 else:
-                    feature.add_attribute(Attribute(name=str(key), default_value=value))
+                    # Handle attributes
+                    if isinstance(value, dict):  # it represents nested attributes
+                        default_value = self._process_nested_attribute(feature, value)
+                    else:
+                        default_value = value
+                    feature.add_attribute(Attribute(name=str(key), default_value=default_value))
         feature.constraints_attributes = self.constraints_attributes[feature]
 
+    def _process_nested_attribute(self, 
+                                  parent: Feature, 
+                                  nested_values: dict[Any]) -> list[Attribute]:
+        attributes = []
+        for key, value in nested_values.items():
+            if isinstance(value, dict):
+                default_value = self._process_nested_attribute(parent, value)
+            else:
+                default_value = value
+            attribute = Attribute(name=str(key), default_value=default_value)
+            attribute.parent = parent
+            attributes.append(attribute)
+        return attributes
 
     def _process_imported_feature(self, feature: Feature) -> None:
         feature_reference = feature.name.split('.')
