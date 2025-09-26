@@ -7,7 +7,8 @@ from .feature_model import (
     Range,
     Attribute,
     Cardinality,
-    FeatureType
+    FeatureType,
+    AttributeType
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     'FeatureType',
     'Range',
     'Relation',
+    'AttributeType'
 ]

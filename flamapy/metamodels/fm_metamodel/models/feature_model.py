@@ -99,6 +99,14 @@ class FeatureType(Enum):
     STRING = 'String'
 
 
+class AttributeType(Enum):
+    BOOLEAN = 'Boolean'
+    INTEGER = 'Integer'
+    REAL = 'Real'
+    STRING = 'String'
+    NESTED = 'Nested'  # Nested attribute (i.e., list of attributes)
+
+
 class Cardinality:
 
     def __init__(self, card_min: int = 1, card_max: int = 1):
@@ -401,6 +409,15 @@ class FeatureModel(VariabilityModel):
                 features.extend(relation.children)
         return features
 
+    def get_attributes(self) -> list["Attribute"]:
+        attributes: set["Attribute"] = set()
+        for feature in self.get_features():
+            attributes.update(feature.get_attributes())
+        return list(attributes)
+
+    def get_attribute_by_name(self, attribute_name: str) -> Optional["Attribute"]:
+        return next((a for a in self.get_attributes() if a.name == attribute_name), None)
+
     def get_boolean_features(self) -> list["Feature"]:
         return [f for f in self.get_features() if f.is_boolean()]
 
@@ -560,6 +577,22 @@ class Attribute:
         self.domain: Optional["Domain"] = domain
         self.default_value: "Any" = default_value
         self.null_value: Optional[Any] = null_value
+        self.attribute_type: AttributeType = self._infer_attribute_type(default_value)
+
+    def _infer_attribute_type(self, value: Any) -> AttributeType:
+        if isinstance(value, bool):
+            attr_type = AttributeType.BOOLEAN
+        elif isinstance(value, int):
+            attr_type = AttributeType.INTEGER
+        elif isinstance(value, float):
+            attr_type = AttributeType.REAL
+        elif isinstance(value, str):
+            attr_type = AttributeType.STRING
+        elif isinstance(value, list):
+            attr_type = AttributeType.NESTED
+        else:
+            attr_type = None
+        return attr_type
 
     def get_name(self) -> str:
         return self.name
@@ -601,7 +634,11 @@ class Attribute:
         if self.domain is not None:
             result = result + "Domain: " + str(self.domain)
         if self.default_value is not None:
-            result = result + "Default value: " + str(self.default_value)
+            if isinstance(self.default_value, list):
+                default_value_str = '{' + ', '.join(str(v) for v in self.default_value) + '}'
+            else:
+                default_value_str = str(self.default_value)
+            result = result + "Default value: " + default_value_str
         if self.null_value is not None:
             result = result + "Null value: " + str(self.null_value)
 
