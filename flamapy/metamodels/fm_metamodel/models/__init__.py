@@ -13,6 +13,7 @@ from .feature_model import (
 
 __all__ = [
     'Attribute',
+    'AttributeType',
     'Cardinality',
     'Constraint',
     'Domain',
@@ -20,6 +21,5 @@ __all__ = [
     'FeatureModel',
     'FeatureType',
     'Range',
-    'Relation',
-    'AttributeType'
+    'Relation'
 ]

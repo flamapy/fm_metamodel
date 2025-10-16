@@ -192,8 +192,8 @@ class UVLReader(TextToModel):
                     feature.add_attribute(Attribute(name=str(key), default_value=default_value))
         feature.constraints_attributes = self.constraints_attributes[feature]
 
-    def _process_nested_attribute(self, 
-                                  parent: Feature, 
+    def _process_nested_attribute(self,
+                                  parent: Feature,
                                   nested_values: dict[Any, Any]) -> list[Attribute]:
         attributes = []
         for key, value in nested_values.items():

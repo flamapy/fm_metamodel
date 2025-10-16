@@ -496,7 +496,7 @@ class FeatureModel(VariabilityModel):
                 attr_counter += 1
         res += "Imports:\r\n"
         for i, (name, imp) in enumerate(self.imports.items()):
-            alias = next((alias for alias, namespace in self.alias_namespace.items() 
+            alias = next((alias for alias, namespace in self.alias_namespace.items()
                           if namespace == name), None)
             if alias is None:
                 res += f"IMP{i}: {name} -> {imp}\r\n"
