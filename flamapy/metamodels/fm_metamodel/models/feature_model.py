@@ -485,14 +485,23 @@ class FeatureModel(VariabilityModel):
         res += "Relations:\r\n"
         for i, relation in enumerate(self.get_relations()):
             res += f"R{i}: {relation}\r\n"
+        res += "Constraints:\r\n"
         for i, ctc in enumerate(self.ctcs):
             res += f"CTC{i}: {ctc}\r\n"
-        attributes_res = ""
+        res += "Attributes:\r\n"
+        attr_counter = 0
         for feature in self.get_features():
             for attribute in feature.get_attributes():
-                attributes_res += f"{attribute}" + "\r\n"
-        if attributes_res != "":
-            res += "Attributes:\r\n" + attributes_res
+                res += f"ATTR{attr_counter}: {attribute}" + "\r\n"
+                attr_counter += 1
+        res += "Imports:\r\n"
+        for i, (name, imp) in enumerate(self.imports.items()):
+            alias = next((alias for alias, namespace in self.alias_namespace.items() 
+                          if namespace == name), None)
+            if alias is None:
+                res += f"IMP{i}: {name} -> {imp}\r\n"
+            else:
+                res += f"IMP{i}: {name} ({alias}) -> {imp}\r\n"
         return res
 
     def __hash__(self) -> int:
@@ -577,9 +586,9 @@ class Attribute:
         self.domain: Optional["Domain"] = domain
         self.default_value: "Any" = default_value
         self.null_value: Optional[Any] = null_value
-        self.attribute_type: AttributeType = self._infer_attribute_type(default_value)
+        self.attribute_type: Optional["AttributeType"] = self._infer_attribute_type(default_value)
 
-    def _infer_attribute_type(self, value: Any) -> AttributeType:
+    def _infer_attribute_type(self, value: Any) -> Optional["AttributeType"]:
         if isinstance(value, bool):
             attr_type = AttributeType.BOOLEAN
         elif isinstance(value, int):
