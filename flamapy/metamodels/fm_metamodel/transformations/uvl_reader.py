@@ -184,7 +184,9 @@ class UVLReader(TextToModel):
                 else:
                     # Handle attributes
                     if isinstance(value, dict):  # it represents nested attributes
-                        default_value = self._process_nested_attribute(feature, value)
+                        attributes_list = self._process_nested_attribute(feature, value)
+                        for attr in attributes_list:
+                            feature.add_attribute(attr)
                     else:
                         default_value = value
                     feature.add_attribute(Attribute(name=str(key), default_value=default_value))
@@ -192,11 +194,13 @@ class UVLReader(TextToModel):
 
     def _process_nested_attribute(self, 
                                   parent: Feature, 
-                                  nested_values: dict[Any]) -> list[Attribute]:
+                                  nested_values: dict[Any, Any]) -> list[Attribute]:
         attributes = []
         for key, value in nested_values.items():
             if isinstance(value, dict):
-                default_value = self._process_nested_attribute(parent, value)
+                attributes_list = self._process_nested_attribute(parent, value)
+                for attr in attributes_list:
+                    attributes.append(attr)
             else:
                 default_value = value
             attribute = Attribute(name=str(key), default_value=default_value)
