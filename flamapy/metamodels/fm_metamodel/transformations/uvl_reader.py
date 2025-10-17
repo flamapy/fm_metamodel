@@ -183,10 +183,13 @@ class UVLReader(TextToModel):
                     feature.is_abstract = True
                 else:
                     # Handle attributes
-                    if isinstance(value, dict):  # it represents nested attributes
-                        attributes_list = self._process_nested_attribute(feature, value)
+                    if value is None:  # for boolean values the value may be not provided
+                        default_value = True
+                    elif isinstance(value, dict):  # it represents nested attributes
+                        attributes_list = self._process_nested_attribute(feature, key, value)
                         for attr in attributes_list:
                             feature.add_attribute(attr)
+                        default_value = None
                     else:
                         default_value = value
                     feature.add_attribute(Attribute(name=str(key), default_value=default_value))
@@ -194,16 +197,20 @@ class UVLReader(TextToModel):
 
     def _process_nested_attribute(self,
                                   parent: Feature,
+                                  parent_attribute_name: str,
                                   nested_values: dict[Any, Any]) -> list[Attribute]:
         attributes = []
         for key, value in nested_values.items():
-            if isinstance(value, dict):
-                attributes_list = self._process_nested_attribute(parent, value)
+            if value is None:  # for boolean values the value may be not provided
+                default_value = True
+            elif isinstance(value, dict):
+                attributes_list = self._process_nested_attribute(parent, f'{parent_attribute_name}.{key}', value)
                 for attr in attributes_list:
                     attributes.append(attr)
+                    default_value = None
             else:
                 default_value = value
-            attribute = Attribute(name=str(key), default_value=default_value)
+            attribute = Attribute(name=f'{parent_attribute_name}.{key}', default_value=default_value)
             attribute.parent = parent
             attributes.append(attribute)
         return attributes

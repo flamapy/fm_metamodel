@@ -104,6 +104,7 @@ class AttributeType(Enum):
     INTEGER = 'Integer'
     REAL = 'Real'
     STRING = 'String'
+    VECTOR = 'Vector'  # Vector (list of values)
     NESTED = 'Nested'  # Nested attribute (i.e., list of attributes)
 
 
@@ -410,10 +411,15 @@ class FeatureModel(VariabilityModel):
         return features
 
     def get_attributes(self) -> list["Attribute"]:
-        attributes: set["Attribute"] = set()
+        attributes_dict: dict[str, "Attribute"] = {}
         for feature in self.get_features():
-            attributes.update(feature.get_attributes())
-        return list(attributes)
+            attributes_dict.update({attr.name: attr for attr in feature.get_attributes()})
+        attributes = []
+        for attr in attributes_dict.values():
+            attribute = Attribute(attr.name, attr.domain, None, attr.null_value)
+            attribute.attribute_type = attr.attribute_type
+            attributes.append(attribute)
+        return attributes
 
     def get_attribute_by_name(self, attribute_name: str) -> Optional["Attribute"]:
         return next((a for a in self.get_attributes() if a.name == attribute_name), None)
@@ -598,9 +604,9 @@ class Attribute:
         elif isinstance(value, str):
             attr_type = AttributeType.STRING
         elif isinstance(value, list):
-            attr_type = AttributeType.NESTED
+            attr_type = AttributeType.VECTOR
         else:
-            attr_type = None
+            attr_type = AttributeType.NESTED
         return attr_type
 
     def get_name(self) -> str:
