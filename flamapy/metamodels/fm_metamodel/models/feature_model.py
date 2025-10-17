@@ -650,7 +650,7 @@ class Attribute:
             result = result + "Domain: " + str(self.domain)
         if self.default_value is not None:
             if isinstance(self.default_value, list):
-                default_value_str = '{' + ', '.join(str(v) for v in self.default_value) + '}'
+                default_value_str = '[' + ', '.join(str(v) for v in self.default_value) + ']'
             else:
                 default_value_str = str(self.default_value)
             result = result + "Default value: " + default_value_str

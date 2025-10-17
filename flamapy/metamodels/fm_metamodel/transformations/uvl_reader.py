@@ -186,7 +186,7 @@ class UVLReader(TextToModel):
                     if value is None:  # for boolean values the value may be not provided
                         default_value = True
                     elif isinstance(value, dict):  # it represents nested attributes
-                        attributes_list = self._process_nested_attribute(feature, key, value)
+                        attributes_list = self._process_nested_attribute(feature, str(key), value)
                         for attr in attributes_list:
                             feature.add_attribute(attr)
                         default_value = None
@@ -204,13 +204,16 @@ class UVLReader(TextToModel):
             if value is None:  # for boolean values the value may be not provided
                 default_value = True
             elif isinstance(value, dict):
-                attributes_list = self._process_nested_attribute(parent, f'{parent_attribute_name}.{key}', value)
+                attributes_list = self._process_nested_attribute(parent,
+                                                                 f'{parent_attribute_name}.{key}',
+                                                                 value)
                 for attr in attributes_list:
                     attributes.append(attr)
                     default_value = None
             else:
                 default_value = value
-            attribute = Attribute(name=f'{parent_attribute_name}.{key}', default_value=default_value)
+            attribute = Attribute(name=f'{parent_attribute_name}.{key}',
+                                  default_value=default_value)
             attribute.parent = parent
             attributes.append(attribute)
         return attributes
