@@ -39,6 +39,11 @@ class FlatFM(ModelToModel):
                 # Copy the feature's attributes and relations from the referenced feature
                 feature.relations = feature.reference.relations
                 feature.attributes.extend(feature.reference.attributes)
+                # Process attribute constraints
+                feature.constraints_attributes.extend(feature.reference.constraints_attributes)
+                process_attribute_constraints(feature.reference,
+                                              new_feature_model.alias_namespace,
+                                              self._maintain_namespaces)
                 if not self._maintain_namespaces:
                     feature.name = feature.reference.name
                 else:
@@ -46,6 +51,9 @@ class FlatFM(ModelToModel):
                     put_namespace_to_features(feature.reference, namespace)
                 feature.reference = None  # Clear reference after copying
             features.extend(feature.get_children())
+        # Add contraints from imported models
+        for imported_fm in self.feature_model.imports.values():
+            new_feature_model.ctcs.extend(imported_fm.ctcs)
         if not self._maintain_namespaces:
             for ctcs in new_feature_model.ctcs:
                 process_namespace_constraint(ctcs.ast, new_feature_model.alias_namespace)
@@ -60,6 +68,20 @@ def put_namespace_to_features(root: Feature, namespace: str) -> None:
     while features:
         feature = features.pop()
         feature.name = f'{namespace}.{feature.name}'
+        features.extend(feature.get_children())
+
+
+def process_attribute_constraints(root: Feature,
+                                  alias_namespace: dict[str, str],
+                                  maintain_namespaces: bool) -> None:
+    """Put the namespace to the constraints of the attributes constraints and return them to
+    incorporate in the new feature model."""
+    features = [root]
+    while features:
+        feature = features.pop()
+        for ctc in feature.constraints_attributes:
+            if not maintain_namespaces:
+                process_namespace_constraint(ctc.ast, alias_namespace)
         features.extend(feature.get_children())
 
 
