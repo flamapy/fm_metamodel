@@ -304,214 +304,137 @@ class UVLReader(TextToModel):
             list_features.append(feature)
         return list_features
 
-    def process_constraints(
-        self, constraint_node: UVLPythonParser.ConstraintContext
-    ) -> Node:
-        process = self.process_literal_constraint(constraint_node)
-        if process is None:
-            process = self.process_logical_constraint(constraint_node)
-        if process is None:
-            process = self.process_arithmetic_constraint(constraint_node)
-        if process is None:
-            if isinstance(constraint_node, UVLPythonParser.EquationConstraintContext):
-                process = self.process_equation_constraint(constraint_node)
-            elif isinstance(constraint_node, UVLPythonParser.ParenthesisConstraintContext):
-                process = self.process_parenthesis_constraint(constraint_node)
-            elif isinstance(constraint_node, UVLPythonParser.BracketExpressionContext):
-                process = self.process_bracket_expression_constraint(constraint_node)
-            elif isinstance(constraint_node, UVLPythonParser.AggregateFunctionExpressionContext):
-                process = self.process_aggregate_function_constraint(constraint_node)
-        if process is None:  # Handle unexpected constraint types
-            raise NotImplementedError(
-                f"Constraint of type {type(constraint_node)} not handled"
-            )
-        return process
+    def process_constraints(self, ctx: UVLPythonParser.ConstraintContext) -> Node:
+        # Logical operators (binary)
+        # Map for binary logical operators
+        binary_ops = {
+            UVLPythonParser.AndConstraintContext: ASTOperation.AND,
+            UVLPythonParser.OrConstraintContext: ASTOperation.OR,
+            UVLPythonParser.ImplicationConstraintContext: ASTOperation.IMPLIES,
+            UVLPythonParser.EquivalenceConstraintContext: ASTOperation.EQUIVALENCE,
+        }
 
-    def process_aggregate_function_constraint(
-        self, aggregate_function_context: UVLPythonParser.AggregateFunctionExpressionContext
-    ) -> Node:
-        """Process an aggregate function constraint."""
-        aggregation = aggregate_function_context.aggregateFunction()
-        if isinstance(aggregation, UVLPythonParser.StringAggregateFunctionExpressionContext):
-            string_function = aggregation.stringAggregateFunction()
-            if isinstance(string_function, UVLPythonParser.LengthAggregateFunctionContext):
-                literal = string_function.reference()
-                return Node(ASTOperation.LEN, Node(literal.getText().replace('"', '')))
-            raise NotImplementedError(f"String function {type(string_function)} not handled.")
-        if isinstance(aggregation, UVLPythonParser.NumericAggregateFunctionExpressionContext):
-            numeric_function = aggregation.numericAggregateFunction()
-            if isinstance(numeric_function, UVLPythonParser.FloorAggregateFunctionContext):
-                literal = numeric_function.reference()
-                return Node(ASTOperation.FLOOR, Node(literal.getText().replace('"', '')))
-            if isinstance(numeric_function, UVLPythonParser.CeilAggregateFunctionContext):
-                literal = numeric_function.reference()
-                return Node(ASTOperation.CEIL, Node(literal.getText().replace('"', '')))
-            raise NotImplementedError(f"Numeric function {type(numeric_function)} not handled.")
-        if isinstance(aggregation, UVLPythonParser.AvgAggregateFunctionContext):
-            literals = aggregation.reference()
-            attribute_literal = literals[0].getText().replace('"', '')
-            if len(literals) > 1:
-                feature_literal = literals[1].getText().replace('"', '')
-                node = Node(ASTOperation.AVG, Node(attribute_literal), Node(feature_literal))
-            else:
-                node = Node(ASTOperation.AVG, Node(attribute_literal))
-            return node
-        if isinstance(aggregation, UVLPythonParser.SumAggregateFunctionContext):
-            literals = aggregation.reference()
-            attribute_literal = literals[0].getText().replace('"', '')
-            if len(literals) > 1:
-                feature_literal = literals[1].getText().replace('"', '')
-                node = Node(ASTOperation.SUM, Node(attribute_literal), Node(feature_literal))
-            else:
-                node = Node(ASTOperation.SUM, Node(attribute_literal))
-            return node
-        raise NotImplementedError(f"Aggregate function {type(aggregation)} not handled.")
+        ctx_type = type(ctx)
+        if ctx_type in binary_ops:
+            return self._binary_ctc(ctx, binary_ops[ctx_type])
 
-    def process_literal_constraint(self, ctc_node: UVLPythonParser.ConstraintContext) -> Node:
-        """Process a literal constraint."""
-        process = None
-        if isinstance(ctc_node,
-                      (UVLPythonParser.LiteralConstraintContext,
-                       UVLPythonParser.LiteralExpressionContext)):
-            process = self.process_literal(ctc_node)
-        elif isinstance(ctc_node, UVLPythonParser.IntegerLiteralExpressionContext):
-            process = self.process_integer_literal_constraint(ctc_node)
-        elif isinstance(ctc_node, UVLPythonParser.FloatLiteralExpressionContext):
-            process = self.process_float_literal_constraint(ctc_node)
-        elif isinstance(ctc_node, UVLPythonParser.StringLiteralExpressionContext):
-            process = self.process_string_literal_constraint(ctc_node)
-        return process
+        # Logical operators (unary) and parenthesis
+        if isinstance(ctx, UVLPythonParser.NotConstraintContext):
+            return Node(ASTOperation.NOT, self.process_constraints(ctx.constraint()))
+        if isinstance(ctx, UVLPythonParser.ParenthesisConstraintContext):
+            return self.process_constraints(ctx.constraint())
 
-    def process_logical_constraint(self, ctc_node: UVLPythonParser.ConstraintContext) -> Node:
-        """Process a logical constraint."""
-        process = None
-        operator = None
-        if isinstance(ctc_node, UVLPythonParser.NotConstraintContext):
-            operator = ASTOperation.NOT
-            process = self.process_unary_constraint(ctc_node, operator)
-        elif isinstance(ctc_node, UVLPythonParser.AndConstraintContext):
-            operator = ASTOperation.AND
-        elif isinstance(ctc_node, UVLPythonParser.OrConstraintContext):
-            operator = ASTOperation.OR
-        elif isinstance(ctc_node, UVLPythonParser.ImplicationConstraintContext):
-            operator = ASTOperation.IMPLIES
-        elif isinstance(ctc_node, UVLPythonParser.EquivalenceConstraintContext):
-            operator = ASTOperation.EQUIVALENCE
-        if operator is None:  # It is other type of constraint
-            return None
-        if process is None:  # It is a binary constraint
-            return self.process_binary_constraints(ctc_node, operator)
-        return process
+        # Leafs: Equations or simple referencesEcuaciones o Referencias simples
+        if isinstance(ctx, UVLPythonParser.EquationConstraintContext):
+            return self.process_equation(ctx.equation())
+        if isinstance(ctx, UVLPythonParser.LiteralConstraintContext):
+            return Node(ctx.reference().getText().replace('"', ''))  # procesar literal
 
-    def process_arithmetic_constraint(self, ctc_node: UVLPythonParser.ConstraintContext) -> Node:
-        """Process an arithmetic constraint."""
-        operator = None
-        if isinstance(ctc_node, UVLPythonParser.AddExpressionContext):
-            operator = ASTOperation.ADD
-        elif isinstance(ctc_node, UVLPythonParser.SubExpressionContext):
-            operator = ASTOperation.SUB
-        elif isinstance(ctc_node, UVLPythonParser.DivExpressionContext):
-            operator = ASTOperation.DIV
-        elif isinstance(ctc_node, UVLPythonParser.MulExpressionContext):
-            operator = ASTOperation.MUL
-        if operator is None:  # It is other type of constraint
-            return None
-        return self.process_binary_expression(ctc_node, operator)
+        raise NotImplementedError(f"Unknown type of constraint: {type(ctx)}")
 
-    def process_equation_constraint(
-        self, equation_context: UVLPythonParser.EquationConstraintContext
-    ) -> Node:
-        """Process an equation constraint."""
-        equation = equation_context.equation()
-        operator = None
-        if isinstance(equation, UVLPythonParser.EqualEquationContext):
-            operator = ASTOperation.EQUALS
-        elif isinstance(equation, UVLPythonParser.LowerEquationContext):
-            operator = ASTOperation.LOWER
-        elif isinstance(equation, UVLPythonParser.LowerEqualsEquationContext):
-            operator = ASTOperation.LOWER_EQUALS
-        elif isinstance(equation, UVLPythonParser.GreaterEquationContext):
-            operator = ASTOperation.GREATER
-        elif isinstance(equation, UVLPythonParser.GreaterEqualsEquationContext):
-            operator = ASTOperation.GREATER_EQUALS
-        elif isinstance(equation, UVLPythonParser.NotEqualsEquationContext):
-            operator = ASTOperation.NOT_EQUALS
-        else:
-            raise NotImplementedError(f"Expression of type {type(equation)} not handled.")
-        return self.process_binary_expression(equation, operator)
+    def _binary_ctc(self, ctx: Any, op: ASTOperation) -> Node:
+        """Helper for binary operators"""
+        return Node(op, self.process_constraints(ctx.constraint(0)),
+                        self.process_constraints(ctx.constraint(1)))
 
-    def process_integer_literal_constraint(
-        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
-    ) -> Node:
-        """Process an integer literal expression."""
-        return Node(int(literal_context.getText()))
+    def process_equation(self, ctx: UVLPythonParser.EquationContext) -> Node:
+        # Operators map
+        ops = {
+            UVLPythonParser.EqualEquationContext: ASTOperation.EQUALS,
+            UVLPythonParser.LowerEquationContext: ASTOperation.LOWER,
+            UVLPythonParser.GreaterEquationContext: ASTOperation.GREATER,
+            UVLPythonParser.LowerEqualsEquationContext: ASTOperation.LOWER_EQUALS,
+            UVLPythonParser.GreaterEqualsEquationContext: ASTOperation.GREATER_EQUALS,
+            UVLPythonParser.NotEqualsEquationContext: ASTOperation.NOT_EQUALS,
+        }
+        operator = ops.get(type(ctx))
+        return Node(operator, self.process_expression(ctx.expression(0)),
+                            self.process_expression(ctx.expression(1)))
 
-    def process_float_literal_constraint(
-        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
-    ) -> Node:
-        """Process a float literal expression."""
-        return Node(float(literal_context.getText()))
+    def process_expression(self, ctx: Any) -> Node:
+        """Handle Additive, Multiplicative y Primary Expressions"""
+        # Binary expressions (arithmetics)
+        # 1. Handle Arithmetic Binary Expressions
+        arithmetic_ops = {
+            UVLPythonParser.AddExpressionContext: (ASTOperation.ADD,
+                                                   'additiveExpression',
+                                                   'multiplicativeExpression'),
+            UVLPythonParser.SubExpressionContext: (ASTOperation.SUB,
+                                                   'additiveExpression',
+                                                   'multiplicativeExpression'),
+            UVLPythonParser.MulExpressionContext: (ASTOperation.MUL,
+                                                   'multiplicativeExpression',
+                                                   'primaryExpression'),
+            UVLPythonParser.DivExpressionContext: (ASTOperation.DIV,
+                                                   'multiplicativeExpression',
+                                                   'primaryExpression'),
+        }
 
-    def process_string_literal_constraint(
-        self, literal_context: UVLPythonParser.IntegerLiteralExpressionContext
-    ) -> Node:
-        """Process a string literal expression."""
-        return Node(literal_context.getText())
+        ctx_type = type(ctx)
+        if ctx_type in arithmetic_ops:
+            op, left_attr, right_attr = arithmetic_ops[ctx_type]
+            return Node(op, self.process_expression(getattr(ctx, left_attr)()),
+                            self.process_expression(getattr(ctx, right_attr)()))
 
-    def process_binary_constraints(
-        self, context: UVLPythonParser.ConstraintContext, operation: ASTOperation
-    ) -> Node:
-        """Process a binary constraint."""
-        left_constraint = context.constraint(0)
-        right_constraint = context.constraint(1)
-        return Node(operation,
-                    self.process_constraints(left_constraint),
-                    self.process_constraints(right_constraint)
-                    )
+        # 2. Handle grammar fall-through (recursive descent)
+        for attr in ['additiveExpression', 'multiplicativeExpression', 'primaryExpression']:
+            if hasattr(ctx, attr):
+                return self.process_expression(getattr(ctx, attr)())
 
-    def process_unary_constraint(
-        self, context: UVLPythonParser.ConstraintContext, operation: ASTOperation
-    ) -> Node:
-        """Process a unary constraint."""
-        inner_constraint = context.constraint()
-        return Node(operation, self.process_constraints(inner_constraint))
+        # 3. Delegate leaves to a specialized helper to reduce complexity
+        return self._process_expression_leaves(ctx)
 
-    def process_binary_expression(self, context: Any, operation: ASTOperation) -> Node:
-        """Process a binary expression."""
-        left_constraint = context.expression(0)
-        right_constraint = context.expression(1)
-        return Node(operation,
-                    self.process_constraints(left_constraint),
-                    self.process_constraints(right_constraint)
-                    )
+    def _process_expression_leaves(self, ctx: Any) -> Node:
+        """Helper to process literal leaves and primary expressions."""
+        if isinstance(ctx, UVLPythonParser.FloatLiteralExpressionContext):
+            return Node(float(ctx.getText()))
+        if isinstance(ctx, UVLPythonParser.IntegerLiteralExpressionContext):
+            return Node(int(ctx.getText()))
+        if isinstance(ctx, (UVLPythonParser.StringLiteralExpressionContext,
+                            UVLPythonParser.LiteralExpressionContext)):
+            return Node(ctx.getText().replace('"', '').replace("'", ''))
+        if isinstance(ctx, UVLPythonParser.BracketExpressionContext):
+            return self.process_expression(ctx.expression())
+        if isinstance(ctx, UVLPythonParser.AggregateFunctionExpressionContext):
+            return self.process_aggregate(ctx.aggregateFunction())
 
-    def process_literal(
-        self, literal_context: UVLPythonParser.LiteralConstraintContext
-    ) -> Node:
-        """Process a literal constraint."""
-        literal = literal_context.reference()
-        return Node(literal.getText().replace('"', ''))
+        # Default fallback
+        return Node(ctx.getText().replace('"', '').replace("'", ''))
 
-    def process_parenthesis_constraint(
-        self, parenthesis_context: UVLPythonParser.ParenthesisConstraintContext
-    ) -> Node:
-        """Process a parenthesis constraint."""
-        inner_constraint = parenthesis_context.constraint()
-        return self.process_constraints(inner_constraint)
+    def process_aggregate(self, ctx: UVLPythonParser.AggregateFunctionContext) -> Node:
+        # 1. SUM: aggregateFunction -> sumAggregateFunction
+        if isinstance(ctx, UVLPythonParser.SumAggregateFunctionExpressionContext):
+            sub_ctx = ctx.sumAggregateFunction()
+            return self._build_aggregate_node(ASTOperation.SUM, sub_ctx.reference())
 
-    def process_bracket_expression_constraint(
-        self, bracket_context: UVLPythonParser.BracketExpressionContext
-    ) -> Node:
-        """Process a bracket (parenthesis) expression constraint."""
-        inner_constraint = bracket_context.expression()
-        return self.process_constraints(inner_constraint)
+        # 2. AVG: aggregateFunction -> avgAggregateFunction
+        if isinstance(ctx, UVLPythonParser.AvgAggregateFunctionExpressionContext):
+            sub_ctx = ctx.avgAggregateFunction()
+            return self._build_aggregate_node(ASTOperation.AVG, sub_ctx.reference())
 
-    def process_not_constraint(
-        self, not_context: UVLPythonParser.NotConstraintContext
-    ) -> Node:
-        """Process a not constraint."""
-        inner_constraint = not_context.constraint()
-        return Node(ASTOperation.NOT, self.process_constraints(inner_constraint))
+        # 3. STRING: aggregateFunction -> stringAggregateFunction
+        if isinstance(ctx, UVLPythonParser.StringAggregateFunctionExpressionContext):
+            string_func = ctx.stringAggregateFunction()
+            # Here we handle the tag # LengthAggregateFunction
+            if isinstance(string_func, UVLPythonParser.LengthAggregateFunctionContext):
+                return Node(ASTOperation.LEN, Node(string_func.reference().getText()))
+
+        # 4. NUMERIC: aggregateFunction -> numericAggregateFunction
+        if isinstance(ctx, UVLPythonParser.NumericAggregateFunctionExpressionContext):
+            num_func = ctx.numericAggregateFunction()
+            ref_node = Node(num_func.reference().getText())
+            # Handle tags # FloorAggregateFunction and # CeilAggregateFunction
+            if isinstance(num_func, UVLPythonParser.FloorAggregateFunctionContext):
+                return Node(ASTOperation.FLOOR, ref_node)
+            if isinstance(num_func, UVLPythonParser.CeilAggregateFunctionContext):
+                return Node(ASTOperation.CEIL, ref_node)
+
+        raise NotImplementedError(f"Aggregate function not supported: {type(ctx)}")
+
+    def _build_aggregate_node(self, operation: ASTOperation, references: list[Any]) -> Node:
+        """Helper for Sum y Avg that can take 1 or 2 references"""
+        nodes = [Node(r.getText().replace('"', '')) for r in references]
+        return Node(operation, *nodes)
 
     def process_includes(
         self, includes_node: UVLPythonParser.IncludesContext
