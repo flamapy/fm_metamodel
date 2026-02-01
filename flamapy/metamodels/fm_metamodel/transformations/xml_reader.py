@@ -1,4 +1,4 @@
-import sys
+import logging
 from typing import Optional
 from xml.etree import ElementTree
 
@@ -11,6 +11,8 @@ from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
     Relation,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class XMLReader(TextToModel):
@@ -39,7 +41,7 @@ class XMLReader(TextToModel):
                 ctc = self.parse_ctc(child)
                 feature_model.ctcs.append(ctc)
             else:
-                print("This XML contains non supported elements", file=sys.stderr)
+                logger.warning("This XML contains non supported elements")
 
         return feature_model
 
@@ -83,7 +85,7 @@ class XMLReader(TextToModel):
         feature = Feature(name, [], parent=parent)
 
         if name in self.name_feature:
-            print("This XML contains duplicated feature names", file=sys.stderr)
+            logger.warning("This XML contains duplicated feature names")
             raise DuplicatedFeature
 
         self.name_feature[name] = feature
@@ -113,7 +115,7 @@ class XMLReader(TextToModel):
                     relation.card_min = int(str(child.attrib.get('min')))
                     relation.card_max = int(str(child.attrib.get('max')))
                 else:
-                    print("This XML contains non supported elements", file=sys.stderr)
+                    logger.warning("This XML contains non supported elements")
 
         elif element.tag.casefold() == 'setrelation':
             for child in element:
@@ -124,7 +126,7 @@ class XMLReader(TextToModel):
                     relation.card_min = int(str(child.attrib.get('min')))
                     relation.card_max = int(str(child.attrib.get('max')))
                 else:
-                    print("This XML contains non supported elements", file=sys.stderr)
+                    logger.warning("This XML contains non supported elements")
         else:
             raise RuntimeError("Something is wrong on the xml")
         return relation

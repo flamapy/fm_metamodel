@@ -1,4 +1,5 @@
 import copy
+import logging
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -15,6 +16,8 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
     FMRefactoring,
     RefactoringException
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -167,7 +170,8 @@ def contextualize_constraint(feature_model: FeatureModel,
                              features_names_map: dict[str, str]) -> Constraint:
     """Create a contextualized constraint for the given constraints according to the provided
     feature clone."""
-    print(f'Contextualizing constraint {constraint.name} for features {features_names_map}')
+    logger.debug("Contextualizing constraint %s for features %s",
+                 constraint.name, features_names_map)
     # Create a copy of the constraint
     new_constraint = copy.deepcopy(constraint)
     # Rename the constraint's name

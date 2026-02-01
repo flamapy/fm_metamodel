@@ -1,10 +1,13 @@
 import json
+import logging
 import string
 from typing import Any
 
 from flamapy.core.models.ast import Node, ASTOperation
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint
+
+logger = logging.getLogger(__name__)
 
 
 class GlencoeWriter(ModelToText):
@@ -38,8 +41,8 @@ class GlencoeWriter(ModelToText):
 
 def _to_json(feature_model: FeatureModel) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    print(f'-{feature_model.root.name}-')
-    print(f'-{safename(feature_model.root.name)}-')
+    logger.debug("Root name: %s", feature_model.root.name)
+    logger.debug("Safe root name: %s", safename(feature_model.root.name))
     result["id"] = f"FM_{safename(feature_model.root.name)}"
     result["name"] = f"FM_{safename(feature_model.root.name)}"
     result["features"] = _get_features_info(feature_model.get_features())
