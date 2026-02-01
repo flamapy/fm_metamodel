@@ -23,15 +23,13 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/flamapy/fm_metamodel",
-    packages=setuptools.find_namespace_packages(include=['flamapy.*']),
+    packages=setuptools.find_namespace_packages(include=["flamapy.*"]),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.9',
+    python_requires=">=3.9",
     install_requires=requirements,
-    extras_require={
-        'dev': dev_requirements
-    },
+    extras_require={"dev": dev_requirements},
 )
