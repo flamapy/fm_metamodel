@@ -59,9 +59,11 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Installing mypy
+      - name: Install dependencies
         run: |
-            pip install mypy
+          pip install setuptools
+          pip install .
+          pip install mypy
       - name: Running static types with mypy
         run: |
           mypy -p flamapy
@@ -80,8 +82,10 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Installing pytest
+      - name: Install dependencies
         run: |
+          pip install setuptools
+          pip install .
           pip install pytest
       - name: Running tests
         run: |
