@@ -46,7 +46,7 @@ class UVLReader(TextToModel):
 
     def __init__(self, path: str) -> None:
         self.path: str = os.sep.join(path.split(os.sep)[:-1])
-        self.file: str = path.split(os.sep)[-1]
+        self.file: str = path.rsplit(os.sep, maxsplit=1)[-1]
         self.namespace: str = ""
         self.parse_tree: Any = None
         self.model: Optional[FeatureModel] = None
