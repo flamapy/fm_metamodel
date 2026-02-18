@@ -12,7 +12,7 @@ authors = [{ name = "Flamapy", email = "flamapy@us.es" }]
 requires-python = ">=3.9"
 dependencies = [
     "flamapy-fw~=2.5.0.dev0",
-    "uvlparser-=2.5.0.dev63",
+    "uvlparser~=2.5.0.dev63",
     "afmparser~=1.0.3",
 ]
 
