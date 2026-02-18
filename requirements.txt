@@ -1,3 +1,0 @@
-flamapy-fw~=2.1.0.dev1
-uvlparser~=2.0.1.dev61
-afmparser~=1.0.3
