@@ -356,30 +356,23 @@ class UVLReader(TextToModel):
         # Binary expressions (arithmetics)
         # 1. Handle Arithmetic Binary Expressions
         arithmetic_ops = {
-            UVLPythonParser.AddExpressionContext: (ASTOperation.ADD,
-                                                   'additiveExpression',
-                                                   'multiplicativeExpression'),
-            UVLPythonParser.SubExpressionContext: (ASTOperation.SUB,
-                                                   'additiveExpression',
-                                                   'multiplicativeExpression'),
-            UVLPythonParser.MulExpressionContext: (ASTOperation.MUL,
-                                                   'multiplicativeExpression',
-                                                   'primaryExpression'),
-            UVLPythonParser.DivExpressionContext: (ASTOperation.DIV,
-                                                   'multiplicativeExpression',
-                                                   'primaryExpression'),
+            UVLPythonParser.AddExpressionContext: ASTOperation.ADD,
+            UVLPythonParser.SubExpressionContext: ASTOperation.SUB,
+            UVLPythonParser.MulExpressionContext: ASTOperation.MUL,
+            UVLPythonParser.DivExpressionContext: ASTOperation.DIV,
         }
 
         ctx_type = type(ctx)
         if ctx_type in arithmetic_ops:
-            op, left_attr, right_attr = arithmetic_ops[ctx_type]
-            return Node(op, self.process_expression(getattr(ctx, left_attr)()),
-                            self.process_expression(getattr(ctx, right_attr)()))
+            op = arithmetic_ops[ctx_type]
+            return Node(op, self.process_expression(ctx.expression(0)),
+                            self.process_expression(ctx.expression(1)))
 
-        # 2. Handle grammar fall-through (recursive descent)
-        for attr in ['additiveExpression', 'multiplicativeExpression', 'primaryExpression']:
-            if hasattr(ctx, attr):
-                return self.process_expression(getattr(ctx, attr)())
+        # 2. Handle single-child expression (grammar fall-through)
+        if hasattr(ctx, 'expression') and callable(ctx.expression):
+            child = ctx.expression()
+            if child is not None:
+                return self.process_expression(child)
 
         # 3. Delegate leaves to a specialized helper to reduce complexity
         return self._process_expression_leaves(ctx)
