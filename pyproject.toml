@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamapy-fm"
-version = "2.1.0.dev2"
+version = "2.5.0.dev0"
 description = "flamapy-fm is a plugin to Flamapy module"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 authors = [{ name = "Flamapy", email = "flamapy@us.es" }]
 requires-python = ">=3.9"
 dependencies = [
-    "flamapy-fw~=2.1.0.dev2",
-    "uvlparser~=2.0.1.dev61",
+    "flamapy-fw~=2.5.0.dev0",
+    "uvlparser-=2.5.0.dev63",
     "afmparser~=1.0.3",
 ]
 

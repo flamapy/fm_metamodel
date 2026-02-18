@@ -352,30 +352,41 @@ class UVLReader(TextToModel):
                             self.process_expression(ctx.expression(1)))
 
     def process_expression(self, ctx: Any) -> Node:
-        """Handle Additive, Multiplicative y Primary Expressions"""
-        # Binary expressions (arithmetics)
-        # 1. Handle Arithmetic Binary Expressions
-        arithmetic_ops = {
-            UVLPythonParser.AddExpressionContext: ASTOperation.ADD,
-            UVLPythonParser.SubExpressionContext: ASTOperation.SUB,
-            UVLPythonParser.MulExpressionContext: ASTOperation.MUL,
-            UVLPythonParser.DivExpressionContext: ASTOperation.DIV,
-        }
-
-        ctx_type = type(ctx)
-        if ctx_type in arithmetic_ops:
-            op = arithmetic_ops[ctx_type]
-            return Node(op, self.process_expression(ctx.expression(0)),
-                            self.process_expression(ctx.expression(1)))
-
-        # 2. Handle single-child expression (grammar fall-through)
-        if hasattr(ctx, 'expression') and callable(ctx.expression):
-            child = ctx.expression()
-            if child is not None:
-                return self.process_expression(child)
-
-        # 3. Delegate leaves to a specialized helper to reduce complexity
+        """Handle Additive, Multiplicative and Primary Expressions"""
+        # Top-level expression rule (expression: additiveExpression)
+        if isinstance(ctx, UVLPythonParser.ExpressionContext):
+            return self.process_expression(ctx.additiveExpression())
+        # Binary arithmetic operations (Add, Sub, Mul, Div)
+        if isinstance(ctx, (UVLPythonParser.AddExpressionContext,
+                            UVLPythonParser.SubExpressionContext,
+                            UVLPythonParser.MulExpressionContext,
+                            UVLPythonParser.DivExpressionContext)):
+            return self._process_binary_expression(ctx)
+        # Pass-through: additiveExpression -> multiplicativeExpression
+        if isinstance(ctx, UVLPythonParser.MultiplicativeExprContext):
+            return self.process_expression(ctx.multiplicativeExpression())
+        # Pass-through: multiplicativeExpression -> primaryExpression
+        if isinstance(ctx, UVLPythonParser.PrimaryExpressionExpressionContext):
+            return self.process_expression(ctx.primaryExpression())
         return self._process_expression_leaves(ctx)
+
+    def _process_binary_expression(self, ctx: Any) -> Node:
+        """Handle binary arithmetic operations: Add, Sub, Mul, Div."""
+        if isinstance(ctx, UVLPythonParser.AddExpressionContext):
+            return Node(ASTOperation.ADD,
+                        self.process_expression(ctx.additiveExpression()),
+                        self.process_expression(ctx.multiplicativeExpression()))
+        if isinstance(ctx, UVLPythonParser.SubExpressionContext):
+            return Node(ASTOperation.SUB,
+                        self.process_expression(ctx.additiveExpression()),
+                        self.process_expression(ctx.multiplicativeExpression()))
+        if isinstance(ctx, UVLPythonParser.MulExpressionContext):
+            return Node(ASTOperation.MUL,
+                        self.process_expression(ctx.multiplicativeExpression()),
+                        self.process_expression(ctx.primaryExpression()))
+        return Node(ASTOperation.DIV,
+                    self.process_expression(ctx.multiplicativeExpression()),
+                    self.process_expression(ctx.primaryExpression()))
 
     def _process_expression_leaves(self, ctx: Any) -> Node:
         """Helper to process literal leaves and primary expressions."""
