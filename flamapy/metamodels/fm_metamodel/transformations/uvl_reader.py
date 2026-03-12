@@ -419,14 +419,15 @@ class UVLReader(TextToModel):
         # 3. STRING: aggregateFunction -> stringAggregateFunction
         if isinstance(ctx, UVLPythonParser.StringAggregateFunctionExpressionContext):
             string_func = ctx.stringAggregateFunction()
+            ref_node = Node(string_func.reference().getText().replace('"', ''))
             # Here we handle the tag # LengthAggregateFunction
             if isinstance(string_func, UVLPythonParser.LengthAggregateFunctionContext):
-                return Node(ASTOperation.LEN, Node(string_func.reference().getText()))
+                return Node(ASTOperation.LEN, ref_node)
 
         # 4. NUMERIC: aggregateFunction -> numericAggregateFunction
         if isinstance(ctx, UVLPythonParser.NumericAggregateFunctionExpressionContext):
             num_func = ctx.numericAggregateFunction()
-            ref_node = Node(num_func.reference().getText())
+            ref_node = Node(num_func.reference().getText().replace('"', ''))
             # Handle tags # FloorAggregateFunction and # CeilAggregateFunction
             if isinstance(num_func, UVLPythonParser.FloorAggregateFunctionContext):
                 return Node(ASTOperation.FLOOR, ref_node)
