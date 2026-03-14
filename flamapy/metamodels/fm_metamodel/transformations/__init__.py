@@ -8,6 +8,7 @@ from .splot_writer import SPLOTWriter
 from .uvl_reader import UVLReader
 from .uvl_writer import UVLWriter
 from .xml_reader import XMLReader
+from .xml_writer import XMLWriter
 from .glencoe_reader import GlencoeReader
 from .glencoe_writer import GlencoeWriter
 from .clafer_writer import ClaferWriter
@@ -33,4 +34,5 @@ __all__ = [
            'UVLReader',
            'UVLWriter',
            'XMLReader',
+           'XMLWriter',
 ]
