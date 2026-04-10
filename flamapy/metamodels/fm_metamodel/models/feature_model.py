@@ -3,7 +3,7 @@ from functools import total_ordering
 from enum import Enum
 
 from flamapy.core.exceptions import FlamaException
-from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
+from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation, NodeType
 from flamapy.core.models.ast import LOGICAL_OPERATORS, ARITHMETIC_OPERATORS, AGGREGATION_OPERATORS
 from flamapy.core.models.ast import simplify_formula, propagate_negation, to_cnf
 
@@ -247,7 +247,11 @@ class Constraint:
         self._ast = ast
 
     def get_features(self) -> list[str]:
-        """List of features' names involved in the constraint."""
+        """List of features' names involved in the constraint.
+
+        Uses node_type information when available (set by readers that support it).
+        Falls back to heuristics for nodes without explicit type info.
+        """
         features = set()
         stack = [self.ast.root]
         while stack:
@@ -255,9 +259,16 @@ class Constraint:
             if node is None:
                 continue
             if node.is_unique_term():
-                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
-                    continue
-                features.add(node.data)
+                if node.node_type is not None:
+                    if node.node_type == NodeType.FEATURE:
+                        features.add(node.data)
+                    # NodeType.LITERAL: skip
+                else:
+                    # Fallback heuristics for nodes without explicit type (backward compatibility)
+                    if not isinstance(node.data, (int, float)) and not (
+                        isinstance(node.data, str) and node.data.startswith("'")
+                    ):
+                        features.add(node.data)
             elif node.is_unary_op():
                 stack.append(node.left)
             elif node.is_binary_op():
