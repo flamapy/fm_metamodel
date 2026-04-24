@@ -169,7 +169,7 @@ class UVLReader(TextToModel):
                 feature_type = FeatureType.REAL
             else:
                 raise FlamaException('Error: unknow feature type for '
-                                     f'{typed_text} of feature {feature.name}.')
+                                     f'{typed_text} of feature "{feature.name}".')
             feature.feature_type = feature_type
 
     def _check_attributes(
@@ -255,7 +255,11 @@ class UVLReader(TextToModel):
                 feature.add_relation(Relation(feature, childs, min_value, max_value))
                 if max_value > len(childs):
                     logging.warning(
-                        "Cardinality error: max value is greater than the number of childs"
+                        f'Cardinality error in feature "{feature.name}": max value is greater than the number of childs'
+                    )
+                if min_value < 0:
+                    logging.warning(
+                        f'Cardinality error in feature "{feature.name}": min value cannot be negative'
                     )
 
     def process_feature(
