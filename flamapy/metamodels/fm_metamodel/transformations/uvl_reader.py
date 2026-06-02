@@ -233,7 +233,7 @@ class UVLReader(TextToModel):
                 raise FlamaException(f'Feature {feature_reference_name} not found in '
                                      f'imported model {namespace}.')
 
-    def process_relationship_type(self,
+    def process_relationship_type(self,  # noqa: C901 - flat dispatch over UVL group types
                                   feature: Feature,
                                   feature_node: UVLPythonParser.FeatureContext) -> None:
         for relationship in feature_node.group():
@@ -255,11 +255,13 @@ class UVLReader(TextToModel):
                 feature.add_relation(Relation(feature, childs, min_value, max_value))
                 if max_value > len(childs):
                     logging.warning(
-                        f'Cardinality error in feature "{feature.name}": max value is greater than the number of childs'
+                        f'Cardinality error in feature "{feature.name}": '
+                        'max value is greater than the number of childs'
                     )
                 if min_value < 0:
                     logging.warning(
-                        f'Cardinality error in feature "{feature.name}": min value cannot be negative'
+                        f'Cardinality error in feature "{feature.name}": '
+                        'min value cannot be negative'
                     )
 
     def process_feature(
@@ -392,7 +394,7 @@ class UVLReader(TextToModel):
                     self.process_expression(ctx.multiplicativeExpression()),
                     self.process_expression(ctx.primaryExpression()))
 
-    def _process_expression_leaves(self, ctx: Any) -> Node:
+    def _process_expression_leaves(self, ctx: Any) -> Node:  # noqa: PLR0911 - one return per UVL leaf type
         """Helper to process literal leaves and primary expressions."""
         if isinstance(ctx, UVLPythonParser.FloatLiteralExpressionContext):
             return Node(float(ctx.getText()), node_type=NodeType.LITERAL)
@@ -424,7 +426,8 @@ class UVLReader(TextToModel):
         # 3. STRING: aggregateFunction -> stringAggregateFunction
         if isinstance(ctx, UVLPythonParser.StringAggregateFunctionExpressionContext):
             string_func = ctx.stringAggregateFunction()
-            ref_node = Node(string_func.reference().getText().replace('"', ''), node_type=NodeType.FEATURE)
+            ref_node = Node(string_func.reference().getText().replace('"', ''),
+                            node_type=NodeType.FEATURE)
             # Here we handle the tag # LengthAggregateFunction
             if isinstance(string_func, UVLPythonParser.LengthAggregateFunctionContext):
                 return Node(ASTOperation.LEN, ref_node)
@@ -432,7 +435,8 @@ class UVLReader(TextToModel):
         # 4. NUMERIC: aggregateFunction -> numericAggregateFunction
         if isinstance(ctx, UVLPythonParser.NumericAggregateFunctionExpressionContext):
             num_func = ctx.numericAggregateFunction()
-            ref_node = Node(num_func.reference().getText().replace('"', ''), node_type=NodeType.FEATURE)
+            ref_node = Node(num_func.reference().getText().replace('"', ''),
+                            node_type=NodeType.FEATURE)
             # Handle tags # FloorAggregateFunction and # CeilAggregateFunction
             if isinstance(num_func, UVLPythonParser.FloorAggregateFunctionContext):
                 return Node(ASTOperation.FLOOR, ref_node)

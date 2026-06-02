@@ -263,12 +263,11 @@ class Constraint:
                     if node.node_type == NodeType.FEATURE:
                         features.add(node.data)
                     # NodeType.LITERAL: skip
-                else:
-                    # Fallback heuristics for nodes without explicit type (backward compatibility)
-                    if not isinstance(node.data, (int, float)) and not (
-                        isinstance(node.data, str) and node.data.startswith("'")
-                    ):
-                        features.add(node.data)
+                # Fallback heuristics for nodes without explicit type (backward compatibility)
+                elif not isinstance(node.data, (int, float)) and not (
+                    isinstance(node.data, str) and node.data.startswith("'")
+                ):
+                    features.add(node.data)
             elif node.is_unary_op():
                 stack.append(node.left)
             elif node.is_binary_op():
