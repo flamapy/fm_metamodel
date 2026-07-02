@@ -1,24 +1,28 @@
-import os
 import random
-import tempfile
 from typing import Optional
 
 from flamapy.core.models import VariabilityModel
+from flamapy.core.models.ast import AST, ASTOperation
 from flamapy.core.operations import Operation
-from flamapy.metamodels.fm_metamodel.models import FeatureModel
-from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+from flamapy.metamodels.fm_metamodel.models import (
+    FeatureModel,
+    Feature,
+    Relation,
+    Constraint,
+)
 
 # Minimum children an or/alternative group needs (and minimum features for a cross-tree constraint).
 _MIN_GROUP_MEMBERS = 2
 
 
 class GenerateRandomFeatureModel(Operation):
-    """Generate a random synthetic feature model.
+    """Generate a random synthetic feature model as a :class:`FeatureModel` object.
 
-    A random feature tree (mandatory/optional/or/alternative groups) plus random cross-tree
-    constraints are emitted as UVL and parsed back into a :class:`FeatureModel`. Useful to build
-    corpora for benchmarking, testing, or training learning-based operations. When ``void`` is
-    set, a contradictory constraint is added so the resulting model is unsatisfiable.
+    The model is built directly from feature-model objects (features, relations and cross-tree
+    constraints) — no serialization is involved. Serialize it to UVL (or any format) afterwards
+    with the corresponding writer transformation if needed. Useful to build corpora for
+    benchmarking, testing, or training learning-based operations. When ``void`` is set, a
+    contradictory constraint is added so the resulting model is unsatisfiable.
 
     The operation produces a model, so ``execute`` ignores its (optional) input model.
     """
@@ -45,56 +49,68 @@ class GenerateRandomFeatureModel(Operation):
     def set_void(self, void: bool) -> None:
         self._void = void
 
-    def _emit_uvl(self, rng: random.Random) -> str:
+    def _build_tree(self, rng: random.Random) -> Feature:
         names = [f'F{i}' for i in range(self._num_features)]
-        root = names[0]
-        lines = ['features', f'    {root} {{abstract}}']
+        features = {name: Feature(name, is_abstract=(index == 0))
+                    for index, name in enumerate(names)}
 
-        children: dict[str, list[str]] = {name: [] for name in names}
+        assignments: dict[str, list[str]] = {name: [] for name in names}
         for name in names[1:]:
             parent = rng.choice(names[: names.index(name)])
-            children[parent].append(name)
+            assignments[parent].append(name)
 
-        def emit(parent: str, depth: int) -> None:
-            kids = children[parent]
+        for parent_name, kids in assignments.items():
             if not kids:
-                return
-            indent = '    ' * (depth + 1)
+                continue
+            parent = features[parent_name]
+            kid_features = [features[kid] for kid in kids]
+            for kid in kid_features:
+                kid.parent = parent
             group = rng.choice(['mandatory', 'optional', 'or', 'alternative'])
             if group in ('or', 'alternative') and len(kids) < _MIN_GROUP_MEMBERS:
                 group = 'optional'
-            lines.append(f'{indent}{group}')
-            lines.extend(f'{indent}    {kid}' for kid in kids)
-            for kid in kids:
-                emit(kid, depth + 2)
+            if group == 'mandatory':
+                parent.relations.extend(Relation(parent, [kid], 1, 1) for kid in kid_features)
+            elif group == 'optional':
+                parent.relations.extend(Relation(parent, [kid], 0, 1) for kid in kid_features)
+            elif group == 'or':
+                parent.relations.append(Relation(parent, kid_features, 1, len(kid_features)))
+            else:  # alternative
+                parent.relations.append(Relation(parent, kid_features, 1, 1))
+        return features[names[0]]
 
-        emit(root, 1)
-
-        constraints = []
-        non_root = names[1:]
+    def _build_constraints(self, root: Feature, rng: random.Random) -> list[Constraint]:
+        non_root = [feature.name for feature in _descendants(root) if feature is not root]
+        constraints: list[Constraint] = []
         if len(non_root) >= _MIN_GROUP_MEMBERS and self._max_constraints > 0:
-            for _ in range(rng.randint(1, self._max_constraints)):
+            for index in range(rng.randint(1, self._max_constraints)):
                 left, right = rng.sample(non_root, 2)
+                operation = rng.choice([ASTOperation.REQUIRES, ASTOperation.EXCLUDES])
                 constraints.append(
-                    rng.choice([f'{left} => {right}', f'!{left} | {right}', f'!{left} | !{right}'])
+                    Constraint(f'ctc{index}',
+                               AST.create_simple_binary_operation(operation, left, right))
                 )
         if self._void and non_root:
+            # Force a feature to be present (required by the always-selected root) and absent.
             forced = rng.choice(non_root)
-            constraints.append(f'{root} => {forced}')
-            constraints.append(f'!{forced}')
-        if constraints:
-            lines.append('constraints')
-            lines.extend(f'    {constraint}' for constraint in constraints)
-        return '\n'.join(lines) + '\n'
+            constraints.append(Constraint(
+                'void_requires',
+                AST.create_simple_binary_operation(ASTOperation.REQUIRES, root.name, forced)))
+            constraints.append(Constraint(
+                'void_excludes', AST.create_simple_unary_operation(ASTOperation.NOT, forced)))
+        return constraints
 
     def execute(self, model: Optional[VariabilityModel] = None) -> 'GenerateRandomFeatureModel':
         rng = random.Random(self._seed)
-        uvl = self._emit_uvl(rng)
-        handle, path = tempfile.mkstemp(suffix='.uvl')
-        try:
-            with os.fdopen(handle, 'w') as file:
-                file.write(uvl)
-            self.result = UVLReader(path).transform()
-        finally:
-            os.remove(path)
+        root = self._build_tree(rng)
+        constraints = self._build_constraints(root, rng)
+        self.result = FeatureModel(root, constraints)
         return self
+
+
+def _descendants(feature: Feature) -> list[Feature]:
+    collected = [feature]
+    for relation in feature.relations:
+        for child in relation.children:
+            collected.extend(_descendants(child))
+    return collected
