@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamapy-fm"
-version = "2.6.0.dev5"
+version = "2.6.0.dev7"
 description = "flamapy-fm is a plugin to Flamapy module"
 readme = "README.md"
 license = "GPL-3.0-or-later"
