@@ -9,7 +9,7 @@ from uvl.UVLPythonParser import UVLPythonParser
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
-from flamapy.core.models.ast import AST, ASTOperation, Node
+from flamapy.core.models.ast import AST, ASTOperation, Node, NodeType
 from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
@@ -169,7 +169,7 @@ class UVLReader(TextToModel):
                 feature_type = FeatureType.REAL
             else:
                 raise FlamaException('Error: unknow feature type for '
-                                     f'{typed_text} of feature {feature.name}.')
+                                     f'{typed_text} of feature "{feature.name}".')
             feature.feature_type = feature_type
 
     def _check_attributes(
@@ -233,7 +233,7 @@ class UVLReader(TextToModel):
                 raise FlamaException(f'Feature {feature_reference_name} not found in '
                                      f'imported model {namespace}.')
 
-    def process_relationship_type(self,
+    def process_relationship_type(self,  # noqa: C901 - flat dispatch over UVL group types
                                   feature: Feature,
                                   feature_node: UVLPythonParser.FeatureContext) -> None:
         for relationship in feature_node.group():
@@ -255,7 +255,13 @@ class UVLReader(TextToModel):
                 feature.add_relation(Relation(feature, childs, min_value, max_value))
                 if max_value > len(childs):
                     logging.warning(
-                        "Cardinality error: max value is greater than the number of childs"
+                        f'Cardinality error in feature "{feature.name}": '
+                        'max value is greater than the number of childs'
+                    )
+                if min_value < 0:
+                    logging.warning(
+                        f'Cardinality error in feature "{feature.name}": '
+                        'min value cannot be negative'
                     )
 
     def process_feature(
@@ -328,7 +334,7 @@ class UVLReader(TextToModel):
         if isinstance(ctx, UVLPythonParser.EquationConstraintContext):
             return self.process_equation(ctx.equation())
         if isinstance(ctx, UVLPythonParser.LiteralConstraintContext):
-            return Node(ctx.reference().getText().replace('"', ''))  # procesar literal
+            return Node(ctx.reference().getText().replace('"', ''), node_type=NodeType.FEATURE)
 
         raise NotImplementedError(f"Unknown type of constraint: {type(ctx)}")
 
@@ -388,22 +394,23 @@ class UVLReader(TextToModel):
                     self.process_expression(ctx.multiplicativeExpression()),
                     self.process_expression(ctx.primaryExpression()))
 
-    def _process_expression_leaves(self, ctx: Any) -> Node:
+    def _process_expression_leaves(self, ctx: Any) -> Node:  # noqa: PLR0911 - one return per UVL leaf type
         """Helper to process literal leaves and primary expressions."""
         if isinstance(ctx, UVLPythonParser.FloatLiteralExpressionContext):
-            return Node(float(ctx.getText()))
+            return Node(float(ctx.getText()), node_type=NodeType.LITERAL)
         if isinstance(ctx, UVLPythonParser.IntegerLiteralExpressionContext):
-            return Node(int(ctx.getText()))
-        if isinstance(ctx, (UVLPythonParser.StringLiteralExpressionContext,
-                            UVLPythonParser.LiteralExpressionContext)):
-            return Node(ctx.getText().replace('"', '').replace("'", ''))
+            return Node(int(ctx.getText()), node_type=NodeType.LITERAL)
+        if isinstance(ctx, UVLPythonParser.StringLiteralExpressionContext):
+            return Node(ctx.getText().replace('"', '').replace("'", ''), node_type=NodeType.LITERAL)
+        if isinstance(ctx, UVLPythonParser.LiteralExpressionContext):
+            return Node(ctx.getText().replace('"', '').replace("'", ''), node_type=NodeType.FEATURE)
         if isinstance(ctx, UVLPythonParser.BracketExpressionContext):
             return self.process_expression(ctx.expression())
         if isinstance(ctx, UVLPythonParser.AggregateFunctionExpressionContext):
             return self.process_aggregate(ctx.aggregateFunction())
 
-        # Default fallback
-        return Node(ctx.getText().replace('"', '').replace("'", ''))
+        # Default fallback: treat as feature reference
+        return Node(ctx.getText().replace('"', '').replace("'", ''), node_type=NodeType.FEATURE)
 
     def process_aggregate(self, ctx: UVLPythonParser.AggregateFunctionContext) -> Node:
         # 1. SUM: aggregateFunction -> sumAggregateFunction
@@ -419,14 +426,17 @@ class UVLReader(TextToModel):
         # 3. STRING: aggregateFunction -> stringAggregateFunction
         if isinstance(ctx, UVLPythonParser.StringAggregateFunctionExpressionContext):
             string_func = ctx.stringAggregateFunction()
+            ref_node = Node(string_func.reference().getText().replace('"', ''),
+                            node_type=NodeType.FEATURE)
             # Here we handle the tag # LengthAggregateFunction
             if isinstance(string_func, UVLPythonParser.LengthAggregateFunctionContext):
-                return Node(ASTOperation.LEN, Node(string_func.reference().getText()))
+                return Node(ASTOperation.LEN, ref_node)
 
         # 4. NUMERIC: aggregateFunction -> numericAggregateFunction
         if isinstance(ctx, UVLPythonParser.NumericAggregateFunctionExpressionContext):
             num_func = ctx.numericAggregateFunction()
-            ref_node = Node(num_func.reference().getText())
+            ref_node = Node(num_func.reference().getText().replace('"', ''),
+                            node_type=NodeType.FEATURE)
             # Handle tags # FloorAggregateFunction and # CeilAggregateFunction
             if isinstance(num_func, UVLPythonParser.FloorAggregateFunctionContext):
                 return Node(ASTOperation.FLOOR, ref_node)
@@ -437,7 +447,7 @@ class UVLReader(TextToModel):
 
     def _build_aggregate_node(self, operation: ASTOperation, references: list[Any]) -> Node:
         """Helper for Sum y Avg that can take 1 or 2 references"""
-        nodes = [Node(r.getText().replace('"', '')) for r in references]
+        nodes = [Node(r.getText().replace('"', ''), node_type=NodeType.FEATURE) for r in references]
         return Node(operation, *nodes)
 
     def process_includes(

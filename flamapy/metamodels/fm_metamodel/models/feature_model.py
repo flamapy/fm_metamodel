@@ -3,7 +3,7 @@ from functools import total_ordering
 from enum import Enum
 
 from flamapy.core.exceptions import FlamaException
-from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation
+from flamapy.core.models import AST, VariabilityModel, VariabilityElement, ASTOperation, NodeType
 from flamapy.core.models.ast import LOGICAL_OPERATORS, ARITHMETIC_OPERATORS, AGGREGATION_OPERATORS
 from flamapy.core.models.ast import simplify_formula, propagate_negation, to_cnf
 
@@ -247,7 +247,11 @@ class Constraint:
         self._ast = ast
 
     def get_features(self) -> list[str]:
-        """List of features' names involved in the constraint."""
+        """List of features' names involved in the constraint.
+
+        Uses node_type information when available (set by readers that support it).
+        Falls back to heuristics for nodes without explicit type info.
+        """
         features = set()
         stack = [self.ast.root]
         while stack:
@@ -255,9 +259,15 @@ class Constraint:
             if node is None:
                 continue
             if node.is_unique_term():
-                if (isinstance(node.data, (int, float)) or node.data.startswith("'")):
-                    continue
-                features.add(node.data)
+                if node.node_type is not None:
+                    if node.node_type == NodeType.FEATURE:
+                        features.add(node.data)
+                    # NodeType.LITERAL: skip
+                # Fallback heuristics for nodes without explicit type (backward compatibility)
+                elif not isinstance(node.data, (int, float)) and not (
+                    isinstance(node.data, str) and node.data.startswith("'")
+                ):
+                    features.add(node.data)
             elif node.is_unary_op():
                 stack.append(node.left)
             elif node.is_binary_op():
@@ -281,8 +291,7 @@ class Constraint:
         """Return true if the constraint is a single feature or its negation."""
         root_op = self._ast.root
         return (root_op.is_term() or
-                (root_op.data == ASTOperation.NOT and
-                (root_op.left.is_term() or root_op.right.is_term())))
+                (root_op.data == ASTOperation.NOT and root_op.left.is_term()))
 
     def is_simple_constraint(self) -> bool:
         """Return true if the constraint is a simple constraint (requires or excludes)."""

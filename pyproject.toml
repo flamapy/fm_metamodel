@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamapy-fm"
-version = "2.5.0"
+version = "2.6.0"
 description = "flamapy-fm is a plugin to Flamapy module"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 authors = [{ name = "Flamapy", email = "flamapy@us.es" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
-    "flamapy-fw~=2.5.0",
+    "flamapy-fw~=2.6.0",
     "uvlparser~=2.5.0",
     "afmparser~=1.0.3",
 ]
@@ -34,7 +34,7 @@ include = ["flamapy.*"]
 
 [tool.ruff]
 line-length = 100  # Matches max-line-length from pycodestyle
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "C", "PL", "RUF"]  # Includes pycodestyle, pylint, and McCabe complexity

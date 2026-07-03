@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import Operation
+from flamapy.core.operations.descriptor import OperationDescriptor, Input
 from flamapy.core.exceptions import FlamaException
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
@@ -12,11 +13,36 @@ from flamapy.metamodels.fm_metamodel.models import (
 )
 
 
+def _generate_random_attribute_inputs(operation: Any, facade: Any, kwargs: dict[str, Any]) -> None:
+    operation.set_name(kwargs['name'])
+    operation.set_domain(Domain([Range(kwargs['min_value'], kwargs['max_value'])], None))
+    operation.set_only_leaf_features(bool(kwargs.get('only_leaf_features', False)))
+
+
 class GenerateRandomAttribute(Operation):
     """
     This operation generate random values for a given attribute and set the attribute for all
     features in the model.
     """
+
+    facade = OperationDescriptor(
+        doc=(
+            'Augments the feature model with a randomly-valued numeric attribute on its\n'
+            'features and returns the modified model. ``name`` is the attribute name, values are\n'
+            'drawn from the ``[min_value, max_value]`` range, and ``only_leaf_features`` limits\n'
+            'it to leaf features. Useful before attribute_optimization or feature bounds.'
+        ),
+        returns='FeatureModel',
+        name='generate_random_attribute', operation='GenerateRandomAttribute',
+        kind='transformer',
+        inputs=(
+            Input('name', str, required=True),
+            Input('min_value', int, default=0),
+            Input('max_value', int, default=100),
+            Input('only_leaf_features', bool, default=False),
+        ),
+        input_adapter=_generate_random_attribute_inputs,
+    )
 
     def __init__(self) -> None:
         self.result: FeatureModel

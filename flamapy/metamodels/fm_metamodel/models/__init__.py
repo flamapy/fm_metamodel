@@ -10,11 +10,13 @@ from .feature_model import (
     FeatureType,
     AttributeType
 )
+from .clause_set import ClauseSet
 
 __all__ = [
     'Attribute',
     'AttributeType',
     'Cardinality',
+    'ClauseSet',
     'Constraint',
     'Domain',
     'Feature',

@@ -2,6 +2,7 @@ from typing import cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import AverageBranchingFactor
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models.feature_model import FeatureModel
 
 
@@ -10,6 +11,18 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
 
     The number of branches is the number of features that have at least one child.
     """
+
+    facade = OperationDescriptor(
+        doc=(
+            'This refers to the average number of child features that a parent feature has\n'
+            "in a feature model. It's calculated by dividing the total number of child\n"
+            'features by the total number of parent features. A high average branching\n'
+            'factor indicates a complex feature model with many options, while a low\n'
+            'average branching factor indicates a simpler model.'
+        ),
+        returns='Union[None, float]',
+        name='average_branching_factor', operation='FMAverageBranchingFactor'
+    )
 
     def __init__(self) -> None:
         self.result: float = 0

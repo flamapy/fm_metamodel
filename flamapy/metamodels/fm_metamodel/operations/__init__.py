@@ -8,6 +8,7 @@ from .fm_estimated_configurations_number import FMEstimatedConfigurationsNumber
 from .fm_atomic_sets import FMAtomicSets
 from .fm_metrics import FMMetrics
 from .fm_generate_random_attribute import GenerateRandomAttribute
+from .fm_generate_random_feature_model import GenerateRandomFeatureModel
 from .fm_variation_points import FMVariationPoints
 from .fm_language_level import FMLanguageLevel, LanguageLevel, MajorLevel, MinorLevel
 
@@ -25,6 +26,7 @@ __all__ = [
            'FMMetrics',
            'FMVariationPoints',
            'GenerateRandomAttribute',
+           'GenerateRandomFeatureModel',
            'LanguageLevel',
            'MajorLevel',
            'MinorLevel'

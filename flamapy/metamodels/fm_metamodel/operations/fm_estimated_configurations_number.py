@@ -4,6 +4,7 @@ from typing import Optional, cast
 from flamapy.core.models import VariabilityModel
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.operations import EstimatedConfigurationsNumber
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relation
 
 
@@ -14,6 +15,18 @@ class FMEstimatedConfigurationsNumber(EstimatedConfigurationsNumber):
     without taking into account the cross-tree constraints,
     and thus, the number is an upper limit of the real number of products.
     """
+
+    facade = OperationDescriptor(
+        doc=(
+            'This is an estimate of the total number of different products that can be\n'
+            "produced from a feature model. It's calculated by considering all possible\n"
+            'combinations of features. This can be a simple multiplication if all features\n'
+            'are independent, but in most cases, constraints and dependencies between\n'
+            'features need to be taken into account.'
+        ),
+        returns='Union[None, int]',
+        name='estimated_number_of_configurations', operation='FMEstimatedConfigurationsNumber'
+    )
 
     def __init__(self) -> None:
         self.result = 0

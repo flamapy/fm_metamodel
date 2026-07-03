@@ -1,9 +1,18 @@
-from typing import Optional
+from typing import Any, Optional
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.operations import Operation
+from flamapy.core.operations.descriptor import OperationDescriptor, Input
 from flamapy.metamodels.fm_metamodel.models import Feature
+
+
+def _feature_ancestors_inputs(operation: Any, facade: Any, kwargs: dict[str, Any]) -> None:
+    operation.set_feature(facade.fm_model.get_feature_by_name(kwargs['feature_name']))
+
+
+def _feature_ancestors_result(result: Any) -> Any:
+    return [feature.name for feature in result]
 
 
 class FMFeatureAncestors(Operation):
@@ -11,6 +20,20 @@ class FMFeatureAncestors(Operation):
     This operation returns the list of ancestors of a given feature
     (i.e., all parents recursively up to the root feature).
     """
+
+    facade = OperationDescriptor(
+        doc=(
+            'These are the features that are directly or indirectly the parent of a given\n'
+            'feature in a feature model. Ancestors of a feature are found by traversing up\n'
+            'the feature hierarchy. This information can be useful to understand the\n'
+            'context and dependencies of a feature.'
+        ),
+        returns='Union[None, List[str]]',
+        name='feature_ancestors', operation='FMFeatureAncestors',
+        inputs=(Input('feature_name', str, required=True),),
+        input_adapter=_feature_ancestors_inputs,
+        result_adapter=_feature_ancestors_result,
+    )
 
     def __init__(self) -> None:
         self.result: list[Feature] = []

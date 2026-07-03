@@ -2,10 +2,21 @@ from typing import cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import CountLeafs
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class FMCountLeafs(CountLeafs):
+
+    facade = OperationDescriptor(
+        doc=(
+            'This operation counts the number of leaf features in a feature model. Leaf\n'
+            'features are those that do not have any child features. They represent the\n'
+            'most specific options in a product line.'
+        ),
+        returns='Union[None, int]',
+        name='count_leafs', operation='FMCountLeafs'
+    )
 
     def __init__(self) -> None:
         self.result = 0
