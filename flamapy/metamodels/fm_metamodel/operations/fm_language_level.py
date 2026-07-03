@@ -36,6 +36,10 @@ class FMLanguageLevel(Operation):
     """Operation to calculate the maximum language level of a feature model."""
 
     facade = OperationDescriptor(
+        doc=(
+            'Return the UVL language level.'
+        ),
+        returns='Union[None, Any]',
         name='language_level', operation='FMLanguageLevel'
     )
 

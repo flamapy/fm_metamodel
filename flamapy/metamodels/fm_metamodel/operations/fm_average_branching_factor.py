@@ -13,6 +13,14 @@ class FMAverageBranchingFactor(AverageBranchingFactor):
     """
 
     facade = OperationDescriptor(
+        doc=(
+            'This refers to the average number of child features that a parent feature has\n'
+            "in a feature model. It's calculated by dividing the total number of child\n"
+            'features by the total number of parent features. A high average branching\n'
+            'factor indicates a complex feature model with many options, while a low\n'
+            'average branching factor indicates a simpler model.'
+        ),
+        returns='Union[None, float]',
         name='average_branching_factor', operation='FMAverageBranchingFactor'
     )
 

@@ -12,6 +12,12 @@ class FMMaxDepthTree(Operation):
     """This operation returns the maximum depth of the feature model tree."""
 
     facade = OperationDescriptor(
+        doc=(
+            'This operation is used to find the max depth of the tree in a model: It\n'
+            'returns the max depth of the tree. If the model does not follow the UVL\n'
+            'specification, an exception is raised and the operation returns False.'
+        ),
+        returns='Union[None, int]',
         name='max_depth', operation='FMMaxDepthTree'
     )
 

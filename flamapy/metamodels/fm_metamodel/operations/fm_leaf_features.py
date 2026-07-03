@@ -17,6 +17,17 @@ class FMLeafFeatures(Operation):
     """
 
     facade = OperationDescriptor(
+        doc=(
+            'This operation is used to find leaf features in a model: It returns the leaf\n'
+            'features if they are found in the model. If the model does not follow the UVL\n'
+            'specification, an exception is raised and the operation returns False.\n'
+            '\n'
+            'Traditionally you would use the flama tool by features =\n'
+            "discover_metamodel.use_operation_from_file('OperationString', model) however,\n"
+            'in this tool we know that this operation is from the fm metamodel, so we avoid\n'
+            'to execute the transformation if possible'
+        ),
+        returns='Union[None, List[str]]',
         name='leaf_features', operation='FMLeafFeatures', result_adapter=_leaf_features_result
     )
 

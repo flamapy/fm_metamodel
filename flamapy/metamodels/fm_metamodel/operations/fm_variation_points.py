@@ -12,6 +12,13 @@ def _variation_points_result(result: Any) -> Any:
 
 class FMVariationPoints(VariationPoints):
     facade = OperationDescriptor(
+        doc=(
+            'Returns the variation points of the feature model. A variation point is a\n'
+            'feature that has at least one non-mandatory child, representing a decision\n'
+            'point in the model. The result maps each variation point name to the list of\n'
+            'its variant feature names.'
+        ),
+        returns='Union[None, Dict[str, List[str]]]',
         name='variation_points', operation='FMVariationPoints',
         result_adapter=_variation_points_result,
     )

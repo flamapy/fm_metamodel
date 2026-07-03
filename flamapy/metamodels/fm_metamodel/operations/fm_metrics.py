@@ -28,6 +28,11 @@ def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str
 class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
 
     facade = OperationDescriptor(
+        doc=(
+            'Returns a collection of structural metrics for the feature model, such as\n'
+            'number of features, constraints, relations, and complexity indicators.'
+        ),
+        returns='Union[None, List[Dict[str, Any]]]',
         name='metrics', operation='FMMetrics'
     )
 

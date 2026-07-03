@@ -12,6 +12,12 @@ def _atomic_sets_result(result: Any) -> Any:
 
 class FMAtomicSets(AtomicSets):
     facade = OperationDescriptor(
+        doc=(
+            'This operation is used to find the atomic sets in a model: It returns the\n'
+            'atomic sets if they are found in the model. If the model does not follow the\n'
+            'UVL specification, an exception is raised and the operation returns False.'
+        ),
+        returns='Union[None, List[List[Any]]]',
         name='atomic_sets', operation='FMAtomicSets', result_adapter=_atomic_sets_result
     )
 

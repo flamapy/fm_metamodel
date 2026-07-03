@@ -17,6 +17,14 @@ class FMEstimatedConfigurationsNumber(EstimatedConfigurationsNumber):
     """
 
     facade = OperationDescriptor(
+        doc=(
+            'This is an estimate of the total number of different products that can be\n'
+            "produced from a feature model. It's calculated by considering all possible\n"
+            'combinations of features. This can be a simple multiplication if all features\n'
+            'are independent, but in most cases, constraints and dependencies between\n'
+            'features need to be taken into account.'
+        ),
+        returns='Union[None, int]',
         name='estimated_number_of_configurations', operation='FMEstimatedConfigurationsNumber'
     )
 

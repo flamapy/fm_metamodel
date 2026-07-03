@@ -22,6 +22,13 @@ class FMFeatureAncestors(Operation):
     """
 
     facade = OperationDescriptor(
+        doc=(
+            'These are the features that are directly or indirectly the parent of a given\n'
+            'feature in a feature model. Ancestors of a feature are found by traversing up\n'
+            'the feature hierarchy. This information can be useful to understand the\n'
+            'context and dependencies of a feature.'
+        ),
+        returns='Union[None, List[str]]',
         name='feature_ancestors', operation='FMFeatureAncestors',
         inputs=(Input('feature_name', str, required=True),),
         input_adapter=_feature_ancestors_inputs,
