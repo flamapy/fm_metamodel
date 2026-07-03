@@ -2,10 +2,15 @@ from typing import cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import CountLeafs
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel
 
 
 class FMCountLeafs(CountLeafs):
+
+    facade = OperationDescriptor(
+        name='count_leafs', operation='FMCountLeafs'
+    )
 
     def __init__(self) -> None:
         self.result = 0

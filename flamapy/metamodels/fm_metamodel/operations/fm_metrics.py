@@ -4,6 +4,7 @@ import statistics
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.variability_model import VariabilityModel
 from flamapy.core.operations.metrics_operation import Metrics
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 from flamapy.metamodels.fm_metamodel.operations import FMAverageBranchingFactor
 
@@ -25,6 +26,10 @@ def metric_method(func: Callable[..., dict[str, Any]]) -> Callable[..., dict[str
 
 
 class FMMetrics(Metrics):  # pylint: disable=too-many-instance-attributes
+
+    facade = OperationDescriptor(
+        name='metrics', operation='FMMetrics'
+    )
 
     def __init__(self) -> None:
         super().__init__()

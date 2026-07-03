@@ -1,11 +1,19 @@
-from typing import cast
+from typing import Any, cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations.atomic_sets import AtomicSets
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
+def _atomic_sets_result(result: Any) -> Any:
+    return [[feature.name for feature in atomic_set] for atomic_set in result]
+
+
 class FMAtomicSets(AtomicSets):
+    facade = OperationDescriptor(
+        name='atomic_sets', operation='FMAtomicSets', result_adapter=_atomic_sets_result
+    )
 
     def __init__(self) -> None:
         self.result: list[set[Feature]] = []

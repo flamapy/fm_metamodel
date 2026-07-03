@@ -1,8 +1,13 @@
-from typing import cast
+from typing import Any, cast
 
 from flamapy.core.models import VariabilityModel
 from flamapy.core.operations import Operation
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
+
+
+def _leaf_features_result(result: Any) -> Any:
+    return [feature.name for feature in result]
 
 
 class FMLeafFeatures(Operation):
@@ -10,6 +15,10 @@ class FMLeafFeatures(Operation):
     This operation returns the list of features that are leaves of the feature model tree
     (i.e., they have not children).
     """
+
+    facade = OperationDescriptor(
+        name='leaf_features', operation='FMLeafFeatures', result_adapter=_leaf_features_result
+    )
 
     def __init__(self) -> None:
         self.result: list[Feature] = []

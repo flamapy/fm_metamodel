@@ -1,11 +1,20 @@
-from typing import cast
+from typing import Any, cast
 
 from flamapy.core.models import VariabilityModel
+from flamapy.core.operations.descriptor import OperationDescriptor
 from flamapy.metamodels.fm_metamodel.operations.interfaces import VariationPoints
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 
+def _variation_points_result(result: Any) -> Any:
+    return {vp.name: [variant.name for variant in variants] for vp, variants in result.items()}
+
+
 class FMVariationPoints(VariationPoints):
+    facade = OperationDescriptor(
+        name='variation_points', operation='FMVariationPoints',
+        result_adapter=_variation_points_result,
+    )
 
     def __init__(self) -> None:
         self.result: dict[Feature, list[Feature]] = {}

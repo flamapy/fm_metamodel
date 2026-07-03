@@ -4,6 +4,7 @@ from typing import cast
 
 from flamapy.core.models import VariabilityModel, ASTOperation
 from flamapy.core.operations import Operation
+from flamapy.core.operations.descriptor import OperationDescriptor
 
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Constraint
 
@@ -33,6 +34,10 @@ class LanguageLevel:
 
 class FMLanguageLevel(Operation):
     """Operation to calculate the maximum language level of a feature model."""
+
+    facade = OperationDescriptor(
+        name='language_level', operation='FMLanguageLevel'
+    )
 
     def __init__(self) -> None:
         self.result: LanguageLevel = LanguageLevel(MajorLevel.BOOLEAN, set())
