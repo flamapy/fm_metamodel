@@ -2,18 +2,30 @@ import random
 from typing import Optional
 
 from flamapy.core.models import VariabilityModel
-from flamapy.core.models.ast import AST, ASTOperation
+from flamapy.core.models.ast import AST, ASTOperation, Node, NodeType
 from flamapy.core.operations import Operation
 from flamapy.core.operations.descriptor import OperationDescriptor, Input
+from flamapy.core.exceptions import FlamaException
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
     Feature,
+    FeatureType,
     Relation,
     Constraint,
+    Attribute,
+    Domain,
+    Range,
 )
 
 # Minimum children an or/alternative group needs (and minimum features for a cross-tree constraint).
 _MIN_GROUP_MEMBERS = 2
+
+# UVL language levels this generator can target.
+_LANGUAGE_LEVELS = ('boolean', 'arithmetic', 'typed')
+# Non-boolean feature types used for the 'typed' level.
+_TYPED_FEATURE_TYPES = (FeatureType.INTEGER, FeatureType.REAL, FeatureType.STRING)
+# Name of the numeric attribute added to features for the 'arithmetic' level.
+_ARITHMETIC_ATTRIBUTE = 'value'
 
 
 class GenerateRandomFeatureModel(Operation):
@@ -22,8 +34,13 @@ class GenerateRandomFeatureModel(Operation):
     The model is built directly from feature-model objects (features, relations and cross-tree
     constraints) — no serialization is involved. Serialize it to UVL (or any format) afterwards
     with the corresponding writer transformation if needed. Useful to build corpora for
-    benchmarking, testing, or training learning-based operations. When ``void`` is set, a
-    contradictory constraint is added so the resulting model is unsatisfiable.
+    benchmarking, testing, or training learning-based operations.
+
+    ``language_level`` selects the UVL expressiveness of the generated model: ``'boolean'`` (tree +
+    requires/excludes constraints), ``'arithmetic'`` (features gain a numeric attribute and the
+    model gets arithmetic cross-tree constraints such as ``F1.value + F2.value > 40``), or
+    ``'typed'`` (some features are typed Integer/Real/String). When ``void`` is set, a contradictory
+    boolean constraint is added so the resulting model is unsatisfiable.
 
     The operation produces a model, so ``execute`` ignores its (optional) input model.
     """
@@ -32,8 +49,10 @@ class GenerateRandomFeatureModel(Operation):
         doc=(
             'Generates a random synthetic feature model and returns it as a FeatureModel.\n'
             '``num_features`` (>= 2) sizes the tree, ``max_constraints`` bounds the number of\n'
-            'cross-tree constraints, ``seed`` makes it reproducible, and ``void=True`` forces an\n'
-            'unsatisfiable model. Useful for building corpora, testing, or training.'
+            'cross-tree constraints, ``seed`` makes it reproducible, ``void=True`` forces an\n'
+            'unsatisfiable model, and ``language_level`` picks the UVL level to target:\n'
+            "'boolean', 'arithmetic' (numeric attributes + arithmetic constraints) or 'typed'\n"
+            '(Integer/Real/String features). Useful for building corpora, testing, or training.'
         ),
         returns='FeatureModel',
         name='generate_random_feature_model', operation='GenerateRandomFeatureModel',
@@ -43,6 +62,7 @@ class GenerateRandomFeatureModel(Operation):
             Input('max_constraints', int, default=3, setter='set_max_constraints'),
             Input('seed', int, default=0, setter='set_seed'),
             Input('void', bool, default=False, setter='set_void'),
+            Input('language_level', str, default='boolean', setter='set_language_level'),
         ),
     )
 
@@ -52,6 +72,7 @@ class GenerateRandomFeatureModel(Operation):
         self._max_constraints: int = 3
         self._seed: int = 0
         self._void: bool = False
+        self._language_level: str = 'boolean'
 
     def get_result(self) -> FeatureModel:
         return self.result
@@ -67,6 +88,14 @@ class GenerateRandomFeatureModel(Operation):
 
     def set_void(self, void: bool) -> None:
         self._void = void
+
+    def set_language_level(self, language_level: str) -> None:
+        level = language_level.lower()
+        if level not in _LANGUAGE_LEVELS:
+            raise FlamaException(
+                f"Unknown language level '{language_level}'. "
+                f"Choose from {list(_LANGUAGE_LEVELS)}.")
+        self._language_level = level
 
     def _build_tree(self, rng: random.Random) -> Feature:
         names = [f'F{i}' for i in range(self._num_features)]
@@ -98,8 +127,27 @@ class GenerateRandomFeatureModel(Operation):
                 parent.relations.append(Relation(parent, kid_features, 1, 1))
         return features[names[0]]
 
-    def _build_constraints(self, root: Feature, rng: random.Random) -> list[Constraint]:
-        non_root = [feature.name for feature in _descendants(root) if feature is not root]
+    def _apply_types(self, root: Feature, rng: random.Random) -> None:
+        """Give a random subset of non-root features a non-boolean type (=> TYPE level)."""
+        candidates = [feature for feature in _descendants(root) if feature is not root]
+        if not candidates:
+            return
+        count = max(1, len(candidates) // 3)
+        for feature in rng.sample(candidates, min(count, len(candidates))):
+            feature.feature_type = rng.choice(_TYPED_FEATURE_TYPES)
+
+    def _apply_attributes(self, root: Feature, rng: random.Random) -> None:
+        """Add a numeric attribute to non-root features for arithmetic constraints to reference."""
+        for feature in _descendants(root):
+            if feature is root:
+                continue
+            domain = Domain([Range(0, 100)], None)
+            feature.add_attribute(
+                Attribute(_ARITHMETIC_ATTRIBUTE, domain, rng.randint(0, 100)))
+
+    def _build_boolean_constraints(
+        self, non_root: list[str], rng: random.Random
+    ) -> list[Constraint]:
         constraints: list[Constraint] = []
         if len(non_root) >= _MIN_GROUP_MEMBERS and self._max_constraints > 0:
             for index in range(rng.randint(1, self._max_constraints)):
@@ -109,19 +157,59 @@ class GenerateRandomFeatureModel(Operation):
                     Constraint(f'ctc{index}',
                                AST.create_simple_binary_operation(operation, left, right))
                 )
+        return constraints
+
+    def _build_arithmetic_constraints(
+        self, non_root: list[str], rng: random.Random
+    ) -> list[Constraint]:
+        """Constraints like ``F1.value + F2.value > 40`` (=> ARITHMETIC level). At least one."""
+        constraints: list[Constraint] = []
+        if len(non_root) < _MIN_GROUP_MEMBERS:
+            return constraints
+        arithmetic_ops = [ASTOperation.ADD, ASTOperation.SUB, ASTOperation.MUL]
+        comparisons = [ASTOperation.GREATER, ASTOperation.LOWER, ASTOperation.GREATER_EQUALS,
+                       ASTOperation.LOWER_EQUALS, ASTOperation.EQUALS]
+        for index in range(rng.randint(1, max(1, self._max_constraints))):
+            left, right = rng.sample(non_root, 2)
+            expression = Node(
+                rng.choice(arithmetic_ops),
+                Node(f'{left}.{_ARITHMETIC_ATTRIBUTE}', node_type=NodeType.FEATURE),
+                Node(f'{right}.{_ARITHMETIC_ATTRIBUTE}', node_type=NodeType.FEATURE))
+            comparison = Node(
+                rng.choice(comparisons), expression,
+                Node(rng.randint(1, 200), node_type=NodeType.LITERAL))
+            constraints.append(Constraint(f'arithmetic_ctc{index}', AST(comparison)))
+        return constraints
+
+    def _build_void_constraints(
+        self, root: Feature, non_root: list[str], rng: random.Random
+    ) -> list[Constraint]:
+        # Force a feature to be present (required by the always-selected root) and absent.
+        forced = rng.choice(non_root)
+        return [
+            Constraint('void_requires',
+                       AST.create_simple_binary_operation(
+                           ASTOperation.REQUIRES, root.name, forced)),
+            Constraint('void_excludes',
+                       AST.create_simple_unary_operation(ASTOperation.NOT, forced)),
+        ]
+
+    def _build_constraints(self, root: Feature, rng: random.Random) -> list[Constraint]:
+        non_root = [feature.name for feature in _descendants(root) if feature is not root]
+        constraints = self._build_boolean_constraints(non_root, rng)
+        if self._language_level == 'arithmetic':
+            constraints.extend(self._build_arithmetic_constraints(non_root, rng))
         if self._void and non_root:
-            # Force a feature to be present (required by the always-selected root) and absent.
-            forced = rng.choice(non_root)
-            constraints.append(Constraint(
-                'void_requires',
-                AST.create_simple_binary_operation(ASTOperation.REQUIRES, root.name, forced)))
-            constraints.append(Constraint(
-                'void_excludes', AST.create_simple_unary_operation(ASTOperation.NOT, forced)))
+            constraints.extend(self._build_void_constraints(root, non_root, rng))
         return constraints
 
     def execute(self, model: Optional[VariabilityModel] = None) -> 'GenerateRandomFeatureModel':
         rng = random.Random(self._seed)
         root = self._build_tree(rng)
+        if self._language_level == 'typed':
+            self._apply_types(root, rng)
+        elif self._language_level == 'arithmetic':
+            self._apply_attributes(root, rng)
         constraints = self._build_constraints(root, rng)
         self.result = FeatureModel(root, constraints)
         return self
