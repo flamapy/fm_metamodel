@@ -4,6 +4,7 @@ from typing import Optional
 from flamapy.core.models import VariabilityModel
 from flamapy.core.models.ast import AST, ASTOperation
 from flamapy.core.operations import Operation
+from flamapy.core.operations.descriptor import OperationDescriptor, Input
 from flamapy.metamodels.fm_metamodel.models import (
     FeatureModel,
     Feature,
@@ -26,6 +27,24 @@ class GenerateRandomFeatureModel(Operation):
 
     The operation produces a model, so ``execute`` ignores its (optional) input model.
     """
+
+    facade = OperationDescriptor(
+        doc=(
+            'Generates a random synthetic feature model and returns it as a FeatureModel.\n'
+            '``num_features`` (>= 2) sizes the tree, ``max_constraints`` bounds the number of\n'
+            'cross-tree constraints, ``seed`` makes it reproducible, and ``void=True`` forces an\n'
+            'unsatisfiable model. Useful for building corpora, testing, or training.'
+        ),
+        returns='FeatureModel',
+        name='generate_random_feature_model', operation='GenerateRandomFeatureModel',
+        kind='producer',
+        inputs=(
+            Input('num_features', int, default=10, setter='set_num_features'),
+            Input('max_constraints', int, default=3, setter='set_max_constraints'),
+            Input('seed', int, default=0, setter='set_seed'),
+            Input('void', bool, default=False, setter='set_void'),
+        ),
+    )
 
     def __init__(self) -> None:
         self.result: FeatureModel
