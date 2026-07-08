@@ -26,6 +26,9 @@ dev = [
     "antlr4-tools",
 ]
 
+[project.entry-points."flamapy.plugins"]
+fm = "flamapy.metamodels.fm_metamodel"
+
 [project.urls]
 Homepage = "https://github.com/flamapy/fm_metamodel"
 
