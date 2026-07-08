@@ -398,6 +398,23 @@ class FeatureModel(VariabilityModel):
         self.ctcs = [] if constraints is None else constraints
         self.imports: dict[str, FeatureModel] = {}  # namespace -> FeatureModel
         self.alias_namespace: dict[str, str] = {}  # alias -> namespace
+        self._canonical_hash: Optional[str] = None
+
+    def canonical_hash(self) -> Optional[str]:
+        """sha256 of the model's canonical UVL serialization, memoized.
+
+        Mutating the model does not invalidate the memo — hash before editing, or build a
+        fresh FeatureModel. (UVLWriter is imported lazily: transformations import models.)
+        """
+        if self._canonical_hash is None:
+            import hashlib  # noqa: PLC0415
+            # Lazy: transformations import models, so this import cannot be top-level.
+            from flamapy.metamodels.fm_metamodel.transformations.uvl_writer import (  # noqa: PLC0415  pylint: disable=import-outside-toplevel,cyclic-import
+                UVLWriter,
+            )
+            uvl = UVLWriter(path=None, source_model=self).transform()  # type: ignore[arg-type]
+            self._canonical_hash = hashlib.sha256(uvl.encode('utf-8')).hexdigest()
+        return self._canonical_hash
 
     def get_relations(self, feature: Optional["Feature"] = None) -> list["Relation"]:
         if self.root is None or self.root.is_empty():

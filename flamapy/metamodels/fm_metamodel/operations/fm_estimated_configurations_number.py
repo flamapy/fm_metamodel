@@ -16,6 +16,8 @@ class FMEstimatedConfigurationsNumber(EstimatedConfigurationsNumber):
     and thus, the number is an upper limit of the real number of products.
     """
 
+    exact = False  # reported in the OperationResult provenance envelope
+
     facade = OperationDescriptor(
         doc=(
             'This is an estimate of the total number of different products that can be\n'
