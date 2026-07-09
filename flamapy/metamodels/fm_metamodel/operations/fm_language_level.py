@@ -2,7 +2,7 @@ from typing import cast
 
 from flamapy.core.models import VariabilityModel, ASTOperation
 # LanguageLevel/MajorLevel/MinorLevel moved to flamapy.core.models.language_level (they now
-# also describe plugin capability manifests); re-exported here for compatibility until 3.1.
+# also describe plugin capability manifests); re-exported here for compatibility until 3.0.
 from flamapy.core.models.language_level import (
     LanguageLevel,
     MajorLevel,
