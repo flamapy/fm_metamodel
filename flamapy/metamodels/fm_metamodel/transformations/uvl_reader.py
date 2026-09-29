@@ -26,7 +26,7 @@ class CustomErrorListener(ErrorListener):
         super().__init__()
         self.errors: list[str] = []
 
-    def syntaxError(  # noqa: PLR0913
+    def syntaxError(  # noqa: PLR0913, PLR0917
         self,
         recognizer: Any,
         offendingSymbol: Any,

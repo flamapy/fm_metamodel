@@ -118,7 +118,7 @@ class Cardinality:
 @total_ordering
 class Feature(VariabilityElement):
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         name: str,
         relations: Optional[list["Relation"]] = None,
