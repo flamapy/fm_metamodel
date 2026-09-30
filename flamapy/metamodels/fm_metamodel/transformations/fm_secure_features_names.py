@@ -1,7 +1,9 @@
 import re
 import copy
+from collections import Counter
 from typing import cast
 
+from flamapy.core.exceptions import FlamaException
 from flamapy.core.models import VariabilityModel, AST
 from flamapy.core.transformations import ModelToModel
 
@@ -21,6 +23,8 @@ class FMSecureFeaturesNames(ModelToModel):
     It ensures that the new names are unique.
 
     The class exposes a mapping between the original feature names and the new secure names.
+    Feature names must be unique (as UVL requires): a model with repeated names cannot be
+    mapped unambiguously, so it is rejected with a FlamaException.
     """
 
     SECURE_CHARS = r'A-Za-z0-9_'
@@ -43,13 +47,25 @@ class FMSecureFeaturesNames(ModelToModel):
 
     def transform(self) -> FeatureModel:
         self.mapping_names = {}
+        repeated = sorted(name for name, count in
+                          Counter(f.name for f in self.feature_model.get_features()).items()
+                          if count > 1)
+        if repeated:
+            raise FlamaException(
+                f'The feature model has {len(repeated)} repeated feature name(s), '
+                f'which cannot be mapped unambiguously: {", ".join(repeated[:10])}'
+                f'{", ..." if len(repeated) > 10 else ""}')
         new_feature_model = copy.deepcopy(self.feature_model)
+        # Uniqueness is checked against the secure names already assigned, so two names that
+        # sanitize to the same string (e.g. 'A B' and 'A_B') get different secure names.
+        used_names: set[str] = set()
         for feature in new_feature_model.get_features():
             new_feature_name = secure_name(name=feature.name,
                                            secure_chars=self.secure_chars,
                                            replacement_char=self.replacement_char,
                                            allow_starting_digit=self.allow_starting_digit,
-                                           existing_names=set(self.mapping_names.keys()))
+                                           existing_names=used_names)
+            used_names.add(new_feature_name)
             self.mapping_names[feature.name] = new_feature_name
             feature.name = new_feature_name
         if set(self.mapping_names.keys()) != set(self.mapping_names.values()):
