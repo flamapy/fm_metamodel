@@ -4,12 +4,12 @@ from typing import Any, Optional, Union
 
 from antlr4 import CommonTokenStream, FileStream
 from antlr4.error.ErrorListener import ErrorListener
-from uvl.UVLCustomLexer import UVLCustomLexer
 from uvl.UVLPythonParser import UVLPythonParser
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
 from flamapy.core.models.ast import AST, ASTOperation, Node, NodeType
+from flamapy.metamodels.fm_metamodel.transformations._uvl_lexer import uvl_lexer
 from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
     Feature,
@@ -58,7 +58,7 @@ class UVLReader(TextToModel):
     def set_parse_tree(self) -> None:
         absolute_path = os.path.abspath(os.path.join(self.path, self.file))
         input_stream = FileStream(absolute_path, encoding="utf-8")
-        lexer = UVLCustomLexer(input_stream)
+        lexer = uvl_lexer(input_stream)
 
         stream = CommonTokenStream(lexer)
         parser = UVLPythonParser(stream)
