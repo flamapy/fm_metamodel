@@ -1,10 +1,21 @@
-import re
 import itertools
+import math
 from enum import Enum
 
 from flamapy.core.models.ast import ASTOperation
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Relation, Constraint
+from flamapy.metamodels.fm_metamodel.transformations.fm_secure_features_names import (
+    FMSecureFeaturesNames,
+)
+from flamapy.metamodels.fm_metamodel.transformations.uvl_writer import xor_as_negated_equivalence
+
+
+# Reserved words of the Logic2BDD expression scanner (synExpScanner.lpp).
+PL_KEYWORDS = frozenset({
+    'synTrue', 'synFalse', 'synModule', 'if', 'IF', 'then', 'THEN', 'else', 'ELSE',
+    'and', 'AND', 'or', 'OR', 'not', 'NOT', 'XOR', 'Xor', 'xor', 'MUX', 'Mux', 'mux',
+})
 
 
 class PLWriter(ModelToText):
@@ -15,6 +26,13 @@ class PLWriter(ModelToText):
 
     Typed features and multi-features are considered as simple (boolean) features.
     Arithmetic, and other complex constraints are ommited, and thus, eliminated from the output.
+
+    The output follows the Logic2BDD expression grammar: one expression per line, every line
+    ending in a newline. Feature names are written through FMSecureFeaturesNames (letters,
+    digits and '_') and never as one of the scanner's keywords (PL_KEYWORDS), so every name is a
+    single symbol. The mapping from original to written names is available in `mapping_names`
+    after `transform()`. XOR constraints are written as `not (a <-> b)`, because the grammar's
+    XOR is a prefix function over a list.
 
     This writer is used by the Logic2BDD tool.
     """
@@ -28,6 +46,10 @@ class PLWriter(ModelToText):
         XOR = 'XOR'
         MUX = 'MUX'
 
+        def __str__(self) -> str:
+            # The connectives are interpolated in f-strings: write the symbol, not the member.
+            return str(self.value)
+
     @staticmethod
     def get_destination_extension() -> str:
         return 'exp'
@@ -35,10 +57,15 @@ class PLWriter(ModelToText):
     def __init__(self, path: str, source_model: FeatureModel):
         self.path: str = path
         self.source_model: FeatureModel = source_model
+        self.mapping_names: dict[str, str] = {}
 
     def transform(self) -> str:
-        expressions = to_exp(self.source_model)
-        expressions_str = '\n'.join(expressions)
+        secure_names = FMSecureFeaturesNames(self.source_model)
+        secure_names.reserved_names |= PL_KEYWORDS
+        feature_model = secure_names.transform()
+        self.mapping_names = secure_names.mapping_names
+        expressions = to_exp(feature_model)
+        expressions_str = ''.join(f'{expression}\n' for expression in expressions)
         if self.path is not None:
             with open(self.path, 'w', encoding='utf8') as file:
                 file.write(expressions_str)
@@ -97,12 +124,13 @@ def get_or_formula(relation: Relation) -> str:
 
 
 def get_alternative_formula(relation: Relation) -> str:
+    """Each child is selected iff its parent is and no sibling is: exactly one child."""
     formula = []
     parent = relation.parent.name
-    children = {child.name for child in relation.children}
+    children = [child.name for child in relation.children]
     for child in children:
-        children_negatives = children - {child}
-        children_neg_str = [f"{PLWriter.LogicConnective.NOT}" + ch for ch in children_negatives]
+        children_neg_str = [f"{PLWriter.LogicConnective.NOT} " + ch
+                            for ch in children if ch != child]
         formula.append(f'{child} {PLWriter.LogicConnective.EQUIVALENCE} '
                        f'({f" {PLWriter.LogicConnective.AND} ".join(children_neg_str)} '
                        f'{PLWriter.LogicConnective.AND} {parent})')
@@ -110,61 +138,73 @@ def get_alternative_formula(relation: Relation) -> str:
 
 
 def get_mutex_formula(relation: Relation) -> str:
-    formula = []
+    """At most one child: the parent with no child, or exactly one child (as in alternative)."""
     parent = relation.parent.name
-    children = {child.name for child in relation.children}
-    for child in children:
-        children_negatives = children - {child}
-        children_neg_str = [f"{PLWriter.LogicConnective.NOT}" + cn for cn in children_negatives]
-        formula.append(f'{child} {PLWriter.LogicConnective.EQUIVALENCE} '
-                       f'({f" {PLWriter.LogicConnective.AND} ".join(children_neg_str)} '
-                       f'{PLWriter.LogicConnective.AND} {parent})')
-    formula_str = f" {PLWriter.LogicConnective.AND} ".join(f'({f})' for f in formula)
-    or_children = f" {PLWriter.LogicConnective.OR} ".join(child for child in children)
-    return f'({parent} {PLWriter.LogicConnective.EQUIVALENCE} ' \
-           f'{PLWriter.LogicConnective.NOT}({or_children})) ' \
-           f'{PLWriter.LogicConnective.OR} ({formula_str})'
+    children = [child.name for child in relation.children]
+    or_children = f" {PLWriter.LogicConnective.OR} ".join(children)
+    return f'({parent} {PLWriter.LogicConnective.AND} ' \
+           f'{PLWriter.LogicConnective.NOT} ({or_children})) ' \
+           f'{PLWriter.LogicConnective.OR} ({get_alternative_formula(relation)})'
+
+
+# Cardinality groups are written as clauses (see cardinality_clauses); groups that would need
+# more clauses than this are rejected instead of producing a huge formula.
+MAX_CARDINALITY_CLAUSES = 100_000
+
+
+def cardinality_clauses(card_min: int, card_max: int, n_children: int) -> int:
+    """Number of clauses cardinality_formula writes for a [card_min..card_max] group."""
+    at_least = math.comb(n_children, n_children - card_min + 1) if 0 < card_min <= n_children else 0
+    at_most = math.comb(n_children, card_max + 1) if card_max < n_children else 0
+    return n_children + at_least + at_most
 
 
 def get_cardinality_formula(relation: Relation) -> str:
+    """A group cardinality [m..k] as a conjunction of clauses:
+
+    * every child implies the parent;
+    * at least m: the parent implies at least one child of every set of n-m+1 children;
+    * at most k: of every set of k+1 children, at least one is not selected.
+
+    Every clause is parenthesized, because in the Logic2BDD grammar `<->` and `->` bind
+    differently from `and`/`or` than in most languages.
+    """
     parent = relation.parent.name
-    children = {child.name for child in relation.children}
-    or_ctc = []
-    for k in range(relation.card_min, relation.card_max + 1):
-        combi_k = list(itertools.combinations(children, k))
-        for positives in combi_k:
-            negatives = children - set(positives)
-            negatives_str = [f"{PLWriter.LogicConnective.NOT}" + f for f in negatives]
-            positives_and_ctc = f'{f" {PLWriter.LogicConnective.AND} ".join(positives)}'
-            negatives_and_ctc = f'{f" {PLWriter.LogicConnective.AND} ".join(negatives_str)}'
-            if positives_and_ctc and negatives_and_ctc:
-                and_ctc = f'{positives_and_ctc} {PLWriter.LogicConnective.AND} {negatives_and_ctc}'
-            else:
-                and_ctc = f'{positives_and_ctc}{negatives_and_ctc}'
-            or_ctc.append(and_ctc)
-    formula_or_ctc = f'{f" {PLWriter.LogicConnective.OR} ".join(or_ctc)}'
-    return f'{parent} {PLWriter.LogicConnective.EQUIVALENCE} {formula_or_ctc}'
+    children = [child.name for child in relation.children]
+    n_children = len(children)
+    card_min = relation.card_min
+    card_max = n_children if relation.card_max < 0 else min(relation.card_max, n_children)
+    n_clauses = cardinality_clauses(card_min, card_max, n_children)
+    if n_clauses > MAX_CARDINALITY_CLAUSES:
+        raise ValueError(
+            f'Group cardinality [{relation.card_min}..{relation.card_max}] of {parent} over '
+            f'{n_children} children needs {n_clauses} clauses; the PL writer supports at most '
+            f'{MAX_CARDINALITY_CLAUSES}.')
+    conn = PLWriter.LogicConnective
+    clauses = [f'({child} {conn.IMPLIES} {parent})' for child in children]
+    if card_min > n_children:
+        clauses.append(f'({conn.NOT} {parent})')  # no set of children is large enough
+    elif card_min > 0:
+        for subset in itertools.combinations(children, n_children - card_min + 1):
+            clauses.append(f'({parent} {conn.IMPLIES} ({f" {conn.OR} ".join(subset)}))')
+    if card_max < n_children:
+        for subset in itertools.combinations(children, card_max + 1):
+            clauses.append(f'({f" {conn.OR} ".join(f"{conn.NOT} {child}" for child in subset)})')
+    return f' {conn.AND} '.join(clauses)
+
+
+PL_OPERATORS = {
+    ASTOperation.NOT: PLWriter.LogicConnective.NOT.value,
+    ASTOperation.AND: PLWriter.LogicConnective.AND.value,
+    ASTOperation.OR: PLWriter.LogicConnective.OR.value,
+    ASTOperation.IMPLIES: PLWriter.LogicConnective.IMPLIES.value,
+    ASTOperation.REQUIRES: PLWriter.LogicConnective.IMPLIES.value,
+    ASTOperation.EQUIVALENCE: PLWriter.LogicConnective.EQUIVALENCE.value,
+    ASTOperation.EXCLUDES: f'{PLWriter.LogicConnective.IMPLIES.value} '
+                           f'{PLWriter.LogicConnective.NOT.value}',
+}
 
 
 def get_constraint_formula(ctc: Constraint) -> str:
-    constraint_str = ctc.ast.pretty_str()
-    constraint_str = re.sub(rf"\b{ASTOperation.XOR.value}\b",
-                            PLWriter.LogicConnective.XOR.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.NOT.value}\b",
-                            PLWriter.LogicConnective.NOT.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.AND.value}\b",
-                            PLWriter.LogicConnective.AND.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.OR.value}\b",
-                            PLWriter.LogicConnective.OR.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.IMPLIES.value}\b",
-                            PLWriter.LogicConnective.IMPLIES.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.EQUIVALENCE.value}\b",
-                            PLWriter.LogicConnective.EQUIVALENCE.value, constraint_str)
-    constraint_str = re.sub(rf"\b{ASTOperation.REQUIRES.value}\b",
-                            PLWriter.LogicConnective.IMPLIES.value, constraint_str)
-    constraint_str = re.sub(
-        rf"\b{ASTOperation.EXCLUDES.value}\b",
-        f'{PLWriter.LogicConnective.IMPLIES.value} {PLWriter.LogicConnective.NOT.value}',
-        constraint_str
-    )
-    return constraint_str
+    """Write a logical constraint with the PL connectives (operators replaced node by node)."""
+    return xor_as_negated_equivalence(ctc.ast).pretty_str(PL_OPERATORS)
