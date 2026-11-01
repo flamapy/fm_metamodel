@@ -37,6 +37,7 @@ class FeatureIDEReader(TextToModel):
     TAG_DISJ = "disj"
     TAG_CONJ = "conj"
     TAG_EQ = "eq"
+    TAG_ATMOST1 = "atmost1"
 
     # Feature attributes
     ATTRIB_NAME = "name"
@@ -146,6 +147,29 @@ class FeatureIDEReader(TextToModel):
             number += 1
         return constraints
 
+    def _parse_nary(self, rule: Element) -> Node:
+        """FeatureIDE writes n-ary disjunctions and conjunctions: fold every operand."""
+        operation = ASTOperation.OR if rule.tag == FeatureIDEReader.TAG_DISJ else ASTOperation.AND
+        operands = [self._parse_rule(child).root for child in rule]
+        if not operands:
+            raise FlamaException(f'Empty <{rule.tag}> in a FeatureIDE constraint.')
+        node = operands[0]
+        for operand in operands[1:]:
+            node = Node(operation, node, operand)
+        return node
+
+    def _parse_atmost1(self, rule: Element) -> Node:
+        """At most one operand: no two of them together."""
+        operands = [self._parse_rule(child).root for child in rule]
+        pairs = [Node(ASTOperation.NOT, Node(ASTOperation.AND, a, b))
+                 for i, a in enumerate(operands) for b in operands[i + 1:]]
+        if not pairs:
+            raise FlamaException('<atmost1> needs at least two operands.')
+        node = pairs[0]
+        for pair in pairs[1:]:
+            node = Node(ASTOperation.AND, node, pair)
+        return node
+
     def _parse_rule(self, rule: Element) -> AST:
         """Return the representation of the constraint (rule) in the AST syntax."""
         if rule.tag == FeatureIDEReader.TAG_VAR:
@@ -170,20 +194,10 @@ class FeatureIDEReader(TextToModel):
             node.right.left = self._parse_rule(rule[1]).root
             node.right.right = self._parse_rule(rule[0]).root
 
-        elif rule.tag == FeatureIDEReader.TAG_DISJ:
-            if len(rule) > 1:
-                node = Node(ASTOperation.OR)
-                node.left = self._parse_rule(rule[0]).root
-                node.right = self._parse_rule(rule[1]).root
-
-            else:
-                node = self._parse_rule(rule[0]).root
-
-        elif rule.tag == FeatureIDEReader.TAG_CONJ:
-            if len(rule) > 1:
-                node = Node(ASTOperation.AND)
-                node.left = self._parse_rule(rule[0]).root
-                node.right = self._parse_rule(rule[1]).root
-            else:
-                node = self._parse_rule(rule[0]).root
+        elif rule.tag in (FeatureIDEReader.TAG_DISJ, FeatureIDEReader.TAG_CONJ):
+            node = self._parse_nary(rule)
+        elif rule.tag == FeatureIDEReader.TAG_ATMOST1:
+            node = self._parse_atmost1(rule)
+        else:
+            raise FlamaException(f'Unknown FeatureIDE constraint element <{rule.tag}>.')
         return AST(node)
