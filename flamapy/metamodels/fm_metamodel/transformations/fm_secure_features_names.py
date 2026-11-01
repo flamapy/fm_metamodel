@@ -21,6 +21,11 @@ class FMSecureFeaturesNames(ModelToModel):
     It replaces each character that is not alphanumeric or underscore with an underscore.
     If the name starts with a number, it adds an underscore at the beginning.
     It ensures that the new names are unique.
+    Names that solver front-ends read as constants or keywords (RESERVED_NAMES, e.g. a feature
+    called `True`, which the BDD expression parser takes for the constant) get a suffix too;
+    writers add the keywords of their own format to `reserved_names`.
+    With `letter_prefix` set, a name that does not start with a letter is prefixed with it
+    (for formats whose identifiers must start with a letter, such as Clafer).
 
     The class exposes a mapping between the original feature names and the new secure names.
     Feature names must be unique (as UVL requires): a model with repeated names cannot be
@@ -29,6 +34,8 @@ class FMSecureFeaturesNames(ModelToModel):
 
     SECURE_CHARS = r'A-Za-z0-9_'
     REPLACEMENT_CHAR = '_'
+    RESERVED_NAMES = frozenset({'True', 'False', 'TRUE', 'FALSE', 'true', 'false', 'ite'})
+    MAX_NAMES_IN_ERROR = 10
 
     @staticmethod
     def get_source_extension() -> str:
@@ -43,6 +50,8 @@ class FMSecureFeaturesNames(ModelToModel):
         self.secure_chars: str = FMSecureFeaturesNames.SECURE_CHARS
         self.replacement_char: str = FMSecureFeaturesNames.REPLACEMENT_CHAR
         self.allow_starting_digit: bool = False
+        self.reserved_names: set[str] = set(FMSecureFeaturesNames.RESERVED_NAMES)
+        self.letter_prefix: str = ''
         self.mapping_names: dict[str, str] = {}
 
     def transform(self) -> FeatureModel:
@@ -53,14 +62,17 @@ class FMSecureFeaturesNames(ModelToModel):
         if repeated:
             raise FlamaException(
                 f'The feature model has {len(repeated)} repeated feature name(s), '
-                f'which cannot be mapped unambiguously: {", ".join(repeated[:10])}'
-                f'{", ..." if len(repeated) > 10 else ""}')
+                f'which cannot be mapped unambiguously: '
+                f'{", ".join(repeated[:self.MAX_NAMES_IN_ERROR])}'
+                f'{", ..." if len(repeated) > self.MAX_NAMES_IN_ERROR else ""}')
         new_feature_model = copy.deepcopy(self.feature_model)
         # Uniqueness is checked against the secure names already assigned, so two names that
         # sanitize to the same string (e.g. 'A B' and 'A_B') get different secure names.
-        used_names: set[str] = set()
+        # Reserved names start as used, so a feature can never be given one of them.
+        used_names: set[str] = set(self.reserved_names)
         for feature in new_feature_model.get_features():
-            new_feature_name = secure_name(name=feature.name,
+            new_feature_name = secure_name(name=prefix_if_not_letter(feature.name,
+                                                                     self.letter_prefix),
                                            secure_chars=self.secure_chars,
                                            replacement_char=self.replacement_char,
                                            allow_starting_digit=self.allow_starting_digit,
@@ -96,6 +108,13 @@ def secure_name(name: str,
         secure = f"{original_secure}_{suffix}"
         suffix += 1
     return secure
+
+
+def prefix_if_not_letter(name: str, prefix: str) -> str:
+    """Prefix the name when it does not start with an ASCII letter (no-op if prefix is empty)."""
+    if prefix and not re.match(r'^[A-Za-z]', name):
+        return prefix + name
+    return name
 
 
 def secure_ast(ast: AST,

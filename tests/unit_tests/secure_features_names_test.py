@@ -60,3 +60,25 @@ def test_repeated_feature_names_are_rejected(tmp_path) -> None:
 """)
     with pytest.raises(FlamaException, match="repeated feature name.*X"):
         FMSecureFeaturesNames(feature_model).transform()
+
+
+def test_reserved_names_get_a_suffix(tmp_path) -> None:
+    feature_model = _read_uvl(tmp_path, """features
+    Root
+        optional
+            "True"
+            True_1
+            ite
+constraints
+    "True" => True_1
+""")
+    op = FMSecureFeaturesNames(feature_model)
+    secured = op.transform()
+    names = {f.name for f in secured.get_features()}
+    assert not names & FMSecureFeaturesNames.RESERVED_NAMES
+    assert len(names) == 4
+    assert len(set(op.mapping_names.values())) == 4
+    # The constraint follows the renaming
+    constraint = secured.get_constraints()[0].ast
+    assert constraint.root.left.data == op.mapping_names["True"]
+    assert constraint.root.right.data == op.mapping_names["True_1"]
