@@ -1,10 +1,8 @@
-import re
 import string
-import functools
 import pathlib
 from typing import Union
 
-from flamapy.core.models.ast import ASTOperation
+from flamapy.core.models.ast import AST, ASTOperation, Node
 from flamapy.core.transformations import ModelToText
 from flamapy.metamodels.fm_metamodel.models import (
     Constraint,
@@ -36,8 +34,15 @@ UVL_OPERATORS: dict[ASTOperation, str] = {ASTOperation.AND: "&",
                                           ASTOperation.LEN: 'len',
                                           ASTOperation.FLOOR: 'floor',
                                           ASTOperation.CEIL: 'ceil',
-                                          ASTOperation.XOR: ASTOperation.XOR.value  # Not soported
                                           }
+
+# Words the UVL lexer reserves; a feature or attribute with one of these names must be quoted.
+UVL_KEYWORDS = frozenset({
+    'namespace', 'imports', 'as', 'include', 'features', 'constraints', 'constraint',
+    'cardinality', 'mandatory', 'optional', 'alternative', 'or',
+    'Boolean', 'Integer', 'Real', 'String', 'Type', 'Arithmetic',
+    'sum', 'avg', 'len', 'floor', 'ceil', 'true', 'false',
+})
 
 
 class UVLWriter(ModelToText):
@@ -210,18 +215,47 @@ class UVLWriter(ModelToText):
         return result
 
     @staticmethod
-    def _substitute_operator(str_constraint: str,
-                             operator: ASTOperation,
-                             new_operator: str) -> str:
-        return re.sub(rf"\b{operator.value}\b", new_operator, str_constraint)
-
-    @staticmethod
     def serialize_constraint(ctc: Constraint) -> str:
-        str_constraint = ctc.ast.pretty_str()
-        return functools.reduce(lambda acc, op: UVLWriter._substitute_operator(acc,
-                                                                               op,
-                                                                               UVL_OPERATORS[op]),
-                                ASTOperation, str_constraint)
+        """Serialize a constraint in UVL syntax.
+
+        `AST.pretty_str` writes the operators with their UVL symbols and every term through
+        `serialize_term`, so names are quoted when UVL requires it and a feature called, e.g.,
+        `OR` is never taken for an operator.
+        """
+        return xor_as_negated_equivalence(ctc.ast).pretty_str(UVL_OPERATORS, serialize_term)
+
+
+def xor_as_negated_equivalence(ast: AST) -> AST:
+    """UVL has no XOR operator: return an AST where every A XOR B is !(A <=> B).
+
+    The constraint's own AST is not modified.
+    """
+    def rewrite(node: Node) -> Node:
+        if node is None or not node.is_op():
+            return node
+        left = rewrite(node.left) if node.left is not None else node.left
+        right = rewrite(node.right) if node.right is not None else node.right
+        if node.data == ASTOperation.XOR:
+            return Node(ASTOperation.NOT, Node(ASTOperation.EQUIVALENCE, left, right))
+        if left is node.left and right is node.right:
+            return node
+        return Node(node.data, left, right, node.node_type)
+
+    root = rewrite(ast.root)
+    return ast if root is ast.root else AST(root)
+
+
+def serialize_term(node: Node) -> str:
+    """A constant is written as it is; a feature or attribute reference is quoted if needed."""
+    term = node.data
+    if isinstance(term, bool):
+        return str(term).lower()
+    if isinstance(term, (int, float)):
+        return str(term)
+    text = str(term)
+    if len(text) > 1 and text.startswith("'") and text.endswith("'"):
+        return text  # string constant
+    return safename(text)
 
 
 def safename(name: str) -> str:
@@ -231,9 +265,20 @@ def safename(name: str) -> str:
 
 
 def safe_simple_name(name: str) -> str:
+    """Quote a name when it is not a valid unquoted UVL identifier.
+
+    Unquoted identifiers may only contain letters, digits and '_', may not start with a digit
+    (the lexer would read a number) and may not be a UVL keyword.
+    """
     if name.startswith("'") and name.endswith("'"):
         return name
-    return f'"{name}"' if any(char not in safecharacters() for char in name) else name
+    needs_quotes = (
+        not name
+        or any(char not in safecharacters() for char in name)
+        or name[0].isdigit()
+        or name in UVL_KEYWORDS
+    )
+    return f'"{name}"' if needs_quotes else name
 
 
 def safecharacters() -> str:
