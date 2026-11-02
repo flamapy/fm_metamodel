@@ -4,6 +4,11 @@ from typing import Any
 from flamapy.core.transformations import ModelToText
 from flamapy.core.models.ast import ASTOperation
 from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature, Constraint, Relation
+from flamapy.metamodels.fm_metamodel.transformations.group_support import (
+    decompose_groups,
+    mixed_decomposition,
+    prepare_model,
+)
 from flamapy.metamodels.fm_metamodel.transformations.fm_secure_features_names import (
     FMSecureFeaturesNames,
     prefix_if_not_letter,
@@ -44,6 +49,12 @@ class ClaferWriter(ModelToText):
     keywords reserved and a leading letter enforced); the mapping from original to written
     names is available in `mapping_names` after `transform()`.
 
+    A Clafer group cardinality (xor, or, mux, m..n) applies to all the children of a clafer, so
+    features with several groups, or a group and other relations, are rejected; with
+    `apply_refactorings=True` a copy of the model is refactored first
+    (MultipleGroupDecompositionRefactoring), which adds abstract features but keeps the
+    configurations of the original features.
+
     Only the logical constraints of the model are written; arithmetic and other non-Boolean
     constraints are omitted (as in PLWriter and FeatureIDEWriter).
     """
@@ -52,13 +63,17 @@ class ClaferWriter(ModelToText):
     def get_destination_extension() -> str:
         return 'txt'
 
-    def __init__(self, path: str, source_model: FeatureModel) -> None:
+    def __init__(self, path: str, source_model: FeatureModel,
+                 apply_refactorings: bool = False) -> None:
         self.path = path
         self.source_model = source_model
+        self.apply_refactorings = apply_refactorings
         self.mapping_names: dict[str, str] = {}
 
     def transform(self) -> str:
-        secure_names = FMSecureFeaturesNames(self.source_model)
+        model = prepare_model(self.source_model, 'Clafer', [mixed_decomposition],
+                              [decompose_groups], self.apply_refactorings)
+        secure_names = FMSecureFeaturesNames(model)
         secure_names.reserved_names |= CLAFER_KEYWORDS | {ATTRIBUTED_FEATURE, INSTANCE}
         secure_names.letter_prefix = LETTER_PREFIX
         feature_model = secure_names.transform()
@@ -76,7 +91,7 @@ def fm_to_clafer(feature_model: FeatureModel) -> str:
     used_names = {feature.name for feature in feature_model.get_features()}
     used_names |= CLAFER_KEYWORDS | {ATTRIBUTED_FEATURE, INSTANCE}
     attributes = clafer_attributes(feature_model, used_names)
-    result = read_features(feature_model.root, 0, used_names, attributes)
+    result = read_features(feature_model.root, 0, attributes)
     # The root feature is always abstract in Clafer:
     result = f'abstract {result}'
     # Definition of attributes at the top of the model:
@@ -121,17 +136,10 @@ def clafer_attributes(feature_model: FeatureModel, used_names: set[str]) -> Claf
     return attributes
 
 
-def read_features(feature: Feature, tab_count: int, used_names: set[str],
-                  attributes: ClaferAttributes, in_group: bool = False) -> str:
-    """Write a feature and its subtree.
-
-    In Clafer the group cardinality (xor, or, mux, m..n) belongs to the parent and applies to
-    all its children. A feature whose only relation is a group is written with that keyword.
-    A feature that has a group and other relations (mandatory/optional children or more groups)
-    gets one mandatory helper clafer per group, named `<feature>_group<n>`, which carries the
-    group keyword and holds that group's children; the semantics of the original features are
-    preserved. Children of a group are marked `?` explicitly.
-    """
+def read_features(feature: Feature, tab_count: int, attributes: ClaferAttributes,
+                  in_group: bool = False) -> str:
+    """Write a feature and its subtree. The feature has a single group (written as the group
+    keyword) or only mandatory/optional children; children of a group are marked `?`."""
     tabs = '\t' * tab_count  # Indentation
     relations = feature.get_relations()
     single_group = len(relations) == 1 and relations[0].is_group()
@@ -152,35 +160,12 @@ def read_features(feature: Feature, tab_count: int, used_names: set[str],
     tab_count += 1
     result += read_feature_attributes(feature, tab_count, attributes)
 
-    # Children, relation by relation
+    # Children
     result += '\n'
-    group_index = 0
     for relation in relations:
-        if single_group:
-            for child in relation.children:
-                result += read_features(child, tab_count, used_names, attributes,
-                                        in_group=True)
-        elif relation.is_group():
-            group_index += 1
-            helper = _helper_name(f'{feature.name}_group{group_index}', used_names)
-            child_tabs = '\t' * tab_count
-            result += f'{child_tabs}{group_keyword(relation)} {helper}\n'
-            for child in relation.children:
-                result += read_features(child, tab_count + 1, used_names, attributes,
-                                        in_group=True)
-        else:
-            for child in relation.children:
-                result += read_features(child, tab_count, used_names, attributes)
+        for child in relation.children:
+            result += read_features(child, tab_count, attributes, in_group=single_group)
     return result
-
-
-def _helper_name(base: str, used_names: set[str]) -> str:
-    name, suffix = base, 1
-    while name in used_names:
-        suffix += 1
-        name = f'{base}_{suffix}'
-    used_names.add(name)
-    return name
 
 
 def read_feature_attributes(feature: Feature, tab_count: int,

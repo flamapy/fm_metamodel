@@ -3,6 +3,7 @@ semantics: every case is written, read back and its configurations counted."""
 import pytest
 
 from flamapy.core.exceptions import FlamaException
+from flamapy.metamodels.fm_metamodel.transformations.refactorings import RefactoringException
 from flamapy.metamodels.fm_metamodel.transformations import (
     FeatureIDEReader,
     FeatureIDEWriter,
@@ -16,12 +17,12 @@ def _count(fm) -> int:
     return PySATConfigurationsNumber().execute(FmToPysat(fm).transform()).get_result()
 
 
-def _write_read(tmp_path, uvl: str):
+def _write_read(tmp_path, uvl: str, apply_refactorings: bool = False):
     src = tmp_path / 'model.uvl'
     src.write_text(uvl)
     fm = UVLReader(str(src)).transform()
     out = tmp_path / 'model.xml'
-    text = FeatureIDEWriter(str(out), fm).transform()
+    text = FeatureIDEWriter(str(out), fm, apply_refactorings=apply_refactorings).transform()
     return fm, FeatureIDEReader(str(out)).transform(), text
 
 
@@ -46,9 +47,29 @@ def _write_read(tmp_path, uvl: str):
     'features\n    R\n        optional\n            A\n            B\n            C\n'
     'constraints\n    A => !B\n    !(A <=> C)\n    B <=> C\n',
 ])
-def test_configurations_are_preserved(tmp_path, uvl: str) -> None:
-    original, back, _ = _write_read(tmp_path, uvl)
+def test_configurations_are_preserved_with_refactorings(tmp_path, uvl: str) -> None:
+    original, back, _ = _write_read(tmp_path, uvl, apply_refactorings=True)
     assert _count(back) == _count(original)
+
+
+@pytest.mark.parametrize('uvl', [
+    'features\n    R\n        mandatory\n            B\n        alternative\n            C\n'
+    '            D\n',
+    'features\n    R\n        [0..1]\n            A\n            B\n',
+    'features\n    R\n        [2..3]\n            A\n            B\n            C\n',
+])
+def test_unrepresentable_groups_are_rejected_by_default(tmp_path, uvl: str) -> None:
+    with pytest.raises(FlamaException, match='apply_refactorings'):
+        _write_read(tmp_path, uvl)
+
+
+def test_original_model_is_not_modified(tmp_path) -> None:
+    src = tmp_path / 'model.uvl'
+    src.write_text(MIXED_UVL)
+    fm = UVLReader(str(src)).transform()
+    before = sorted(f.name for f in fm.get_features())
+    FeatureIDEWriter(str(tmp_path / 'out.xml'), fm, apply_refactorings=True).transform()
+    assert sorted(f.name for f in fm.get_features()) == before
 
 
 def test_names_are_not_quoted(tmp_path) -> None:
@@ -66,16 +87,19 @@ def test_only_featureide_constraint_elements(tmp_path) -> None:
     assert '<impn' not in text and '<alt>' not in text
 
 
-def test_helper_features_for_mixed_relations(tmp_path) -> None:
-    _, _, text = _write_read(tmp_path, 'features\n    R\n        mandatory\n            B\n'
-                                       '        alternative\n            C\n            D\n')
-    assert '<alt mandatory="true" abstract="true" name="R_group1">' in text
+MIXED_UVL = ('features\n    R\n        mandatory\n            B\n'
+             '        alternative\n            C\n            D\n')
+
+
+def test_refactoring_adds_an_abstract_feature_for_the_group(tmp_path) -> None:
+    _, _, text = _write_read(tmp_path, MIXED_UVL, apply_refactorings=True)
+    assert '<alt mandatory="true" abstract="true" name="R_1">' in text
 
 
 def test_huge_cardinality_group_is_rejected(tmp_path) -> None:
     children = ''.join(f'            F{i}\n' for i in range(30))
-    with pytest.raises(ValueError, match='clauses'):
-        _write_read(tmp_path, f'features\n    R\n        [15..*]\n{children}')
+    with pytest.raises(RefactoringException, match='constraints'):
+        _write_read(tmp_path, f'features\n    R\n        [15..*]\n{children}', apply_refactorings=True)
 
 
 def test_repeated_names_are_rejected(tmp_path) -> None:
@@ -88,7 +112,8 @@ def test_repeated_names_are_rejected(tmp_path) -> None:
 def test_large_cardinality_group_is_written(tmp_path) -> None:
     # [4..*] over 27 children (as in a UVLHub model) used to need 134 million combinations
     children = ''.join(f'            F{i}\n' for i in range(27))
-    _, _, text = _write_read(tmp_path, f'features\n    R\n        [4..*]\n{children}')
+    _, _, text = _write_read(tmp_path, f'features\n    R\n        [4..*]\n{children}',
+                             apply_refactorings=True)
     assert text.count('<rule>') == 2925           # C(27, 24) at-least clauses
 
 

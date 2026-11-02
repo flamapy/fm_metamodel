@@ -51,12 +51,12 @@ def test_write_compare_glencoe(model):
     
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as glencoe_file:
         glencoe_file_path = glencoe_file.name
-        GlencoeWriter(path=glencoe_file_path, source_model=model).transform()
+        GlencoeWriter(path=glencoe_file_path, source_model=model, apply_refactorings=True).transform()
         
         fm_from_glencoe=GlencoeReader(path=glencoe_file_path).transform()
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as glencoe_file_second:
             glencoe_file_path_second = glencoe_file_second.name
-            GlencoeWriter(path=glencoe_file_path_second,source_model=fm_from_glencoe).transform()
+            GlencoeWriter(path=glencoe_file_path_second,source_model=fm_from_glencoe, apply_refactorings=True).transform()
             
             fm_from_glencoe_2=GlencoeReader(path=glencoe_file_path_second).transform()
 
@@ -76,12 +76,12 @@ def test_write_compare_featueride(model):
     
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fide_file:
         fide_file_path = fide_file.name
-        FeatureIDEWriter(path=fide_file_path, source_model=model).transform()
+        FeatureIDEWriter(path=fide_file_path, source_model=model, apply_refactorings=True).transform()
         
         fm_from_fide=FeatureIDEReader(path=fide_file_path).transform()
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as glencoe_file_second:
             filde_file_path_second = glencoe_file_second.name
-            FeatureIDEWriter(path=filde_file_path_second,source_model=fm_from_fide).transform()
+            FeatureIDEWriter(path=filde_file_path_second,source_model=fm_from_fide, apply_refactorings=True).transform()
             
             fm_from_fide_2=FeatureIDEReader(path=filde_file_path_second).transform()
 
