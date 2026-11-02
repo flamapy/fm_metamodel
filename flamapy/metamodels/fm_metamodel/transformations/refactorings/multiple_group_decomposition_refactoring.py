@@ -9,7 +9,11 @@ from flamapy.metamodels.fm_metamodel.transformations.refactorings import (
 
 class MultipleGroupDecompositionRefactoring(FMRefactoring):
     """"It substitutes each group in the feature by a mandatory abstract feature which becomes a
-    new group below the original feature."""
+    new group below the original feature.
+
+    It applies to features with several groups and also to features with one group together
+    with other (mandatory/optional) relations, so that afterwards every feature has either a
+    single group or only mandatory/optional children."""
 
     def get_name(self) -> str:
         return 'Multiple group decomposition refactoring'
@@ -18,12 +22,12 @@ class MultipleGroupDecompositionRefactoring(FMRefactoring):
         if self.feature_model is None:
             return []
         return [feat for feat in self.feature_model.get_features()
-                if feat.is_multiple_group_decomposition()]
+                if needs_group_decomposition(feat)]
 
     def is_applicable(self) -> bool:
         if self.feature_model is None:
             return False
-        return any(feat.is_multiple_group_decomposition()
+        return any(needs_group_decomposition(feat)
                    for feat in self.feature_model.get_features())
 
     def apply(self, instance: Any) -> FeatureModel | None:
@@ -34,13 +38,20 @@ class MultipleGroupDecompositionRefactoring(FMRefactoring):
         if not isinstance(instance, Feature):
             raise RefactoringException(f'Invalid instance for {self.get_name()}.'
                                        f'Expected Feature, got {type(instance)} for {instance}.')
-        if not instance.is_multiple_group_decomposition():
-            raise RefactoringException(f'Feature {instance.name} does not have multiple groups.')
+        if not needs_group_decomposition(instance):
+            raise RefactoringException(f'Feature {instance.name} does not have multiple groups '
+                                       f'or a group together with other relations.')
 
         for relation in instance.get_relations():
             if relation.is_group():
                 self.feature_model = new_decomposition(self.feature_model, instance, relation)
         return self.feature_model
+
+
+def needs_group_decomposition(feature: Feature) -> bool:
+    """Several groups, or a group together with mandatory/optional relations."""
+    return feature.is_multiple_group_decomposition() or \
+        (feature.is_group() and len(feature.get_relations()) > 1)
 
 
 def new_decomposition(fm_model: FeatureModel, feature: Feature, r_group: Relation) -> FeatureModel:
