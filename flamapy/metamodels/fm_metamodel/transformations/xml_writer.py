@@ -2,7 +2,7 @@ import logging
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 
-from flamapy.core.models.ast import ASTOperation
+from flamapy.core.models.ast import ASTOperation, Node
 from flamapy.core.transformations import ModelToText
 
 from flamapy.metamodels.fm_metamodel.models import Feature, FeatureModel, Relation
@@ -78,30 +78,48 @@ class XMLWriter(ModelToText):
     def _extract_binary_constraints(
         self,
     ) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+        """requires/excludes pairs for every constraint FaMa XML can express.
+
+        Besides `A requires B` / `A => B` and `A excludes B`, the equivalent forms
+        `A => !B` and `!(A & B)` are written as excludes and `A <=> B` as two requires.
+        """
         requires_list: list[tuple[str, str]] = []
         excludes_list: list[tuple[str, str]] = []
         for constraint in self._source_model.get_constraints():
-            raw = str(constraint)
-            ast_root = constraint.ast.root
-            op = getattr(ast_root.data, 'value', str(ast_root.data)).upper()
-            left = ast_root.left
-            right = ast_root.right
-            if (
-                left is not None
-                and right is not None
-                and left.is_term()
-                and right.is_term()
-            ):
-                if op in ('REQUIRES', 'IMPLIES', '=>') or ast_root.data is ASTOperation.REQUIRES:
-                    requires_list.append((str(left.data), str(right.data)))
-                    continue
-                if op == 'EXCLUDES' or ast_root.data is ASTOperation.EXCLUDES:
-                    excludes_list.append((str(left.data), str(right.data)))
-                    continue
-            logger.warning('Constraint skipped (unsupported in XML format): %s', raw)
-            self.skipped_constraints.append(raw)
+            pairs = _binary_pairs(constraint.ast.root)
+            if pairs is None:
+                raw = str(constraint)
+                logger.warning('Constraint skipped (unsupported in XML format): %s', raw)
+                self.skipped_constraints.append(raw)
+                continue
+            kind, found = pairs
+            (requires_list if kind == 'requires' else excludes_list).extend(found)
         return requires_list, excludes_list
 
+
+def _binary_pairs(node: Node) -> tuple[str, list[tuple[str, str]]] | None:
+    """('requires' | 'excludes', pairs) when the constraint is a binary relation between two
+    features that FaMa XML can express, otherwise None."""
+    def term(n: Node | None) -> str | None:
+        return str(n.data) if n is not None and n.is_term() else None
+
+    def negated_term(n: Node | None) -> str | None:
+        return term(n.left) if n is not None and n.data == ASTOperation.NOT else None
+
+    op, left, right = node.data, node.left, node.right
+    if op in (ASTOperation.REQUIRES, ASTOperation.IMPLIES) and term(left):
+        if term(right):
+            return 'requires', [(term(left), term(right))]  # type: ignore[list-item]
+        if negated_term(right):
+            return 'excludes', [(term(left), negated_term(right))]  # type: ignore[list-item]
+    if op == ASTOperation.EXCLUDES and term(left) and term(right):
+        return 'excludes', [(term(left), term(right))]  # type: ignore[list-item]
+    if op == ASTOperation.EQUIVALENCE and term(left) and term(right):
+        return 'requires', [(term(left), term(right)), (term(right), term(left))]  # type: ignore[list-item]
+    if op == ASTOperation.NOT and left is not None and left.data == ASTOperation.AND \
+            and term(left.left) and term(left.right):
+        return 'excludes', [(term(left.left), term(left.right))]  # type: ignore[list-item]
+    return None
 
 def _write_feature(feature: Feature, parent_el: ET.Element, counters: list[int]) -> None:
     """Recursively append FAMA XML child elements to *parent_el*."""
