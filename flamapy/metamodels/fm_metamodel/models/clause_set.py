@@ -10,9 +10,10 @@ their representation from this single encoding.
 """
 import itertools
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from flamapy.core.exceptions import FlamaException
+from flamapy.core.models.ast import AST, ASTOperation, Node
 
 from flamapy.metamodels.fm_metamodel.models.feature_model import (
     FeatureModel,
@@ -48,9 +49,78 @@ class ClauseSet:
 
         ``cnf_method`` controls only how cross-tree constraints are turned into clauses:
         ``'distributive'`` (default) expands them directly, ``'tseytin'`` introduces auxiliary
-        variables for a compact, model-count-preserving encoding.
+        variables for a compact, model-count-preserving encoding, and ``'auto'`` decides per
+        constraint: it expands a constraint directly unless the expansion would be larger than
+        its Tseytin encoding (see `distributive_clause_count`), so only constraints that blow up
+        (e.g. disjunctions of conjunctions, wide equivalences) get auxiliary variables.
         """
+        if cnf_method not in CNF_METHODS:
+            raise FlamaException(f'Unknown cnf_method {cnf_method!r}; expected one of '
+                                 f'{", ".join(CNF_METHODS)}.')
         return _Encoder(cnf_method).encode(feature_model)
+
+
+CNF_METHODS = ('distributive', 'tseytin', 'auto')
+BINARY = 2
+
+
+# Clause counts of (P op Q) and of its negation, from the counts of P and Q in both polarities,
+# following flamapy's rewriting (simplify_formula): P => Q as !P | Q, P excludes Q as !P | !Q,
+# P <=> Q as (P => Q) & (Q => P), P xor Q as (P & !Q) | (!P & Q). A conjunction adds the clauses
+# of its operands, a disjunction multiplies them.
+_COUNT_RULES: dict[ASTOperation, Callable[[int, int, int, int], tuple[int, int]]] = {
+    ASTOperation.AND: lambda ap, an, bp, bn: (ap + bp, an * bn),
+    ASTOperation.OR: lambda ap, an, bp, bn: (ap * bp, an + bn),
+    ASTOperation.IMPLIES: lambda ap, an, bp, bn: (an * bp, ap + bn),
+    ASTOperation.REQUIRES: lambda ap, an, bp, bn: (an * bp, ap + bn),
+    ASTOperation.EXCLUDES: lambda ap, an, bp, bn: (an * bn, ap + bp),
+    ASTOperation.EQUIVALENCE: lambda ap, an, bp, bn: (an * bp + ap * bn, ap * bp + an * bn),
+    ASTOperation.XOR: lambda ap, an, bp, bn: ((ap + bn) * (an + bp), an * bp + ap * bn),
+}
+
+
+def distributive_clause_count(ast: AST) -> Optional[int]:
+    """Number of clauses the distributive CNF expansion of `ast` produces, computed without
+    building it (duplicates and subsumed clauses are not removed, as in the expansion itself).
+
+    Each node is counted for both polarities (see _COUNT_RULES), in one iterative pass, so deep
+    constraints do not hit the recursion limit. Returns None for non-propositional operators.
+    """
+    pos: dict[int, int] = {}
+    neg: dict[int, int] = {}
+    stack: list[tuple[Node, bool]] = [(ast.root, False)]
+    while stack:
+        node, expanded = stack.pop()
+        if node.is_term():
+            pos[id(node)] = neg[id(node)] = 1
+            continue
+        children = [child for child in (node.left, node.right) if child is not None]
+        if not expanded:
+            stack.append((node, True))
+            stack.extend((child, False) for child in children)
+            continue
+        if any(id(child) not in pos for child in children):
+            return None
+        if node.data == ASTOperation.NOT:
+            pos[id(node)], neg[id(node)] = neg[id(children[0])], pos[id(children[0])]
+        elif node.data in _COUNT_RULES and len(children) == BINARY:
+            left, right = children
+            pos[id(node)], neg[id(node)] = _COUNT_RULES[node.data](
+                pos[id(left)], neg[id(left)], pos[id(right)], neg[id(right)])
+        else:
+            return None
+    return pos[id(ast.root)]
+
+
+def tseytin_clause_estimate(ast: AST) -> int:
+    """Approximate size of the Tseytin encoding: about three clauses per operator, plus one."""
+    return 3 * sum(1 for _ in ast.get_operators()) + 1
+
+
+def use_tseytin(ast: AST) -> bool:
+    """The `auto` rule: Tseytin when the distributive expansion would be larger."""
+    count = distributive_clause_count(ast)
+    return count is not None and count > tseytin_clause_estimate(ast)
 
 
 class _Encoder:
@@ -180,7 +250,10 @@ class _Encoder:
         return aux_map
 
     def _add_constraint(self, ctc: Constraint) -> None:
-        if self.cnf_method == 'tseytin':
+        method = self.cnf_method
+        if method == 'auto':
+            method = 'tseytin' if use_tseytin(ctc.ast) else 'distributive'
+        if method == 'tseytin':
             clauses, aux_names = ctc.ast.get_clauses_with_aux(method='tseytin')
             aux_map = self._allocate_auxiliary(aux_names)
         else:
