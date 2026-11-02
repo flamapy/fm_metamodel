@@ -17,6 +17,7 @@ def serialize_node(node: Node) -> str:
     ('MP3_Recording', 'MP3_Recording'),
     ('5 MP', '"5 MP"'),
     ('2_1MP', '"2_1MP"'),              # starts with a digit: the lexer would read a number
+    ('_id_0', '"_id_0"'),              # starts with '_': the lexer would drop it
     ("Bob's Hemp", '"Bob\'s Hemp"'),
     ('or', '"or"'),                    # UVL keywords
     ('features', '"features"'),
@@ -47,7 +48,7 @@ def _count(fm: FeatureModel) -> int:
 
 
 def test_round_trip_with_names_that_need_quotes(tmp_path) -> None:
-    names = ['5 MP', '2_1MP', "Bob's Hemp", 'or', 'OR', 'plain']
+    names = ['5 MP', '2_1MP', "Bob's Hemp", 'or', 'OR', 'plain', '_id_0']
     ctcs = [
         AST.create_simple_binary_operation(ASTOperation.IMPLIES, '5 MP', '2_1MP'),
         AST.create_simple_binary_operation(ASTOperation.EXCLUDES, "Bob's Hemp", 'or'),
@@ -75,3 +76,17 @@ def test_xor_is_written_as_negated_equivalence(tmp_path) -> None:
 def test_layout_unchanged_for_plain_constraints() -> None:
     node = Node(ASTOperation.IMPLIES, Node('A'), Node(ASTOperation.OR, Node('B'), Node(ASTOperation.NOT, Node('C'))))
     assert serialize_node(node) == 'A => (B | ! C)'
+
+
+def test_nested_attributes_are_written_nested(tmp_path) -> None:
+    src = tmp_path / 'nested.uvl'
+    src.write_text('features\n    R\n        optional\n'
+                   '            Waffle {Price 4.3, Allergen {Gluten, Egg}}\n')
+    fm = UVLReader(str(src)).transform()
+    out = tmp_path / 'out.uvl'
+    text = UVLWriter(str(out), fm).transform()
+    assert 'Allergen {Gluten true, Egg true}' in text
+    back = UVLReader(str(out)).transform()
+    waffle = back.get_feature_by_name('Waffle')
+    assert {a.name: a.default_value for a in waffle.get_attributes()} == \
+        {a.name: a.default_value for a in fm.get_feature_by_name('Waffle').get_attributes()}

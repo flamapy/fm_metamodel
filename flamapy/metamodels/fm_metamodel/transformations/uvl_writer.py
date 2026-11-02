@@ -1,6 +1,6 @@
 import string
 import pathlib
-from typing import Union
+from typing import Any, Union
 
 from flamapy.core.models.ast import AST, ASTOperation, Node
 from flamapy.core.transformations import ModelToText
@@ -146,16 +146,7 @@ class UVLWriter(ModelToText):
         attributes = []
         if feature.is_abstract:
             attributes.append("abstract")
-        for attribute in feature.get_attributes():
-            attribute_str = safename(attribute.name)
-            if attribute.default_value is not None:
-                if isinstance(attribute.default_value, str):
-                    attribute_str += f" '{attribute.default_value}'"
-                elif isinstance(attribute.default_value, bool):
-                    attribute_str += f" {str(attribute.default_value).lower()}"
-                else:
-                    attribute_str += f" {attribute.default_value}"
-            attributes.append(attribute_str)
+        attributes.extend(serialize_attributes(feature))
         feature_constraints_str = self.read_feature_constraints(feature)
         if feature_constraints_str:
             attributes.append(feature_constraints_str)
@@ -258,6 +249,46 @@ def serialize_term(node: Node) -> str:
     return safename(text)
 
 
+class _AttributeNode:
+    """An attribute key with its value or its nested attributes (UVLReader flattens nested
+    attributes such as `Allergen {Gluten, Egg}` into `Allergen.Gluten`, `Allergen.Egg`)."""
+
+    def __init__(self) -> None:
+        self.value: Any = None
+        self.children: dict[str, '_AttributeNode'] = {}
+
+
+def serialize_attributes(feature: Feature) -> list[str]:
+    """The feature's attributes in UVL syntax, with dotted names written back as nested blocks."""
+    root = _AttributeNode()
+    for attribute in feature.get_attributes():
+        node = root
+        for part in attribute.name.split('.'):
+            node = node.children.setdefault(part, _AttributeNode())
+        node.value = attribute.default_value
+    return _serialize_attribute_nodes(root)
+
+
+def _serialize_attribute_nodes(node: _AttributeNode) -> list[str]:
+    result = []
+    for key, child in node.children.items():
+        text = safe_simple_name(key)
+        if child.children:
+            text += f' {{{", ".join(_serialize_attribute_nodes(child))}}}'
+        elif child.value is not None:
+            text += f' {_attribute_value(child.value)}'
+        result.append(text)
+    return result
+
+
+def _attribute_value(value: Any) -> str:
+    if isinstance(value, str):
+        return f"'{value}'"
+    if isinstance(value, bool):
+        return str(value).lower()
+    return str(value)
+
+
 def safename(name: str) -> str:
     if '.' in name:
         return '.'.join([safe_simple_name(simple_name) for simple_name in name.split('.')])
@@ -267,15 +298,15 @@ def safename(name: str) -> str:
 def safe_simple_name(name: str) -> str:
     """Quote a name when it is not a valid unquoted UVL identifier.
 
-    Unquoted identifiers may only contain letters, digits and '_', may not start with a digit
-    (the lexer would read a number) and may not be a UVL keyword.
+    Unquoted identifiers may only contain letters, digits and '_', must start with a letter (the
+    lexer reads a leading digit as a number and drops a leading '_') and may not be a UVL keyword.
     """
     if name.startswith("'") and name.endswith("'"):
         return name
     needs_quotes = (
         not name
         or any(char not in safecharacters() for char in name)
-        or name[0].isdigit()
+        or not name[0].isalpha()
         or name in UVL_KEYWORDS
     )
     return f'"{name}"' if needs_quotes else name
