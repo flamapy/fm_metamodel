@@ -1,9 +1,10 @@
 import os
 
-from typing import Optional
+from typing import Any, Optional
 
-from afmparser import AFMParser
-from afmparser import get_tree
+from antlr4 import CommonTokenStream, FileStream
+from antlr4.error.ErrorListener import ErrorListener
+from afmparser import AFMLexer, AFMParser
 
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.transformations import TextToModel
@@ -19,7 +20,32 @@ from flamapy.metamodels.fm_metamodel.models import (
 )
 
 
+class _RaisingErrorListener(ErrorListener):
+    """Turn syntax errors into exceptions: the generated parser recovers from them and the
+    reader would otherwise fail later on a half-built parse tree."""
+
+    def syntaxError(  # noqa: PLR0913, PLR0917 (ANTLR's signature)
+        self, recognizer: Any, offendingSymbol: Any, line: int, column: int, msg: str, e: Any
+    ) -> None:
+        raise FlamaException(f"AFM syntax error at line {line}:{column}: {msg}")
+
+
+def get_tree(path: str) -> AFMParser.Feature_modelContext:
+    """Parse an AFM file (UTF-8), raising FlamaException on the first syntax error."""
+    lexer = AFMLexer(FileStream(path, encoding="utf-8"))
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(_RaisingErrorListener())
+    parser = AFMParser(CommonTokenStream(lexer))
+    parser.removeErrorListeners()
+    parser.addErrorListener(_RaisingErrorListener())
+    return parser.feature_model()
+
+
 class AFMReader(TextToModel):
+    """Read the AFM text format of FaMa. Relationships, attributes (Integer ranges and
+    discrete domains) and the logical constraints are read; constraints with relational or
+    arithmetic operators are not supported."""
+
     @staticmethod
     def get_source_extension() -> str:
         return "afm"
@@ -141,7 +167,8 @@ class AFMReader(TextToModel):
         if range_domain_node is not None:
             range_list = []
             for domain_range in range_domain_node.domain_range():
-                range_list.append(Range(domain_range.INT()[0], domain_range.INT()[1]))
+                range_list.append(Range(int(domain_range.INT()[0].getText()),
+                                        int(domain_range.INT()[1].getText())))
             domain = Domain(range_list, None)
 
         default_value = attribute_spec.attribute_default_value().value_spec().getText()
@@ -203,6 +230,7 @@ class AFMReader(TextToModel):
             "OR": ASTOperation.OR,
             "AND": ASTOperation.AND,
             "IFF": ASTOperation.EQUIVALENCE,
+            "IMPLIES": ASTOperation.IMPLIES,
         }
 
         if expression.__class__ in binary_operation_types:
@@ -219,8 +247,10 @@ class AFMReader(TextToModel):
             result.right = self.build_ast_node(expression.expression()[1], prefix)
 
         if isinstance(expression, AFMParser.NotExpContext):
+            # the operand of a unary operator is the left child (as the other readers and
+            # the AST simplification expect)
             result = Node(ASTOperation.NOT)
-            result.right = self.build_ast_node(expression.expression(), prefix)
+            result.left = self.build_ast_node(expression.expression(), prefix)
 
         if isinstance(expression, AFMParser.ParenthesisExpContext):
             result = self.build_ast_node(expression.expression(), prefix)
