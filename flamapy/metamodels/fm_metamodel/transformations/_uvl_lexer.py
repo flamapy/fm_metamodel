@@ -29,7 +29,7 @@ _DECISIONS_TO_DFA = [DFA(state, index)
                      for index, state in enumerate(UVLPythonLexer.atn.decisionToState)]
 
 
-class _StartStateCachingSimulator(LexerATNSimulator):  # type: ignore[misc]
+class _StartStateCachingSimulator(LexerATNSimulator):
 
     # Parameter names follow LexerATNSimulator (pylint: arguments-renamed otherwise).
     # pylint: disable=redefined-builtin
