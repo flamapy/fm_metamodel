@@ -26,6 +26,14 @@ dev = [
     "antlr4-tools",
 ]
 
+# The writer/reader round-trip tests check the models through the SAT plugin and the
+# group refactorings through the BDD plugin.
+test = [
+    "pytest",
+    "flamapy-sat~=2.9.0.dev0",
+    "flamapy-bdd~=2.9.0.dev0",
+]
+
 [project.entry-points."flamapy.plugins"]
 fm = "flamapy.metamodels.fm_metamodel"
 
