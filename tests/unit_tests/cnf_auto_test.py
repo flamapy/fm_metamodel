@@ -75,7 +75,15 @@ def test_unknown_method_is_rejected(tmp_path) -> None:
         ClauseSet.from_feature_model(_model(tmp_path, '    A => B\n'), 'fast')
 
 
-def test_default_is_unchanged(tmp_path) -> None:
-    fm = _model(tmp_path, '    (A & B & C) | (D & E & F)\n')
+def test_default_is_auto(tmp_path) -> None:
+    # Simple constraints: the default produces exactly the distributive clauses.
+    fm = _model(tmp_path, '    A => B\n    !(E & F)\n')
     assert ClauseSet.from_feature_model(fm).clauses == \
         ClauseSet.from_feature_model(fm, 'distributive').clauses
+    assert not ClauseSet.from_feature_model(fm).auxiliary_variables
+    # A constraint whose expansion blows up: the default switches that one to Tseytin.
+    fm = _model(tmp_path, '    (A & B & C) | (D & E & F) | (A & D) | (B & E)\n')
+    default = ClauseSet.from_feature_model(fm)
+    assert default.clauses == ClauseSet.from_feature_model(fm, 'auto').clauses
+    assert default.auxiliary_variables
+    assert len(default.clauses) < len(ClauseSet.from_feature_model(fm, 'distributive').clauses)
