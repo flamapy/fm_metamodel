@@ -12,5 +12,8 @@ MANIFEST = PluginManifest(
         # the cross-tree constraints: an estimate, never chosen by the planner unless the
         # caller allows approximate results.
         'core_features': OperationCapability(exact=False, cost=1),
+        # FMAtomicSets groups mandatory features with their parents and ignores the
+        # cross-tree constraints, which can merge sets: an estimate as well.
+        'atomic_sets': OperationCapability(exact=False, cost=1),
     },
 )
