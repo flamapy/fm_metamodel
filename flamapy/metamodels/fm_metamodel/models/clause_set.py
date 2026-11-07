@@ -219,15 +219,11 @@ class _Encoder:
                         else:
                             cnf.append(self._get_variable(feat.name))
                     clauses.append(cnf)
-        for val in range(1, len(relation.children) + 1):
-            for combination in itertools.combinations(relation.children, val):
-                cnf = [parent]
-                for feat in relation.children:
-                    if feat in combination:
-                        cnf.append(-self._get_variable(feat.name))
-                    else:
-                        cnf.append(self._get_variable(feat.name))
-                clauses.append(cnf)
+        # Every selected child implies the parent: one binary clause per child. (The previous
+        # encoder enumerated every non-empty subset of the children for this, 2^n - 1 clauses,
+        # which hung on a 27-child group of the UVLHub corpus.)
+        for feat in relation.children:
+            clauses.append([parent, -self._get_variable(feat.name)])
         return clauses
 
     def _add_relation(self, relation: Relation) -> None:
