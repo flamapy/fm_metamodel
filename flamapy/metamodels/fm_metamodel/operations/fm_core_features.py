@@ -18,6 +18,10 @@ class FMCoreFeatures(CoreFeatures):
         false-optional features (e.g., for 'requires' constraints).
     """
 
+    # Reads the tree only, so the result can miss core features that cross-tree constraints
+    # force: reported in the OperationResult provenance envelope.
+    exact = False
+
     def __init__(self) -> None:
         self.result: list[Feature] = []
 

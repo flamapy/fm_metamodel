@@ -11,6 +11,9 @@ class FMAtomicSets(AtomicSets):
     can merge sets, are ignored (the facade descriptor is the interface's; the exact sets are
     computed by the solver-based implementations)."""
 
+    # Ignores the cross-tree constraints: reported in the OperationResult provenance envelope.
+    exact = False
+
     def __init__(self) -> None:
         self.result: list[set[Feature]] = []
 
