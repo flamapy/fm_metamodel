@@ -148,17 +148,22 @@ def test_constraints_are_equivalent():
     assert entails(original, read_back) and entails(read_back, original)
 
 
-def test_xor_is_expanded_and_read_back():
+def test_xor_is_rewritten_and_read_back():
     from flamapy.core.models.ast import AST, ASTOperation, Node
     from flamapy.metamodels.fm_metamodel.models import Constraint
 
     fm = _read_uvl('features\n    Root\n        optional\n            A\n            B\n')
     fm.ctcs.append(Constraint('xor', AST(Node(ASTOperation.XOR, Node('A'), Node('B')))))
     _, text, back = _round_trip(fm)
-    assert '((A OR B) AND (NOT (A AND B)));' in text
-    expanded = _read_uvl('features\n    Root\n        optional\n            A\n            B\n'
-                         'constraints\n    (A | B) & !(A & B)\n')
-    assert str(back.get_constraints()[0].ast) == str(expanded.get_constraints()[0].ast)
+    assert '(NOT (A IFF B));' in text
+    rewritten = _read_uvl('features\n    Root\n        optional\n            A\n            B\n'
+                          'constraints\n    !(A <=> B)\n')
+    assert str(back.get_constraints()[0].ast) == str(rewritten.get_constraints()[0].ast)
+    pysat = pytest.importorskip('flamapy.metamodels.pysat_metamodel')
+    from flamapy.metamodels.pysat_metamodel.operations import PySATConfigurationsNumber
+    from flamapy.metamodels.pysat_metamodel.transformations import FmToPysat
+    count = PySATConfigurationsNumber().execute(FmToPysat(back).transform()).get_result()
+    assert count == 2  # exactly one of A and B
 
 
 def test_reader_supports_implies_and_reports_syntax_errors():

@@ -4,6 +4,7 @@ from typing import Any, Optional
 from flamapy.core.exceptions import FlamaException
 from flamapy.core.models.ast import ASTOperation, Node
 from flamapy.core.transformations import ModelToText
+from flamapy.metamodels.fm_metamodel.transformations.uvl_writer import xor_as_negated_equivalence
 from flamapy.metamodels.fm_metamodel.models import (
     Attribute,
     Feature,
@@ -33,15 +34,19 @@ class AFMWriter(ModelToText):
     AFM feature names are a letter followed by letters and digits, starting with a capital;
     attribute names are lowercase letters and digits. Names are rewritten to that shape (every
     other character dropped, a prefix or suffix added when needed, keywords avoided) and the
-    mapping from original to written names is in `mapping_names` after `transform()`.
+    mapping from original to written names is in `mapping_names` after `transform()`, with
+    the attribute names in `mapping_attribute_names`. The renaming does not go through
+    `FMSecureFeaturesNames` because AFM needs a capital first letter and cannot lex ``_``,
+    which that helper cannot express.
 
     The relationships are the tree with mandatory (``A``), optional (``[A]``) and group
     (``[min,max]{A B}``) children; a feature can have several. Abstract features are written
     as plain features. Typed features and feature cardinalities cannot be written: the writer
     rejects them. Attributes are written with an Integer range domain, a discrete domain or,
     without a domain, the single value they hold; attributes with other values (lists,
-    nested attributes) are omitted. Only the logical constraints are written (``XOR``
-    expanded), as in the other text writers.
+    nested attributes) are omitted. Only the logical constraints are written, as in the other
+    text writers; AFM has no XOR, so ``A XOR B`` is written as ``NOT (A IFF B)`` (the rewrite
+    the UVL and FeatureIDE writers share).
     """
 
     @staticmethod
@@ -52,7 +57,8 @@ class AFMWriter(ModelToText):
         self.path = path
         self.model = source_model
         self.mapping_names: dict[str, str] = {}
-        self._attribute_names: dict[tuple[str, str], str] = {}
+        # (feature name, attribute name) -> the attribute name written.
+        self.mapping_attribute_names: dict[tuple[str, str], str] = {}
 
     def transform(self) -> str:
         self._check_representable()
@@ -114,7 +120,7 @@ class AFMWriter(ModelToText):
                     continue
                 name = attribute_name(attribute.name, used)
                 used.add(name)
-                self._attribute_names[(feature.name, attribute.name)] = name
+                self.mapping_attribute_names[(feature.name, attribute.name)] = name
                 result += f'{self._name(feature)}.{name}: {spec};\n'
         return result + '\n'
 
@@ -144,12 +150,13 @@ class AFMWriter(ModelToText):
     def serialize_constraints(self) -> str:
         result = '%Constraints\n'
         for constraint in self.model.get_logical_constraints():
-            result += self.recursive_constraint_read(constraint.ast.root) + ';\n'
+            ast = xor_as_negated_equivalence(constraint.ast)
+            result += self.recursive_constraint_read(ast.root) + ';\n'
         return result
 
     def recursive_constraint_read(self, node: Node) -> str:
         """The expression of the AST node, fully parenthesised (the grammar does not take a
-        bare NOT as an operand; it has no XOR, written as (a OR b) AND (NOT (a AND b)))."""
+        bare NOT as an operand). XOR must have been rewritten before (see `transform`)."""
         if not node.is_op():
             return self.mapping_names.get(node.data, str(node.data))
         if node.data == ASTOperation.NOT:
@@ -157,8 +164,6 @@ class AFMWriter(ModelToText):
             return f'(NOT {self.recursive_constraint_read(operand)})'
         left = self.recursive_constraint_read(node.left)
         right = self.recursive_constraint_read(node.right)
-        if node.data == ASTOperation.XOR:
-            return f'(({left} OR {right}) AND (NOT ({left} AND {right})))'
         operator = BINARY_OPERATORS.get(node.data)
         if operator is None:
             raise FlamaException(f'AFM cannot represent the operator {node.data} '
