@@ -2,6 +2,16 @@ name: Python analysis
 
 on: [push, pull_request]
 
+env:
+  # The flamapy siblings the jobs install follow the branch being built. Commits always land on
+  # develop, and a .devN tag on develop publishes a dev release: those builds take the siblings
+  # from develop. The stable branch (main, or master in fw/fm/sat/bdd) only receives merges from
+  # develop and its tags publish the stable release: those builds take the siblings' stable
+  # branches, merged first in dependency order.
+  FLAMAPY_FW_REF: ${{ (contains(fromJSON('["main", "master"]'), github.base_ref || github.ref_name) || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'dev'))) && 'master' || 'develop' }}
+  PYSAT_METAMODEL_REF: ${{ (contains(fromJSON('["main", "master"]'), github.base_ref || github.ref_name) || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'dev'))) && 'master' || 'develop' }}
+  BDD_METAMODEL_REF: ${{ (contains(fromJSON('["main", "master"]'), github.base_ref || github.ref_name) || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, 'dev'))) && 'master' || 'develop' }}
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -15,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install setuptools
-          pip install "git+https://github.com/flamapy/flamapy_fw@develop"
+          pip install "git+https://github.com/flamapy/flamapy_fw@${FLAMAPY_FW_REF}"
           pip install .
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -63,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install setuptools
-          pip install "git+https://github.com/flamapy/flamapy_fw@develop"
+          pip install "git+https://github.com/flamapy/flamapy_fw@${FLAMAPY_FW_REF}"
           pip install .
           pip install mypy
       - name: Running static types with mypy
@@ -89,11 +99,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools
           # The sibling packages the dev pins and the test extra need are not on PyPI
-          # until the dev release: take them from their develop branches first.
-          pip install "git+https://github.com/flamapy/flamapy_fw@develop"
+          # until their release: take them from git (see the *_REF variables at the top).
+          pip install "git+https://github.com/flamapy/flamapy_fw@${FLAMAPY_FW_REF}"
           pip install .
-          pip install "git+https://github.com/flamapy/pysat_metamodel@develop"
-          pip install "git+https://github.com/flamapy/bdd_metamodel@develop"
+          pip install "git+https://github.com/flamapy/pysat_metamodel@${PYSAT_METAMODEL_REF}"
+          pip install "git+https://github.com/flamapy/bdd_metamodel@${BDD_METAMODEL_REF}"
           pip install ".[test]"
       - name: Running tests
         run: |
