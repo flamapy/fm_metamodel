@@ -14,6 +14,13 @@ from flamapy.metamodels.pysat_metamodel.models import PySATModel
 
 
 class PysatToFM(ModelToModel):
+    """Rebuild a flat feature model (every feature optional under the root, every clause a
+    cross-tree constraint) from a SAT model.
+
+    Only SAT models whose variables are all features can be converted: Tseytin auxiliary
+    variables (``cnf_method='tseytin'``, or ``'auto'`` on constraints that would blow up when
+    expanded) have no feature to map to, so such models are refused with an explanation.
+    """
 
     @staticmethod
     def get_source_extension() -> str:
@@ -29,6 +36,12 @@ class PysatToFM(ModelToModel):
         self.destination_model: Optional[FeatureModel] = None
 
     def transform(self) -> FeatureModel:
+        auxiliary = getattr(self.source_model, 'auxiliary_variables', None)
+        if auxiliary:
+            raise FlamaException(
+                f'The SAT model has {len(auxiliary)} Tseytin auxiliary variables, which do not '
+                f"correspond to features. Build it with FmToPysat(fm, cnf_method='distributive') "
+                f'to convert it back to a feature model.')
         # Create the tree with the root and all children as optional features
         root_feature = self._identify_root()
         children_features = [Feature(v) 
