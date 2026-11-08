@@ -1,5 +1,5 @@
 """Group cardinalities [a..b] in the CNF encoder: the forbidden counts are enumerated, the
-child-implies-parent clauses are one per child (the 2.8 encoder enumerated every non-empty subset
+child-implies-parent clauses are one per child (the 2.6 encoder enumerated every non-empty subset
 of the children for them, 2^n - 1 clauses, and hung on a 27-child group of the UVLHub corpus)."""
 import time
 
