@@ -19,5 +19,8 @@ MANIFEST = PluginManifest(
         # cross-tree constraints, which can merge sets: an estimate as well.
         'atomic_sets': OperationCapability(
             exact=False, cost_curve=((1000, 1), (2000, 2), (5000, 4), (10000, 7))),
+        # The estimated number of configurations is, by definition, an estimate (2 ms at
+        # 10,000 features).
+        'estimated_number_of_configurations': OperationCapability(exact=False, cost=2),
     },
 )
