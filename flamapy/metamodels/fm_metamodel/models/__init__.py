@@ -10,9 +10,10 @@ from .feature_model import (
     FeatureType,
     AttributeType
 )
-from .clause_set import ClauseSet
+from .clause_set import DEFAULT_CNF_METHOD, ClauseSet
 
 __all__ = [
+    'DEFAULT_CNF_METHOD',
     'Attribute',
     'AttributeType',
     'Cardinality',

@@ -1,5 +1,6 @@
 """Group cardinalities [a..b] in the CNF encoder: the forbidden counts are enumerated, the
-child-implies-parent clauses are linear in the number of children."""
+child-implies-parent clauses are one per child (the 2.8 encoder enumerated every non-empty subset
+of the children for them, 2^n - 1 clauses, and hung on a 27-child group of the UVLHub corpus)."""
 import time
 
 from flamapy.metamodels.fm_metamodel.models.clause_set import ClauseSet
@@ -28,10 +29,12 @@ def test_small_group_keeps_its_semantics(tmp_path) -> None:
     # root selected and 2 or 3 of the 4 children: C(4,2) + C(4,3) = 10 configurations
     assert _count(cs.clauses, len(cs.variables)) == 10
     parent = cs.variables['R']
-    assert all([parent, -cs.variables[f'C{i}']] in cs.clauses for i in range(4))
+    clauses = {frozenset(clause) for clause in cs.clauses}
+    assert all(frozenset((-cs.variables[f'C{i}'], parent)) in clauses for i in range(4))
 
 
-def test_wide_group_encodes_in_linear_time(tmp_path) -> None:
+def test_wide_group_child_implies_parent_is_linear(tmp_path) -> None:
+    # [4..27]: the forbidden counts are 0-3, so their enumeration stays small too.
     fm = _model(tmp_path, 27, 4, 27)
     start = time.perf_counter()
     cs = ClauseSet.from_feature_model(fm)

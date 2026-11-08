@@ -23,6 +23,11 @@ from flamapy.metamodels.fm_metamodel.models.feature_model import (
 )
 
 
+# The encoding every CNF consumer uses unless told otherwise (FmToPysat, FmToDiagPysat, FmToSDD,
+# FmToSharpSAT, FmToDDNNF): import it rather than repeating the literal.
+DEFAULT_CNF_METHOD = 'auto'
+
+
 @dataclass
 class ClauseSet:
     """CNF encoding of a feature model as signed-integer clauses plus name/id maps."""
@@ -43,7 +48,7 @@ class ClauseSet:
 
     @classmethod
     def from_feature_model(
-        cls, feature_model: FeatureModel, cnf_method: str = 'auto'
+        cls, feature_model: FeatureModel, cnf_method: str = DEFAULT_CNF_METHOD
     ) -> 'ClauseSet':
         """Encode ``feature_model`` into CNF.
 
@@ -219,11 +224,9 @@ class _Encoder:
                         else:
                             cnf.append(self._get_variable(feat.name))
                     clauses.append(cnf)
-        # Every selected child implies the parent: one binary clause per child. (The previous
-        # encoder enumerated every non-empty subset of the children for this, 2^n - 1 clauses,
-        # which hung on a 27-child group of the UVLHub corpus.)
+        # Every selected child implies the parent: one binary clause per child.
         for feat in relation.children:
-            clauses.append([parent, -self._get_variable(feat.name)])
+            clauses.append([-self._get_variable(feat.name), parent])
         return clauses
 
     def _add_relation(self, relation: Relation) -> None:
