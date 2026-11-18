@@ -7,7 +7,8 @@ from flamapy.metamodels.fm_metamodel.models import FeatureModel, Feature
 
 class FMAtomicSets(AtomicSets):
     """The atomic sets read from the feature tree: the root with its chain of mandatory
-    descendants, and every other feature with its own chain. Cross-tree constraints, which
+    descendants, and every other feature with its own chain. The children of a group that
+    needs all of them ([n..n]) count as mandatory. Cross-tree constraints, which
     can merge sets, are ignored (the facade descriptor is the interface's; the exact sets are
     computed by the solver-based implementations)."""
 
@@ -44,11 +45,12 @@ def get_atomic_sets(feature_model: FeatureModel) -> list[set[Feature]]:
 def compute_atomic_sets(atomic_sets: list[set[Feature]],
                         feature: Feature,
                         current_set: set[Feature]) -> None:
-    for child in feature.get_children():
-        if child.is_mandatory():
-            current_set.add(child)
-            compute_atomic_sets(atomic_sets, child, current_set)
-        else:
-            new_as = {child}
-            atomic_sets.append(new_as)
-            compute_atomic_sets(atomic_sets, child, new_as)
+    for relation in feature.get_relations():
+        for child in relation.children:
+            if relation.requires_all_children():
+                current_set.add(child)
+                compute_atomic_sets(atomic_sets, child, current_set)
+            else:
+                new_as = {child}
+                atomic_sets.append(new_as)
+                compute_atomic_sets(atomic_sets, child, new_as)

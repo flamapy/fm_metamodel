@@ -47,7 +47,8 @@ def get_core_features(feature_model: FeatureModel) -> list[Feature]:
     while features:
         feature = features.pop()
         for relation in feature.get_relations():
-            if relation.is_mandatory():
+            # mandatory children, and those of a group that needs all of them ([n..n])
+            if relation.requires_all_children():
                 core_features.extend(relation.children)
                 features.extend(relation.children)
 

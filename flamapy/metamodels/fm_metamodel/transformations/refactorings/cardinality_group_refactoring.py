@@ -153,6 +153,10 @@ def get_or_constraints_for_cardinality_group(relation: Relation) -> Node:
 
 
 def get_ast_constraint_for_cardinality_group(feature: Feature, relation: Relation) -> AST:
+    n_children = len(relation.children)
+    card_max = n_children if relation.card_max < 0 else min(relation.card_max, n_children)
+    if relation.card_min > card_max:  # no selection of children fits: the feature is dead
+        return AST.create_simple_unary_operation(ASTOperation.NOT, feature.name)
     return AST.create_binary_operation(ASTOperation.IMPLIES,
                                        Node(feature.name),
                                        get_or_constraints_for_cardinality_group(relation))

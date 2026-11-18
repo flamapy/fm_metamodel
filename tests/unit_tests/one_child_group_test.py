@@ -9,6 +9,8 @@ from flamapy.core.exceptions import FlamaException
 
 from flamapy.metamodels.fm_metamodel.models import Feature, Relation
 from flamapy.metamodels.fm_metamodel.operations import (
+    FMAtomicSets,
+    FMCoreFeatures,
     FMEstimatedConfigurationsNumber,
     FMLanguageLevel,
 )
@@ -165,3 +167,69 @@ def test_clafer_writer_writes_the_group_cardinality(tmp_path, cardinality, expec
     out = tmp_path / 'out.txt'
     ClaferWriter(str(out), _read(tmp_path, cardinality)).transform()
     assert f'abstract {cardinality} Root\n\tF0 ?' in out.read_text()
+
+
+def _names(features) -> list[str]:
+    return sorted(feature.name for feature in features)
+
+
+def _sat_core(fm) -> list[str]:
+    from flamapy.metamodels.pysat_metamodel.operations import PySATCoreFeatures
+    from flamapy.metamodels.pysat_metamodel.transformations import FmToPysat
+    return sorted(PySATCoreFeatures().execute(FmToPysat(fm).transform()).get_result())
+
+
+def _sat_atomic_sets(fm) -> list[list[str]]:
+    from flamapy.metamodels.pysat_metamodel.operations import PySATAtomicSets
+    from flamapy.metamodels.pysat_metamodel.transformations import FmToPysat
+    result = PySATAtomicSets().execute(FmToPysat(fm).transform()).get_result()
+    return sorted(sorted(atomic_set) for atomic_set in result)
+
+
+# groups that need all their children, with a mandatory grandchild under the first one
+REQUIRED_CHILDREN = [
+    ('[1..2]', 'F0'), ('[1..*]', 'F0'), ('[2..2]', 'F0\n            F1'),
+    ('[2..*]', 'F0\n            F1'), ('[2..3]', 'F0\n            F1'),
+]
+
+
+@pytest.mark.parametrize('card_min, card_max, children, expected', [
+    (1, 1, 1, True), (1, 2, 1, True), (1, -1, 1, True), (2, 2, 2, True), (2, -1, 2, True),
+    (0, 1, 1, False), (0, 0, 1, False), (1, 1, 2, False), (1, 2, 2, False),
+    (2, 2, 1, False),  # impossible: the parent cannot be selected
+    (2, 1, 2, False),  # inconsistent bounds
+    (0, 0, 0, False),
+])
+def test_requires_all_children(card_min, card_max, children, expected) -> None:
+    assert _relation(card_min, card_max, children).requires_all_children() is expected
+
+
+@pytest.mark.parametrize('cardinality, children', REQUIRED_CHILDREN)
+def test_core_features_and_atomic_sets_follow_required_children(tmp_path, cardinality,
+                                                                children) -> None:
+    src = tmp_path / 'model.uvl'
+    src.write_text(f'features\n    Root\n        {cardinality}\n            {children}\n'
+                   '        optional\n            Opt\n                mandatory\n'
+                   '                    Sub\n')
+    read = lambda: UVLReader(str(src)).transform()  # noqa: E731
+    expected = sorted(['Root'] + children.split())
+    assert _names(FMCoreFeatures().execute(read()).get_result()) == expected == _sat_core(read())
+    atomic_sets = sorted(_names(s) for s in FMAtomicSets().execute(read()).get_result())
+    assert atomic_sets == sorted([['Opt', 'Sub'], expected]) == _sat_atomic_sets(read())
+
+
+@pytest.mark.parametrize('cardinality', ['[0..0]', '[0..3]', '[0..1]'])
+def test_an_optional_or_forbidden_child_is_not_core(tmp_path, cardinality) -> None:
+    fm = _read(tmp_path, cardinality.strip('[]'))
+    assert _names(FMCoreFeatures().execute(fm).get_result()) == ['Root']
+    assert sorted(_names(s) for s in FMAtomicSets().execute(fm).get_result()) == [['F0'],
+                                                                                  ['Root']]
+
+
+@pytest.mark.parametrize('cardinality, expected', ONE_CHILD_GROUPS + [('3..3', 0)])
+@pytest.mark.parametrize('clauses', [False, True])
+def test_cardinality_group_refactoring_of_any_group(tmp_path, cardinality, expected,
+                                                    clauses) -> None:
+    """Both encodings, an impossible cardinality included (it makes the feature dead)."""
+    fm = CardinalityGroupRefactoring(_read(tmp_path, cardinality), clauses=clauses).transform()
+    assert _count(fm) == expected

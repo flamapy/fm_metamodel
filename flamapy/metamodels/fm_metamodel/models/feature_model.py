@@ -54,6 +54,15 @@ class Relation:
             len(self.children) == 1 and not self.is_mandatory() and not self.is_optional()
         )
 
+    def requires_all_children(self) -> bool:
+        """Whether selecting the parent selects every child: a mandatory relation, or a group
+        whose minimum is its number of children, such as [2..2] over two children or [1..2]
+        over one. False for an impossible cardinality, whose parent cannot be selected."""
+        n_children = len(self.children)
+        return n_children > 0 and self.card_min == n_children and (
+            self.card_max < 0 or self.card_max >= n_children
+        )
+
     def __str__(self) -> str:
         parent_name = self.parent.name if self.parent else ""
         res = f"{parent_name}[{self.card_min},{self.card_max}]"
