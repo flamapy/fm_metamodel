@@ -116,6 +116,8 @@ def calculate_group_cardinality_configurations(relation: Relation) -> int:
                 dp[i][j] += dp[i-1][j-1] * current_child_config
 
     # Sum the configurations for the allowed cardinalities [card_min..card_max]
-    for k in range(relation.card_min, relation.card_max + 1):
+    # The upper bound may be unbounded (-1) or larger than the number of children.
+    card_max = num_children if relation.card_max < 0 else min(relation.card_max, num_children)
+    for k in range(relation.card_min, card_max + 1):
         relation_configurations += dp[num_children][k]
     return relation_configurations

@@ -56,8 +56,9 @@ def add_features(feature: Feature, n_tabs: int) -> list[str]:
             child = relation.children[0]
             lines.append(indentation + f':m {safename(child.name)} ({safename(child.name)})')
             lines.extend(add_features(child, n_tabs + 1))
-        elif relation.is_alternative() or relation.is_or():
-            lines.append(indentation + f':g [{relation.card_min},{relation.card_max}]')
+        elif relation.is_group():  # or, alternative, mutex and any other [m,n]
+            card_max = '*' if relation.card_max == -1 else relation.card_max
+            lines.append(indentation + f':g [{relation.card_min},{card_max}]')
             for child in relation.children:
                 lines.append(
                     indentation + TAB + f': {safename(child.name)} ({safename(child.name)})'

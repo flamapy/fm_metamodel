@@ -48,7 +48,11 @@ class Relation:
         )
 
     def is_group(self) -> bool:
-        return len(self.children) > 1
+        """Whether the relation is a group: several children, or a single child under a
+        cardinality other than mandatory [1..1] and optional [0..1], such as [0..0] or [1..2]."""
+        return len(self.children) > 1 or (
+            len(self.children) == 1 and not self.is_mandatory() and not self.is_optional()
+        )
 
     def __str__(self) -> str:
         parent_name = self.parent.name if self.parent else ""
