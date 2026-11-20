@@ -557,7 +557,13 @@ class UVLReader(TextToModel):
             )
 
         # Find ParseTree node of root feature
-        root_feature_ast = self.parse_tree.features().feature()
+        features_node = self.parse_tree.features()
+        if features_node is None or features_node.feature() is None:
+            raise FlamaException(
+                "The UVL model has no 'features' section: "
+                "a feature model needs a root feature."
+            )
+        root_feature_ast = features_node.feature()
         # Get the root and process it
         feature_text = root_feature_ast.reference().getText().replace('"', '')
         feature = Feature(feature_text, [])
