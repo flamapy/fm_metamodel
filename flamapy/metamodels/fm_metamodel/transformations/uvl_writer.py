@@ -82,8 +82,14 @@ class UVLWriter(ModelToText):
                 file.write(serialized_model)
 
         for namespace, submodel in self.model.imports.items():
-            path = f'{"/".join(namespace.split("."))}.uvl'
-            pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+            # An imported model goes where the reader looks for it: under its namespace,
+            # next to the importing file. Without a path nothing is written at all.
+            path = None
+            if self.path is not None:
+                submodel_path = pathlib.Path(self.path).parent.joinpath(
+                    *namespace.split('.')).with_suffix('.uvl')
+                submodel_path.parent.mkdir(parents=True, exist_ok=True)
+                path = str(submodel_path)
             submodel_str = UVLWriter(path, submodel).transform()
             serialized_model += f'\n\n{submodel_str}'
         return serialized_model
