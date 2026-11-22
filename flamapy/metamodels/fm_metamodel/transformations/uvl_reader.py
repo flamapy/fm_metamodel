@@ -52,6 +52,7 @@ class UVLReader(TextToModel):
         self.model: Optional[FeatureModel] = None
         self.imports: dict[str, FeatureModel] = {}  # namespace -> FeatureModel
         self.import_root: dict[str, str] = {}  # alias -> namespace
+        self.referenced_roots: set[int] = set()  # ids of imported roots already referenced
         self.constraints_attributes: dict[Feature, list[Constraint]] = {}
         self.constraint_counter: int = 0
 
@@ -228,6 +229,14 @@ class UVLReader(TextToModel):
             if imported_fm is None:
                 raise FlamaException(f'Imported model {namespace} not found.')
             if feature_reference_name == imported_fm.root.name:
+                if id(imported_fm.root) in self.referenced_roots:
+                    # A second reference would share the first one's feature names, so the
+                    # backends could not tell the two instances apart and would answer for a
+                    # different model.
+                    raise FlamaException(f'Imported feature {feature.name} is referenced more '
+                                         'than once; using the same imported model twice is '
+                                         'not supported.')
+                self.referenced_roots.add(id(imported_fm.root))
                 feature.reference = imported_fm.root
             else:
                 raise FlamaException(f'Feature {feature_reference_name} not found in '
