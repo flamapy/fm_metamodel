@@ -63,8 +63,11 @@ class UVLReader(TextToModel):
         stream = CommonTokenStream(lexer)
         parser = UVLPythonParser(stream)
 
-        # Attach custom error listener
+        # Attach custom error listener to the lexer and the parser, so that a
+        # character the lexer cannot tokenize is reported instead of skipped
         error_listener = CustomErrorListener()
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(error_listener)
         parser.removeErrorListeners()
         parser.addErrorListener(error_listener)
 
