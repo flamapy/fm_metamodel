@@ -512,17 +512,14 @@ class UVLReader(TextToModel):
                 # If the import is not already processed, we can process it
                 relative_path = namespace.replace('.', '/')
                 import_path = os.path.join(self.path, f'{relative_path}.uvl')
-                if os.path.exists(import_path):
-                    imported_model = UVLReader(import_path).transform()
-                    self.imports[namespace] = imported_model
-                    if alias:
-                        self.import_root[alias] = namespace
-                    else:
-                        self.import_root[namespace] = namespace
-                else:
+                if not os.path.exists(import_path):
                     logging.warning(
                         "Import %s not found in path %s", namespace, self.path
                     )
+                    continue
+                self.imports[namespace] = UVLReader(import_path).transform()
+            # The same model may be imported under several aliases: each one resolves to it.
+            self.import_root[alias or namespace] = namespace
 
     def transform(self) -> FeatureModel:
         self.set_parse_tree()

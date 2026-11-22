@@ -97,3 +97,35 @@ def test_flat_fm_does_not_mutate_the_source_model(tmp_path, maintain_namespaces:
     assert [feature.name for feature in sub_model.get_features()] == sub_features
     assert source_model.imports and source_model.alias_namespace
     assert not {id(ctc) for ctc in fm.get_constraints()} & {id(ctc) for ctc in sub_model.ctcs}
+
+
+SPIRITS = 'features\n    Spirits\n        alternative\n            Gin\n            Rum\n'
+TWO_PARENTS = ('imports\n{imports}features\n    Mix\n        optional\n'
+               '            Three\n                mandatory\n                    {first}.Spirits\n'
+               '            Two\n                mandatory\n                    {second}.Spirits\n')
+
+
+def _flat_names(tmp_path, main: str) -> list[str]:
+    (tmp_path / 'Spirits.uvl').write_text(SPIRITS)
+    (tmp_path / 'Mix.uvl').write_text(main)
+    fm = FlatFM(UVLReader(str(tmp_path / 'Mix.uvl')).transform()).transform()
+    for feature in fm.get_features():
+        for relation in feature.get_relations():
+            assert relation.parent is feature
+    return [feature.name for feature in fm.get_features()]
+
+
+def test_flat_fm_expands_every_alias_of_the_same_model(tmp_path) -> None:
+    # Regression: only the first alias of a model was registered, so the second stayed a leaf.
+    names = _flat_names(tmp_path, TWO_PARENTS.format(
+        imports='    Spirits as S\n    Spirits as T\n', first='S', second='T'))
+    assert sorted(names) == sorted(['Mix', 'Three', 'Two', 'S.Spirits', 'S.Gin', 'S.Rum',
+                                    'T.Spirits', 'T.Gin', 'T.Rum'])
+
+
+def test_flat_fm_copies_a_model_referenced_twice(tmp_path) -> None:
+    # Regression (flamapy/fm_metamodel#110): the two references shared one subtree, which
+    # was namespaced twice ('S.S.Gin') and re-parented to the last reference.
+    names = _flat_names(tmp_path, TWO_PARENTS.format(
+        imports='    Spirits as S\n', first='S', second='S'))
+    assert sorted(names) == sorted(['Mix', 'Three', 'Two'] + ['S.Spirits', 'S.Gin', 'S.Rum'] * 2)

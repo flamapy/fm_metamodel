@@ -41,7 +41,12 @@ class FlatFM(ModelToModel):
         while features:
             feature = features.pop()
             if feature.reference is not None:
-                imported_fm = imported_models[id(feature.reference)]
+                # Every reference gets its own copy of the imported model: the same model may
+                # be referenced more than once (under one alias or several), and each
+                # reference is a separate subtree with its own namespace.
+                imported_fm = copy.deepcopy(imported_models[id(feature.reference)])
+                imported_models.update(get_imported_models_by_root(imported_fm))
+                feature.reference = imported_fm.root
                 # Copy the feature's attributes and relations from the referenced feature
                 feature.relations = feature.reference.relations
                 for relation in feature.relations:
