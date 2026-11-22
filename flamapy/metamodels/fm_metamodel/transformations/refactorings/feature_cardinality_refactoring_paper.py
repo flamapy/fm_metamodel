@@ -144,7 +144,8 @@ def create_contextual_constraint(context: ContextualConstraintContext) -> None:
     """Create contextual constraints for the given feature clone."""
     for constraint in context.feature_model.get_constraints():
         features_in_constraint = constraint.get_features()
-        if all(feat in context.features_names_map for feat in features_in_constraint):
+        if features_in_constraint and all(feat in context.features_names_map
+                                          for feat in features_in_constraint):
             # Contextualize constraint for the clone
             context.ctcs_to_be_removed.add(constraint)
             new_constraint = contextualize_constraint(context.feature_model,
