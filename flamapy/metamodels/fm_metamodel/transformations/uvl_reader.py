@@ -209,7 +209,7 @@ class UVLReader(TextToModel):
                                                                  value)
                 for attr in attributes_list:
                     attributes.append(attr)
-                    default_value = None
+                default_value = None  # also when the block is empty
             else:
                 default_value = value
             attribute = Attribute(name=f'{parent_attribute_name}.{key}',
